@@ -1,0 +1,1 @@
+This is an auction website built with React + Express + PostgreSQL for my project in class.
