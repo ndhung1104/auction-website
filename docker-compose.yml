@@ -29,6 +29,8 @@ services:
   db:
     image: postgres:14-alpine    # Sử dụng image PostgreSQL 14
     restart: always
+    env_file:
+      - ./backend/.env       # Lấy thông tin từ file .env của backend
     environment:
       # Lấy thông tin từ file .env của backend
       POSTGRES_USER: ${DB_USER}
