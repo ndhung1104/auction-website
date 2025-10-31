@@ -31,11 +31,6 @@ services:
     restart: always
     env_file:
       - ./backend/.env       # Lấy thông tin từ file .env của backend
-    environment:
-      # Lấy thông tin từ file .env của backend
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
     ports:
       - "5433:5432"              # Map cổng 5433 (máy bạn) vào 5432 (container)
     volumes:
