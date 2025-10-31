@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # 1. Dịch vụ Backend (Node.js)
+  backend:
+    build: ./backend             # Build từ Dockerfile trong thư mục ./backend
+    ports:
+      - "3001:3000"              # Map cổng 3001 (máy bạn) vào 3000 (container)
+    volumes:
+      - ./backend:/usr/src/app   # Mount code của bạn vào container (để hot-reload)
+      - /usr/src/app/node_modules # Loại trừ node_modules để dùng của container
+    env_file:
+      - ./backend/.env           # Đọc biến môi trường từ file .env
+    depends_on:
+      - db                       # Khởi động SAU khi service 'db' chạy
+
+  # 2. Dịch vụ Frontend (React)
+  frontend:
+    build: ./frontend            # Build từ Dockerfile trong thư mục ./frontend
+    ports:
+      - "5173:5173"              # Map cổng 5173 (máy bạn) vào 5173 (container)
+    volumes:
+      - ./frontend:/usr/src/app  # Mount code của bạn vào container (để hot-reload)
+      - /usr/src/app/node_modules # Loại trừ node_modules
+    env_file:
+      - ./frontend/.env          # Đọc biến môi trường
+    depends_on:
+      - backend                  # Khởi động SAU khi service 'backend' chạy
+
+  # 3. Dịch vụ Database (PostgreSQL)
+  db:
+    image: postgres:14-alpine    # Sử dụng image PostgreSQL 14
+    restart: always
+    environment:
+      # Lấy thông tin từ file .env của backend
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5433:5432"              # Map cổng 5433 (máy bạn) vào 5432 (container)
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Lưu trữ dữ liệu DB bên ngoài container
+
+volumes:
+  postgres_data:                 # Định nghĩa volume để giữ dữ liệu khi container bị xóa

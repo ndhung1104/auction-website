@@ -7,3 +7,7 @@ node_modules
 # Bỏ qua các file log và file của HĐH
 npm-debug.log
 .DS_Store
+
+# Bỏ qua build artifacts
+frontend/dist/
+frontend/.vite/
