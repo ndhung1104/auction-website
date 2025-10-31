@@ -1,5 +1,5 @@
-# Sử dụng base image Node.js 18
-FROM node:18-alpine
+# Sử dụng base image Node.js 22
+FROM node:22-alpine
 
 # Set thư mục làm việc bên trong container
 WORKDIR /usr/src/app
