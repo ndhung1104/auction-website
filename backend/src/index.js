@@ -10,7 +10,7 @@ app.use(helmet());
 app.use(cors({ origin: process.env.CLIENT_ORIGIN || '*' }));
 app.use(express.json());
 
-app.get('/health', (_, res) => res.json({ status: 'ok' }));
+app.get('/api/health', (_, res) => res.json({ status: 'ok' }));
 
 app.use((req, res, next) => {
   const error = new Error('Not Found');
