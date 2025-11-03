@@ -1,184 +1,194 @@
-
 ```mermaid
 erDiagram
-    USER ||--|{ USER_ROLE : "có"
-    ROLE ||--|{ USER_ROLE : "thuộc về"
-    
-    PRODUCT ||--|{ PRODUCT_IMAGE : "có"
-    PRODUCT }o--|| CATEGORY : "thuộc về"
-    PRODUCT }o--|| USER : "bán bởi"
+    users ||--o{ user_otps : "owns"
+    users ||--o{ products : "sells"
+    users ||--o{ bids : "places"
+    users ||--o{ auto_bids : "configures"
+    users ||--o{ questions : "asks"
+    users ||--o{ answers : "answers"
+    users ||--o{ watchlist : "tracks"
+    users ||--o{ seller_requests : "submits"
+    users ||--o{ orders : "wins"
+    users ||--o{ order_messages : "sends"
+    users ||--o{ ratings : "rates"
 
-    PRODUCT ||--|{ BIDDER_ACTION : "có"
-    USER ||--|{ BIDDER_ACTION : "thực hiện"
+    products ||--o{ product_images : "has"
+    products ||--o{ bids : "collects"
+    products ||--o{ auto_bids : "allows"
+    products ||--o{ questions : "receives"
+    products ||--o{ watchlist : "appears in"
+    products ||--o{ orders : "converts to"
+    products ||--o{ product_description_history : "tracks"
+    products ||--o{ auto_bid_events : "logs"
 
-    PRODUCT ||--|{ AUTO_BID : "có"
-    USER ||--|{ AUTO_BID : "cài đặt"
+    orders ||--o{ order_messages : "has"
+    orders ||--o{ ratings : "produces"
 
-    USER ||--|{ SYSTEM_SETTING : "quản lý"
-    
-    USER {
-        int id PK
-        varchar fullname
-        varchar address
-        varchar email 
-        date birth_date
-        int positive_point
-        int negative_point
-        date timestamp
-        varchar status "created/confirmed/deleted"
-    }
-    
-    USER_ROLE {
-        int id PK
-        int user_id FK
-        int role_id FK
-    }
-    
-    ROLE {
-        int id PK
-        char role
-    }
-    
-    CATEGORY {
-        int id PK
-        varchar name
-        int parent_id FK "nullable, tham chiếu đến CATEGORY(id)"
-    }
-    
-    PRODUCT_IMAGE {
-        int id PK
-        int product_id FK
-        varchar url
-    }
-    
-    BIDDER_ACTION {
-        int id PK
-        int product_id FK
-        int user_id FK
-        datetime timestamp
-        decimal bid_price
-        decimal max_price "nullable"
-        char bidder
-    }
-    
-    PRODUCT {
-        int id PK 
-        int seller_id FK
-        int category_id FK
-        varchar product_name 
-        text description 
-        decimal initial_price 
-        decimal price_step
-        decimal current_price
-        decimal buy_out_price "nullable" 
-        date start_time
-        date end_time
-        bool new_user_can_bid
-        bool point_threshold_on
-        bool status "active/ended"
-    }
-    
-    AUTO_BID {
-        int id PK
-        int product_id FK
-        int user_id FK
-        date timestamp
-        decimal max_price "nullable" 
-    }
-    
-    SYSTEM_SETTING {
-        int id PK
-        datetime timestamp
-        int extended_window
-        int extended_time
-        int user_id FK
-    }
-    QUESTIONS {
-        int id PK
-        int product_id FK
-        int user_id FK "người hỏi"
-        text question_text
-        datetime created_at
-    }
-    
-    ANSWERS {
-        int id PK
-        int question_id FK
-        int user_id FK "người trả lời (thường là seller)"
-        text answer_text
-        datetime created_at
-    }
+    categories ||--o{ categories : "parent of"
+    categories ||--o{ products : "groups"
 
-    REVIEWS {
-        int id PK
-        int product_id FK "sản phẩm của giao dịch"
-        int reviewer_id FK "người đánh giá"
-        int reviewed_id FK "người bị đánh giá"
-        smallint rating "+1 or -1"
-        text comment "nhận xét"
-        datetime created_at
-    }
-
-    WATCH_LIST {
-        int id PK
-        int user_id FK
-        int product_id FK
-    }
-
-    UPGRADE_REQUESTS {
-        int id PK
-        int user_id FK "user yêu cầu"
-        varchar status "pending/approved/rejected"
-        datetime created_at
-        datetime updated_at "ngày duyệt/từ chối"
-    }
-
-    PRODUCT_DESCRIPTION_HISTORY {
-        int id PK
-        int product_id FK
-        text content_added "nội dung được thêm vào"
-        datetime created_at
-    }
-
-    BID_BLACKLIST {
-        int id PK
-        int user_id FK "bidder bị chặn"
-        int product_id FK "sản phẩm bị chặn"
-    }
-
-    OTP_CODES {
-        int id PK
-        int user_id FK
-        varchar code "mã OTP"
-        datetime expires_at "thời gian hết hạn"
-        varchar purpose "register/reset_password"
-    }
-
-    %% --- Định nghĩa các mối quan hệ ---
-    
-    CATEGORY }o--o{ CATEGORY : "có danh mục con"
-
-    USER ||--|{ QUESTIONS : "hỏi"
-    PRODUCT ||--|{ QUESTIONS : "có câu hỏi"
-    
-    QUESTIONS ||--|{ ANSWERS : "có câu trả lời"
-    USER ||--|{ ANSWERS : "trả lời"
-
-    USER ||--|{ REVIEWS : "viết"
-    USER ||--|{ REVIEWS : "nhận"
-    PRODUCT ||--|{ REVIEWS : "thuộc về"
-
-    USER ||--|{ WATCH_LIST : "theo dõi"
-    PRODUCT ||--|{ WATCH_LIST : "được theo dõi"
-
-    USER ||--|{ UPGRADE_REQUESTS : "yêu cầu nâng cấp"
-    
-    PRODUCT ||--|{ PRODUCT_DESCRIPTION_HISTORY : "có lịch sử mô tả"
-    
-    USER ||--|{ BID_BLACKLIST : "bị chặn khỏi"
-    PRODUCT ||--|{ BID_BLACKLIST : "có người bị chặn"
-    
-    USER ||--|{ OTP_CODES : "sở hữu"
+    bids ||--o{ auto_bid_events : "originates"
 ```
-    
-    
+
+**users**
+- id PK
+- email UNIQUE
+- password_hash
+- full_name
+- phone_number
+- address
+- role ENUM('ADMIN','SELLER','BIDDER')
+- positive_score DEFAULT 0
+- negative_score DEFAULT 0
+- status ENUM('CREATED','CONFIRMED','SUSPENDED')
+- created_at TIMESTAMPTZ
+- updated_at TIMESTAMPTZ
+
+**user_otps**
+- id PK
+- user_id FK → users.id
+- code
+- purpose ENUM('REGISTER','RESET_PASSWORD')
+- expires_at TIMESTAMPTZ
+- consumed_at TIMESTAMPTZ NULLABLE
+- created_at TIMESTAMPTZ
+
+**categories**
+- id PK
+- name
+- parent_id FK → categories.id NULLABLE
+- created_at TIMESTAMPTZ
+- updated_at TIMESTAMPTZ
+
+**products**
+- id PK
+- seller_id FK → users.id
+- category_id FK → categories.id
+- name
+- slug UNIQUE
+- description
+- start_price BIGINT
+- price_step BIGINT
+- current_price BIGINT
+- buy_now_price BIGINT NULLABLE
+- auto_extend BOOLEAN DEFAULT true
+- enable_auto_bid BOOLEAN DEFAULT true
+- current_bidder_id FK → users.id NULLABLE
+- bid_count INTEGER DEFAULT 0
+- highlight_until TIMESTAMPTZ NULLABLE
+- status ENUM('ACTIVE','ENDED','REMOVED')
+- start_at TIMESTAMPTZ
+- end_at TIMESTAMPTZ
+- created_at TIMESTAMPTZ
+- updated_at TIMESTAMPTZ
+
+**product_images**
+- id PK
+- product_id FK → products.id
+- image_url
+- display_order INTEGER DEFAULT 0
+- created_at TIMESTAMPTZ
+
+**bids**
+- id PK
+- product_id FK → products.id
+- user_id FK → users.id
+- bid_amount BIGINT
+- is_auto_bid BOOLEAN DEFAULT false
+- created_at TIMESTAMPTZ
+
+**auto_bids**
+- id PK
+- product_id FK → products.id
+- user_id FK → users.id
+- max_bid_amount BIGINT
+- created_at TIMESTAMPTZ
+- updated_at TIMESTAMPTZ
+- UNIQUE (product_id, user_id)
+
+**auto_bid_events**
+- id PK
+- product_id FK → products.id
+- auto_bid_id FK → auto_bids.id NULLABLE
+- bid_id FK → bids.id NULLABLE
+- event_type ENUM('PLACE','OUTBID','RECALCULATE')
+- previous_bidder_id FK → users.id NULLABLE
+- new_bidder_id FK → users.id NULLABLE
+- triggered_at TIMESTAMPTZ
+
+**settings**
+- id PK
+- key UNIQUE
+- value
+- description
+- created_at TIMESTAMPTZ
+- updated_at TIMESTAMPTZ
+
+**watchlist**
+- id PK
+- user_id FK → users.id
+- product_id FK → products.id
+- created_at TIMESTAMPTZ
+
+**questions**
+- id PK
+- product_id FK → products.id
+- user_id FK → users.id
+- question_text
+- created_at TIMESTAMPTZ
+
+**answers**
+- id PK
+- question_id FK → questions.id
+- user_id FK → users.id
+- answer_text
+- created_at TIMESTAMPTZ
+
+**seller_requests**
+- id PK
+- user_id FK → users.id
+- status ENUM('PENDING','APPROVED','REJECTED')
+- requested_at TIMESTAMPTZ
+- expire_at TIMESTAMPTZ
+- processed_at TIMESTAMPTZ NULLABLE
+
+**orders**
+- id PK
+- product_id FK → products.id
+- seller_id FK → users.id
+- winner_id FK → users.id
+- final_price BIGINT
+- status ENUM('PENDING_PAYMENT','PROCESSING','COMPLETED','CANCELLED')
+- created_at TIMESTAMPTZ
+- updated_at TIMESTAMPTZ
+
+**order_messages**
+- id PK
+- order_id FK → orders.id
+- sender_id FK → users.id
+- message
+- created_at TIMESTAMPTZ
+
+**ratings**
+- id PK
+- order_id FK → orders.id
+- rater_id FK → users.id
+- rated_user_id FK → users.id
+- score SMALLINT CHECK (score IN (1, -1))
+- comment
+- created_at TIMESTAMPTZ
+- UNIQUE (order_id, rater_id)
+
+**product_description_history**
+- id PK
+- product_id FK → products.id
+- content_added
+- created_at TIMESTAMPTZ
+
+**bid_blacklist**
+- id PK
+- product_id FK → products.id
+- user_id FK → users.id
+- reason
+- created_at TIMESTAMPTZ
+```
