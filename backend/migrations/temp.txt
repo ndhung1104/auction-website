@@ -1,0 +1,146 @@
+
+  await knex.schema.createTable('answers', (table) => {
+    table.bigIncrements('id');
+    table.bigInteger('question_id').unsigned().notNullable()
+      .references('id').inTable('questions').onDelete('RESTRICT');
+    table.bigInteger('user_id').unsigned().notNullable()
+      .references('id').inTable('users').onDelete('RESTRICT');
+    table.text('answer_text').notNullable();
+    table.timestamp('created_at', { useTz: true }).notNullable().defaultTo(knex.fn.now());
+    table.index(['question_id', 'created_at']);
+    table.index(['user_id', 'created_at']);
+  });
+
+  await knex.schema.createTable('seller_requests', (table) => {
+    table.bigIncrements('id');
+    table.bigInteger('user_id').unsigned().notNullable()
+      .references('id').inTable('users').onDelete('RESTRICT');
+    table.specificType('status', 'seller_request_status_enum').notNullable();
+    table.timestamp('requested_at', { useTz: true }).notNullable();
+    table.timestamp('expire_at', { useTz: true }).notNullable();
+    table.timestamp('processed_at', { useTz: true }).nullable();
+    table.index(['user_id']);
+    table.index(['status']);
+    table.index(['requested_at']);
+  });
+
+  await knex.schema.createTable('orders', (table) => {
+    table.bigIncrements('id');
+    table.bigInteger('product_id').unsigned().notNullable()
+      .references('id').inTable('products').onDelete('RESTRICT');
+    table.bigInteger('seller_id').unsigned().notNullable()
+      .references('id').inTable('users').onDelete('RESTRICT');
+    table.bigInteger('winner_id').unsigned().notNullable()
+      .references('id').inTable('users').onDelete('RESTRICT');
+
+    table.bigInteger('final_price').notNullable();
+    table.specificType('status', 'order_status_enum').notNullable();
+
+    table.timestamps(true, true);
+
+    table.index(['product_id']);
+    table.index(['seller_id']);
+    table.index(['winner_id']);
+    table.index(['status']);
+  });
+
+  await knex.schema.createTable('order_messages', (table) => {
+    table.bigIncrements('id');
+    table.bigInteger('order_id').unsigned().notNullable()
+      .references('id').inTable('orders').onDelete('RESTRICT');
+    table.bigInteger('sender_id').unsigned().notNullable()
+      .references('id').inTable('users').onDelete('RESTRICT');
+    table.text('message').notNullable();
+    table.timestamp('created_at', { useTz: true }).notNullable().defaultTo(knex.fn.now());
+    table.index(['order_id', 'created_at']);
+    table.index(['sender_id', 'created_at']);
+  });
+
+  await knex.schema.createTable('ratings', (table) => {
+    table.bigIncrements('id');
+    table.bigInteger('order_id').unsigned().notNullable()
+      .references('id').inTable('orders').onDelete('RESTRICT');
+    table.bigInteger('rater_id').unsigned().notNullable()
+      .references('id').inTable('users').onDelete('RESTRICT');
+    table.bigInteger('rated_user_id').unsigned().notNullable()
+      .references('id').inTable('users').onDelete('RESTRICT');
+
+    table.specificType('score', 'smallint').notNullable();
+    table.checkBetween('score', [-1, 1]); // safety; vẫn đúng vì bạn check (1,-1)
+
+    table.text('comment');
+    table.timestamp('created_at', { useTz: true }).notNullable().defaultTo(knex.fn.now());
+
+    table.unique(['order_id', 'rater_id']);
+    table.index(['rated_user_id']);
+  });
+
+  await knex.schema.createTable('product_description_history', (table) => {
+    table.bigIncrements('id');
+    table.bigInteger('product_id').unsigned().notNullable()
+      .references('id').inTable('products').onDelete('RESTRICT');
+    table.text('content_added').notNullable();
+    table.timestamp('created_at', { useTz: true }).notNullable().defaultTo(knex.fn.now());
+    table.index(['product_id', 'created_at']);
+  });
+
+  await knex.schema.createTable('bid_blacklist', (table) => {
+    table.bigIncrements('id');
+    table.bigInteger('product_id').unsigned().notNullable()
+      .references('id').inTable('products').onDelete('RESTRICT');
+    table.bigInteger('user_id').unsigned().notNullable()
+      .references('id').inTable('users').onDelete('RESTRICT');
+    table.text('reason');
+    table.timestamp('created_at', { useTz: true }).notNullable().defaultTo(knex.fn.now());
+    table.index(['product_id']);
+    table.index(['user_id']);
+    // Có thể unique để 1 user không bị blacklist 2 lần cho cùng product:
+    // table.unique(['product_id','user_id']);
+  });
+
+  await knex.schema.createTable('user_otps', (table) => {
+    table.bigIncrements('id');
+    table.bigInteger('user_id').unsigned().notNullable()
+      .references('id').inTable('users').onDelete('RESTRICT');
+    table.string('code').notNullable();
+    table.specificType('purpose', 'otp_purpose_enum').notNullable();
+    table.timestamp('expires_at', { useTz: true }).notNullable();
+    table.timestamp('consumed_at', { useTz: true }).nullable();
+    table.timestamp('created_at', { useTz: true }).notNullable().defaultTo(knex.fn.now());
+    table.index(['user_id']);
+    table.index(['purpose']);
+    table.index(['expires_at']);
+  });
+}
+
+/** @type {import('knex').Knex} */
+export async function down(knex) {
+  // Xoá bảng theo thứ tự NGƯỢC phụ thuộc
+  await knex.schema.dropTableIfExists('user_otps');
+  await knex.schema.dropTableIfExists('bid_blacklist');
+  await knex.schema.dropTableIfExists('product_description_history');
+  await knex.schema.dropTableIfExists('ratings');
+  await knex.schema.dropTableIfExists('order_messages');
+  await knex.schema.dropTableIfExists('orders');
+  await knex.schema.dropTableIfExists('seller_requests');
+  await knex.schema.dropTableIfExists('answers');
+  await knex.schema.dropTableIfExists('questions');
+  await knex.schema.dropTableIfExists('watchlist');
+  await knex.schema.dropTableIfExists('auto_bid_events');
+  await knex.schema.dropTableIfExists('auto_bids');
+  await knex.schema.dropTableIfExists('bids');
+  await knex.schema.dropTableIfExists('product_images');
+  await knex.schema.dropTableIfExists('products');
+  await knex.schema.dropTableIfExists('settings');
+  await knex.schema.dropTableIfExists('categories');
+  await knex.schema.dropTableIfExists('users');
+
+  // Drop ENUM types sau khi chắc chắn không còn bảng nào dùng
+  await knex.schema.raw('DROP TYPE IF EXISTS order_status_enum');
+  await knex.schema.raw('DROP TYPE IF EXISTS seller_request_status_enum');
+  await knex.schema.raw('DROP TYPE IF EXISTS auto_bid_event_type_enum');
+  await knex.schema.raw('DROP TYPE IF EXISTS product_status_enum');
+  await knex.schema.raw('DROP TYPE IF EXISTS otp_purpose_enum');
+  await knex.schema.raw('DROP TYPE IF EXISTS user_status_enum');
+  await knex.schema.raw('DROP TYPE IF EXISTS user_role_enum');
+}
