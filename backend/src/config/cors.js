@@ -1,2 +1,9 @@
-const allowedOrigin = process.env.FRONTEND_URL || '*';
-export default { origin: allowedOrigin };
+const allowedOrigins = (process.env.FRONTEND_URL || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+export default {
+  origin: allowedOrigins.length ? allowedOrigins : '*',
+  credentials: true
+};
