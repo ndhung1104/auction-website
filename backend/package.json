@@ -5,10 +5,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "migrate": "knex migrate:latest --knexfile knexfile.js",
-    "migrate:rollback": "knex migrate:rollback --knexfile knexfile.js"
+    "migrate:status": "knex migrate:list --knexfile knexfile.js",
+    "migrate:make": "knex migrate:make --knexfile knexfile.js",
+    "migrate:rollback": "knex migrate:rollback --knexfile knexfile.js",
+    "seed": "knex seed:run --knexfile knexfile.js"
   },
   "keywords": [],
   "author": "",
