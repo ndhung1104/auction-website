@@ -1,6 +1,6 @@
 import Joi from 'joi';
-import { registerUser } from '../services/auth.service.js';
-import { ApiError, sendCreated } from '../utils/response.js';
+import { authenticateUser, registerUser } from '../services/auth.service.js';
+import { ApiError, sendCreated, sendSuccess } from '../utils/response.js';
 
 const registerSchema = Joi.object({
   email: Joi.string().email().required(),
@@ -32,6 +32,34 @@ export const register = async (req, res, next) => {
     });
 
     return sendCreated(res, { user }, 'Account registered successfully');
+  } catch (err) {
+    next(err);
+  }
+};
+
+const loginSchema = Joi.object({
+  email: Joi.string().email().required(),
+  password: Joi.string().required()
+});
+
+export const login = async (req, res, next) => {
+  try {
+    const { value, error } = loginSchema.validate(req.body, {
+      abortEarly: false,
+      stripUnknown: true
+    });
+
+    if (error) {
+      throw new ApiError(
+        422,
+        'AUTH.INVALID_LOGIN_PAYLOAD',
+        'Invalid login payload',
+        error.details.map(({ message, path }) => ({ message, path }))
+      );
+    }
+
+    const payload = await authenticateUser(value);
+    return sendSuccess(res, payload, 'Authentication successful');
   } catch (err) {
     next(err);
   }
