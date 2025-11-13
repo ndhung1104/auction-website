@@ -1,5 +1,5 @@
 import Joi from 'joi';
-import { authenticateUser, registerUser } from '../services/auth.service.js';
+import { authenticateUser, createPasswordResetRequest, registerUser } from '../services/auth.service.js';
 import { ApiError, sendCreated, sendSuccess } from '../utils/response.js';
 
 const registerSchema = Joi.object({
@@ -60,6 +60,37 @@ export const login = async (req, res, next) => {
 
     const payload = await authenticateUser(value);
     return sendSuccess(res, payload, 'Authentication successful');
+  } catch (err) {
+    next(err);
+  }
+};
+
+const forgotPasswordSchema = Joi.object({
+  email: Joi.string().email().required()
+});
+
+export const forgotPassword = async (req, res, next) => {
+  try {
+    const { value, error } = forgotPasswordSchema.validate(req.body, {
+      abortEarly: false,
+      stripUnknown: true
+    });
+
+    if (error) {
+      throw new ApiError(
+        422,
+        'AUTH.INVALID_FORGOT_PASSWORD_PAYLOAD',
+        'Invalid forgot password payload',
+        error.details.map(({ message, path }) => ({ message, path }))
+      );
+    }
+
+    const data = await createPasswordResetRequest(value);
+    return sendSuccess(
+      res,
+      data,
+      'If the account exists, password reset instructions have been recorded'
+    );
   } catch (err) {
     next(err);
   }

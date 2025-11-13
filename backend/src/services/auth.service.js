@@ -1,9 +1,11 @@
 import bcrypt from 'bcrypt';
+import crypto from 'node:crypto';
 import https from 'node:https';
 import jwt from 'jsonwebtoken';
 import { URLSearchParams } from 'node:url';
 import { ApiError } from '../utils/response.js';
 import { createUser, findUserByEmail } from '../repositories/user.repository.js';
+import { consumeActiveResetOtps, createUserOtp } from '../repositories/userOtp.repository.js';
 
 const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 10);
 const RECAPTCHA_ENDPOINT = {
@@ -11,6 +13,7 @@ const RECAPTCHA_ENDPOINT = {
   path: '/recaptcha/api/siteverify'
 };
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
+const RESET_TOKEN_TTL_MINUTES = Number(process.env.RESET_TOKEN_TTL_MINUTES || 15);
 
 const buildSafeUserPayload = (userRow) => ({
   id: userRow.id,
@@ -173,4 +176,35 @@ export const authenticateUser = async ({ email, password }) => {
   }
 
   return buildAuthResponse(user);
+};
+
+export const createPasswordResetRequest = async ({ email }) => {
+  if (!email) {
+    throw new ApiError(400, 'AUTH.MISSING_EMAIL', 'Email is required');
+  }
+
+  const user = await findUserByEmail(email);
+  if (!user) {
+    return { resetDispatched: false };
+  }
+
+  await consumeActiveResetOtps(user.id);
+
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MINUTES * 60 * 1000);
+
+  await createUserOtp({
+    user_id: user.id,
+    code: resetToken,
+    purpose: 'RESET_PASSWORD',
+    expires_at: expiresAt,
+    consumed_at: null
+  });
+
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  return {
+    resetDispatched: true,
+    ...(isProduction ? {} : { resetToken, expiresAt })
+  };
 };
