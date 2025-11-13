@@ -23,9 +23,9 @@
 
 ## Week 2 – Auth & Basic View
 ### DBA
-- [ ] Run the Week 1 migrations to materialize the schema.
+- [x] Run the Week 1 migrations to materialize the schema.
 ### Backend
-- [ ] Implement `POST /api/auth/register` with reCAPTCHA verification.
+- [x] Implement `POST /api/auth/register` with reCAPTCHA verification.
 - [ ] Implement `POST /api/auth/login` that returns JWT tokens.
 - [ ] Implement `POST /api/auth/forgot-password` that records OTP/token entries.
 - [ ] Provide `GET /api/categories` for the two-level catalog.
