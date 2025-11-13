@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import https from 'node:https';
+import jwt from 'jsonwebtoken';
 import { URLSearchParams } from 'node:url';
 import { ApiError } from '../utils/response.js';
 import { createUser, findUserByEmail } from '../repositories/user.repository.js';
@@ -9,6 +10,7 @@ const RECAPTCHA_ENDPOINT = {
   hostname: 'www.google.com',
   path: '/recaptcha/api/siteverify'
 };
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
 
 const buildSafeUserPayload = (userRow) => ({
   id: userRow.id,
@@ -17,6 +19,30 @@ const buildSafeUserPayload = (userRow) => ({
   role: userRow.role,
   status: userRow.status
 });
+
+const buildAuthResponse = (userRow) => ({
+  token: generateJwt(userRow),
+  user: buildSafeUserPayload(userRow)
+});
+
+const generateJwt = (userRow) => {
+  if (!process.env.JWT_SECRET) {
+    throw new ApiError(
+      500,
+      'AUTH.MISSING_JWT_SECRET',
+      'JWT secret is not configured on the server'
+    );
+  }
+
+  return jwt.sign(
+    {
+      sub: userRow.id,
+      role: userRow.role
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: JWT_EXPIRES_IN }
+  );
+};
 
 const shouldBypassRecaptcha = (token) => {
   const bypassToken = process.env.RECAPTCHA_BYPASS_TOKEN;
@@ -129,4 +155,22 @@ export const registerUser = async ({
   });
 
   return buildSafeUserPayload(createdUser);
+};
+
+export const authenticateUser = async ({ email, password }) => {
+  const user = await findUserByEmail(email);
+  if (!user) {
+    throw new ApiError(401, 'AUTH.INVALID_CREDENTIALS', 'Invalid email or password');
+  }
+
+  if (user.status !== 'CONFIRMED') {
+    throw new ApiError(403, 'AUTH.UNCONFIRMED', 'Account is not confirmed');
+  }
+
+  const passwordValid = await bcrypt.compare(password, user.password_hash);
+  if (!passwordValid) {
+    throw new ApiError(401, 'AUTH.INVALID_CREDENTIALS', 'Invalid email or password');
+  }
+
+  return buildAuthResponse(user);
 };
