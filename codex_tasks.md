@@ -26,14 +26,14 @@
 - [x] Run the Week 1 migrations to materialize the schema.
 ### Backend
 - [x] Implement `POST /api/auth/register` with reCAPTCHA verification.
-- [ ] Implement `POST /api/auth/login` that returns JWT tokens.
-- [ ] Implement `POST /api/auth/forgot-password` that records OTP/token entries.
-- [ ] Provide `GET /api/categories` for the two-level catalog.
-- [ ] Provide `GET /api/products` with pagination, sorting, and `status = 'ACTIVE'` filtering.
+- [x] Implement `POST /api/auth/login` that returns JWT tokens.
+- [x] Implement `POST /api/auth/forgot-password` that records OTP/token entries.
+- [x] Provide `GET /api/categories` for the two-level catalog.
+- [x] Provide `GET /api/products` with pagination, sorting, and `status = 'ACTIVE'` filtering.
 ### Frontend
-- [ ] Build `Register`, `Login`, and `ForgotPassword` pages with Bootstrap forms.
-- [ ] Implement the shared layout (Navbar/Footer) and load categories into the Navbar.
-- [ ] Build `ProductListPage` with pagination and sorting hooked to the API.
+- [x] Build `Register`, `Login`, and `ForgotPassword` pages with Bootstrap forms.
+- [x] Implement the shared layout (Navbar/Footer) and load categories into the Navbar.
+- [x] Build `ProductListPage` with pagination and sorting hooked to the API.
 
 ## Week 3 – Complete View & Homepage
 ### DBA
