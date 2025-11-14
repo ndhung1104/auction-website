@@ -50,15 +50,15 @@
 
 ## Week 4 – Seller Product & Profile
 ### DBA
-- [ ] Verify that `product_images` and `seller_requests` tables and constraints behave as expected.
+- [x] Verify that `product_images` and `seller_requests` tables and constraints behave as expected.
 ### Backend
-- [ ] Implement secure image upload handling (e.g., multer pipeline).
-- [ ] Implement `POST /api/products` (SELLER role) enforcing min three images, price fields, `buy_now_price`, `auto_extend`, and `enable_auto_bid`.
-- [ ] Implement `POST /api/seller/request-upgrade` that sets `expire_at = now() + 7 days`.
-- [ ] Expose `GET/PUT /api/profile` for profile viewing and updates.
+- [x] Implement secure image upload handling (e.g., multer pipeline).
+- [x] Implement `POST /api/products` (SELLER role) enforcing min three images, price fields, `buy_now_price`, `auto_extend`, and `enable_auto_bid`.
+- [x] Implement `POST /api/seller/request-upgrade` that sets `expire_at = now() + 7 days`.
+- [x] Expose `GET/PUT /api/profile` for profile viewing and updates.
 ### Frontend
-- [ ] Build `ProfilePage` showing account data and conditional “Request Seller” button.
-- [ ] Build `CreateProductPage` with multi-image upload, buy-now, auto-extend, and auto-bid toggle controls.
+- [x] Build `ProfilePage` showing account data and conditional “Request Seller” button.
+- [x] Build `CreateProductPage` with multi-image upload, buy-now, auto-extend, and auto-bid toggle controls.
 
 ## Week 5 – Core Bidding & Auto-Bid
 ### DBA

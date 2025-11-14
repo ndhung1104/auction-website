@@ -110,6 +110,20 @@ export default function MainLayout() {
                   Products
                 </NavLink>
               </li>
+              {isAuthenticated && (
+                <li className="nav-item">
+                  <NavLink className="nav-link" to="/profile">
+                    Profile
+                  </NavLink>
+                </li>
+              )}
+              {isAuthenticated && (user?.role === 'SELLER' || user?.role === 'ADMIN') && (
+                <li className="nav-item">
+                  <NavLink className="nav-link" to="/sell/create">
+                    Create product
+                  </NavLink>
+                </li>
+              )}
               {renderCategoryDropdown}
             </ul>
 

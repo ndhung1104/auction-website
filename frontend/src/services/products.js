@@ -11,3 +11,11 @@ export function fetchProductDetail(productId) {
 export function fetchProductBids(productId, params = {}) {
   return apiClient.get(`/products/${productId}/bids`, { params })
 }
+
+export function createProduct(formData) {
+  return apiClient.post('/products', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
