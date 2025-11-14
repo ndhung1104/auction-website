@@ -73,6 +73,9 @@ export const insertProductImages = (images, trx = db) => {
   return trx('product_images').insert(images);
 };
 
+export const findProductByIdForUpdate = (id, trx = db) =>
+  trx('products').where({ id }).forUpdate().first();
+
 export const findProductByIdWithSeller = (id) =>
   db('products as p')
     .select([

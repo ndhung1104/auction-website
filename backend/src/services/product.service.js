@@ -1,3 +1,4 @@
+import db from '../db/knex.js';
 import {
   countActiveProducts,
   findActiveProducts,
@@ -11,14 +12,18 @@ import {
   findProductStatusById,
   insertProduct,
   insertProductImages,
-  findProductBySlug
+  findProductBySlug,
+  findProductByIdForUpdate
 } from '../repositories/product.repository.js';
 import { findCategoryById } from '../repositories/category.repository.js';
+import { insertBid } from '../repositories/bid.repository.js';
+import { upsertAutoBid, deleteAutoBidsByProductId } from '../repositories/autoBid.repository.js';
+import { findUserById } from '../repositories/user.repository.js';
 import { ApiError } from '../utils/response.js';
-import { getHighlightNewMinutes } from './setting.service.js';
+import { getExtendSettings, getHighlightNewMinutes } from './setting.service.js';
 import { aggregateRating } from '../utils/rating.js';
 import { maskBidderName } from '../utils/bid.js';
-import db from '../db/knex.js';
+import { recalcAutoBid } from './autoBid.service.js';
 
 const SORT_FIELDS = {
   'end_at': 'end_at',
@@ -36,6 +41,7 @@ const RELATED_LIMIT = 5;
 const BID_HISTORY_DEFAULT_LIMIT = 20;
 const BID_HISTORY_MAX_LIMIT = 50;
 const PRODUCT_SLUG_MAX_ATTEMPTS = 5;
+const MIN_BIDDER_RATING_PERCENT = Number(process.env.MIN_BIDDER_RATING_PERCENT || 80);
 
 const normalizeSort = (sortRaw) => {
   if (!sortRaw) return DEFAULT_SORT;
@@ -96,6 +102,102 @@ const mapProduct = (row, { highlightWindowMinutes = 60, primaryImageUrl = null }
     isNew,
     primaryImageUrl
   };
+};
+
+const summarizeProduct = (row = {}, base = {}) => ({
+  id: row.id ?? base.id ?? null,
+  currentPrice: Number(row.current_price ?? base.current_price ?? 0),
+  currentBidderId: row.current_bidder_id ?? base.current_bidder_id ?? null,
+  bidCount: Number(row.bid_count ?? base.bid_count ?? 0),
+  endAt: row.end_at ?? base.end_at ?? null,
+  status: row.status ?? base.status ?? null
+});
+
+const ensureAuctionWindowOpen = (product) => {
+  if (!product) {
+    throw new ApiError(404, 'PRODUCTS.NOT_FOUND', 'Product not found');
+  }
+
+  if (product.status !== 'ACTIVE') {
+    throw new ApiError(400, 'PRODUCTS.NOT_ACTIVE', 'Auction is not active');
+  }
+
+  const now = Date.now();
+  const startsAt = new Date(product.start_at).getTime();
+  const endsAt = new Date(product.end_at).getTime();
+
+  if (startsAt > now) {
+    throw new ApiError(400, 'PRODUCTS.NOT_STARTED', 'Auction has not started yet');
+  }
+
+  if (endsAt <= now) {
+    throw new ApiError(400, 'PRODUCTS.CLOSED', 'Auction already ended');
+  }
+};
+
+const calculateRatingPercent = (rating) => {
+  const positive = Number(rating?.positive || 0);
+  const negative = Number(rating?.negative || 0);
+  const total = positive + negative;
+  if (total === 0) return 100;
+  return (positive / total) * 100;
+};
+
+const ensureBidderEligibility = async (userId, sellerId) => {
+  const user = await findUserById(userId);
+  if (!user) {
+    throw new ApiError(404, 'BIDDER.NOT_FOUND', 'Bidder not found');
+  }
+  if (user.role !== 'BIDDER') {
+    throw new ApiError(403, 'BIDDER.INVALID_ROLE', 'Only bidder accounts can participate');
+  }
+  if (user.status !== 'CONFIRMED') {
+    throw new ApiError(403, 'BIDDER.UNCONFIRMED', 'Account must be confirmed before bidding');
+  }
+  if (String(user.id) === String(sellerId)) {
+    throw new ApiError(403, 'BIDDER.SELF_BID', 'Sellers cannot bid on their own products');
+  }
+
+  const rating = await aggregateRating(userId);
+  const ratingPercent = calculateRatingPercent(rating);
+
+  if (ratingPercent < MIN_BIDDER_RATING_PERCENT) {
+    throw new ApiError(
+      403,
+      'BIDDER.RATING_TOO_LOW',
+      `Bidders need at least ${MIN_BIDDER_RATING_PERCENT}% positive rating`
+    );
+  }
+
+  return user;
+};
+
+const parseBidAmount = (amountRaw, code, message) => {
+  const amount = Number(amountRaw);
+  if (!Number.isFinite(amount) || amount <= 0 || !Number.isSafeInteger(amount)) {
+    throw new ApiError(422, code, message);
+  }
+  return amount;
+};
+
+const ensureStepCompliance = (amount, startPrice, priceStep) => {
+  if ((amount - startPrice) % priceStep !== 0) {
+    throw new ApiError(
+      422,
+      'BIDS.INVALID_STEP',
+      'Bid amount must align with the configured step'
+    );
+  }
+};
+
+const computeExtendedEndTime = (product, windowMinutes, extendMinutes) => {
+  if (!product.auto_extend) return null;
+  const endTime = new Date(product.end_at).getTime();
+  const now = Date.now();
+  if (endTime <= now) return null;
+  const windowMs = windowMinutes * 60 * 1000;
+  if (endTime - now > windowMs) return null;
+  return new Date(endTime + extendMinutes * 60 * 1000);
 };
 
 export const listProducts = async ({ page, limit, sort, categoryId }) => {
@@ -350,4 +452,184 @@ export const createProductListing = async ({
       displayOrder: row.display_order
     }))
   };
+};
+
+export const placeManualBid = async ({ productId, userId, amount }) => {
+  const bidAmount = parseBidAmount(
+    amount,
+    'BIDS.INVALID_AMOUNT',
+    'Bid amount must be a positive integer'
+  );
+  const extendSettings = await getExtendSettings();
+
+  return db.transaction(async (trx) => {
+    const product = await findProductByIdForUpdate(productId, trx);
+    ensureAuctionWindowOpen(product);
+    await ensureBidderEligibility(userId, product.seller_id);
+
+    const startPrice = Number(product.start_price);
+    const priceStep = Number(product.price_step);
+    const currentPrice = Number(product.current_price);
+    const minimumAllowed = currentPrice + priceStep;
+
+    if (bidAmount < minimumAllowed) {
+      throw new ApiError(
+        422,
+        'BIDS.AMOUNT_TOO_LOW',
+        `Minimum allowable bid is ${minimumAllowed}`
+      );
+    }
+
+    ensureStepCompliance(bidAmount, startPrice, priceStep);
+
+    const [bidRow] = await insertBid(
+      {
+        product_id: productId,
+        user_id: userId,
+        bid_amount: bidAmount,
+        is_auto_bid: false
+      },
+      trx
+    );
+
+    const extendedEndAt = computeExtendedEndTime(
+      product,
+      extendSettings.windowMinutes,
+      extendSettings.extendMinutes
+    );
+
+    const updatePayload = {
+      current_price: bidAmount,
+      current_bidder_id: userId,
+      bid_count: trx.raw('bid_count + 1'),
+      updated_at: trx.fn.now()
+    };
+
+    if (extendedEndAt) {
+      updatePayload.end_at = extendedEndAt;
+    }
+
+    const [updatedRow] = await trx('products')
+      .where({ id: productId })
+      .update(updatePayload, ['id', 'current_price', 'current_bidder_id', 'bid_count', 'end_at', 'status']);
+
+    let summary = summarizeProduct(updatedRow, product);
+    let autoBidTriggered = false;
+
+    if (product.enable_auto_bid) {
+      const autoBidResult = await recalcAutoBid(productId, trx, {
+        product: { ...product, ...updatedRow }
+      });
+
+      if (autoBidResult?.triggered) {
+        autoBidTriggered = true;
+        summary = summarizeProduct(autoBidResult.product, product);
+      }
+    }
+
+    return {
+      product: summary,
+      bid: bidRow,
+      autoBidTriggered
+    };
+  });
+};
+
+export const registerAutoBid = async ({ productId, userId, maxBidAmount }) => {
+  const parsedAmount = parseBidAmount(
+    maxBidAmount,
+    'AUTO_BID.INVALID_AMOUNT',
+    'Max auto-bid must be a positive integer'
+  );
+
+  return db.transaction(async (trx) => {
+    const product = await findProductByIdForUpdate(productId, trx);
+    ensureAuctionWindowOpen(product);
+
+    if (!product.enable_auto_bid) {
+      throw new ApiError(400, 'AUTO_BID.DISABLED', 'Auto-bid is disabled for this product');
+    }
+
+    await ensureBidderEligibility(userId, product.seller_id);
+
+    const startPrice = Number(product.start_price);
+    const priceStep = Number(product.price_step);
+    const currentPrice = Number(product.current_price);
+    const minimumRequired = product.current_bidder_id
+      ? currentPrice + priceStep
+      : startPrice;
+
+    if (parsedAmount < minimumRequired) {
+      throw new ApiError(
+        422,
+        'AUTO_BID.AMOUNT_TOO_LOW',
+        `Max auto-bid must be at least ${minimumRequired}`
+      );
+    }
+
+    ensureStepCompliance(parsedAmount, startPrice, priceStep);
+
+    const [autoBidRow] = await upsertAutoBid(
+      { productId, userId, maxBidAmount: parsedAmount },
+      trx
+    );
+
+    let summary = summarizeProduct(product);
+    const autoBidResult = await recalcAutoBid(productId, trx, { product });
+    if (autoBidResult?.product) {
+      summary = summarizeProduct(autoBidResult.product, product);
+    }
+
+    return {
+      autoBid: autoBidRow,
+      product: summary,
+      autoBidTriggered: Boolean(autoBidResult?.triggered)
+    };
+  });
+};
+
+export const buyNowProduct = async ({ productId, userId }) => {
+  return db.transaction(async (trx) => {
+    const product = await findProductByIdForUpdate(productId, trx);
+    ensureAuctionWindowOpen(product);
+    await ensureBidderEligibility(userId, product.seller_id);
+
+    if (product.buy_now_price === null) {
+      throw new ApiError(400, 'PRODUCTS.NO_BUY_NOW', 'Buy-now option is not available for this product');
+    }
+
+    const buyNowPrice = Number(product.buy_now_price);
+
+    const [bidRow] = await insertBid(
+      {
+        product_id: productId,
+        user_id: userId,
+        bid_amount: buyNowPrice,
+        is_auto_bid: false
+      },
+      trx
+    );
+
+    await deleteAutoBidsByProductId(productId, trx);
+
+    const [updatedRow] = await trx('products')
+      .where({ id: productId })
+      .update(
+        {
+          status: 'ENDED',
+          current_price: buyNowPrice,
+          current_bidder_id: userId,
+          bid_count: trx.raw('bid_count + 1'),
+          enable_auto_bid: false,
+          end_at: trx.fn.now(),
+          updated_at: trx.fn.now()
+        },
+        ['id', 'current_price', 'current_bidder_id', 'bid_count', 'end_at', 'status']
+      );
+
+    return {
+      product: summarizeProduct(updatedRow),
+      bid: bidRow
+    };
+  });
 };

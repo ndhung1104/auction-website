@@ -19,3 +19,15 @@ export function createProduct(formData) {
     }
   })
 }
+
+export function placeManualBid(productId, payload) {
+  return apiClient.post(`/products/${productId}/bid`, payload)
+}
+
+export function registerAutoBid(productId, payload) {
+  return apiClient.post(`/products/${productId}/auto-bid`, payload)
+}
+
+export function buyNowProduct(productId) {
+  return apiClient.post(`/products/${productId}/buy-now`)
+}

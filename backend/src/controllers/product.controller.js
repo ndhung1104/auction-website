@@ -3,7 +3,10 @@ import {
   createProductListing,
   getProductBidHistory,
   getProductDetail,
-  listProducts
+  listProducts,
+  placeManualBid,
+  registerAutoBid,
+  buyNowProduct
 } from '../services/product.service.js';
 import { cleanupUploadedFiles, buildPublicUrl } from '../middlewares/upload.js';
 import { ApiError, sendCreated, sendSuccess } from '../utils/response.js';
@@ -21,6 +24,14 @@ const idParamSchema = Joi.object({
 
 const bidQuerySchema = Joi.object({
   limit: Joi.number().integer().min(1).max(50).optional()
+});
+
+const manualBidSchema = Joi.object({
+  amount: Joi.number().integer().min(1).required()
+});
+
+const autoBidSchema = Joi.object({
+  maxBidAmount: Joi.number().integer().min(1).required()
 });
 
 const booleanField = Joi.boolean()
@@ -189,6 +200,117 @@ export const createProduct = async (req, res, next) => {
     if (err) {
       cleanupUploadedFiles(uploadedFiles);
     }
+    next(err);
+  }
+};
+
+export const submitProductBid = async (req, res, next) => {
+  try {
+    const { value: params, error: paramsError } = idParamSchema.validate(req.params, {
+      abortEarly: false,
+      convert: true
+    });
+
+    if (paramsError) {
+      throw new ApiError(
+        422,
+        'PRODUCTS.INVALID_ID',
+        'Invalid product identifier',
+        paramsError.details.map(({ message, path }) => ({ message, path }))
+      );
+    }
+
+    const { value: body, error: bodyError } = manualBidSchema.validate(req.body, {
+      abortEarly: false,
+      convert: true
+    });
+
+    if (bodyError) {
+      throw new ApiError(
+        422,
+        'BIDS.INVALID_PAYLOAD',
+        'Invalid bid payload',
+        bodyError.details.map(({ message, path }) => ({ message, path }))
+      );
+    }
+
+    const result = await placeManualBid({
+      productId: params.id,
+      userId: req.user.id,
+      amount: body.amount
+    });
+
+    return sendCreated(res, result, 'Bid placed successfully');
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const submitAutoBid = async (req, res, next) => {
+  try {
+    const { value: params, error: paramsError } = idParamSchema.validate(req.params, {
+      abortEarly: false,
+      convert: true
+    });
+
+    if (paramsError) {
+      throw new ApiError(
+        422,
+        'PRODUCTS.INVALID_ID',
+        'Invalid product identifier',
+        paramsError.details.map(({ message, path }) => ({ message, path }))
+      );
+    }
+
+    const { value: body, error: bodyError } = autoBidSchema.validate(req.body, {
+      abortEarly: false,
+      convert: true
+    });
+
+    if (bodyError) {
+      throw new ApiError(
+        422,
+        'AUTO_BID.INVALID_PAYLOAD',
+        'Invalid auto-bid payload',
+        bodyError.details.map(({ message, path }) => ({ message, path }))
+      );
+    }
+
+    const result = await registerAutoBid({
+      productId: params.id,
+      userId: req.user.id,
+      maxBidAmount: body.maxBidAmount
+    });
+
+    return sendCreated(res, result, 'Auto-bid saved successfully');
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const buyNow = async (req, res, next) => {
+  try {
+    const { value: params, error } = idParamSchema.validate(req.params, {
+      abortEarly: false,
+      convert: true
+    });
+
+    if (error) {
+      throw new ApiError(
+        422,
+        'PRODUCTS.INVALID_ID',
+        'Invalid product identifier',
+        error.details.map(({ message, path }) => ({ message, path }))
+      );
+    }
+
+    const result = await buyNowProduct({
+      productId: params.id,
+      userId: req.user.id
+    });
+
+    return sendSuccess(res, result, 'Purchase successful');
+  } catch (err) {
     next(err);
   }
 };

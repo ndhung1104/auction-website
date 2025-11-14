@@ -62,16 +62,16 @@
 
 ## Week 5 – Core Bidding & Auto-Bid
 ### DBA
-- [ ] Author transactions for manual bids, auto-bid registrations, and auto-bid recalculations.
+- [x] Author transactions for manual bids, auto-bid registrations, and auto-bid recalculations.
 ### Backend
-- [ ] Implement `POST /api/products/:id/bid` with rating checks, step validation, bid recording, and auto-extend logic.
-- [ ] Implement `POST /api/products/:id/auto-bid` with upsert behavior and invocation of `recalcAutoBid`.
-- [ ] Complete `recalcAutoBid(productId)` to rank auto-bidders, compute minimal winning prices, update product state, and log bid history.
-- [ ] Implement `POST /api/products/:id/buy-now` following the original flow.
+- [x] Implement `POST /api/products/:id/bid` with rating checks, step validation, bid recording, and auto-extend logic.
+- [x] Implement `POST /api/products/:id/auto-bid` with upsert behavior and invocation of `recalcAutoBid`.
+- [x] Complete `recalcAutoBid(productId)` to rank auto-bidders, compute minimal winning prices, update product state, and log bid history.
+- [x] Implement `POST /api/products/:id/buy-now` following the original flow.
 ### Frontend
-- [ ] Wire the manual bidding UI on `ProductDetailPage` to the backend API.
-- [ ] Add the auto-bid form (currency input + submit) and refresh logic after registration.
-- [ ] Annotate bid history entries to indicate auto-bid generated events.
+- [x] Wire the manual bidding UI on `ProductDetailPage` to the backend API.
+- [x] Add the auto-bid form (currency input + submit) and refresh logic after registration.
+- [x] Annotate bid history entries to indicate auto-bid generated events.
 
 ## Week 6 – Admin & Advanced Management
 ### DBA

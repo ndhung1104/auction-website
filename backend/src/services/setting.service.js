@@ -4,7 +4,9 @@ const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const cache = new Map();
 
 export const SettingKeys = {
-  HIGHLIGHT_NEW_MINUTES: 'highlight_new_minutes'
+  HIGHLIGHT_NEW_MINUTES: 'highlight_new_minutes',
+  EXTEND_WINDOW_MINUTES: 'extend_window_min',
+  EXTEND_AMOUNT_MINUTES: 'extend_amount_min'
 };
 
 const getFromCache = (key) => {
@@ -45,4 +47,27 @@ export const getHighlightNewMinutes = async (fallback = 60) => {
     return parsed;
   }
   return fallback;
+};
+
+const parsePositiveNumber = (value, fallback) => {
+  const parsed = Number(value);
+  if (Number.isFinite(parsed) && parsed > 0) {
+    return parsed;
+  }
+  return fallback;
+};
+
+export const getExtendSettings = async () => {
+  const DEFAULT_WINDOW = 5;
+  const DEFAULT_EXTEND = 5;
+
+  const [windowRaw, extendRaw] = await Promise.all([
+    getSettingValue(SettingKeys.EXTEND_WINDOW_MINUTES, String(DEFAULT_WINDOW)),
+    getSettingValue(SettingKeys.EXTEND_AMOUNT_MINUTES, String(DEFAULT_EXTEND))
+  ]);
+
+  return {
+    windowMinutes: parsePositiveNumber(windowRaw, DEFAULT_WINDOW),
+    extendMinutes: parsePositiveNumber(extendRaw, DEFAULT_EXTEND)
+  };
 };
