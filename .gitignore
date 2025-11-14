@@ -11,3 +11,4 @@ npm-debug.log
 # Bỏ qua build artifacts
 frontend/dist/
 frontend/.vite/
+.venv
