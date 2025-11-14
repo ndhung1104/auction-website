@@ -6,7 +6,9 @@ import {
   listProducts,
   placeManualBid,
   registerAutoBid,
-  buyNowProduct
+  buyNowProduct,
+  appendProductDescription as appendDescriptionService,
+  rejectBidder as rejectBidderService
 } from '../services/product.service.js';
 import { cleanupUploadedFiles, buildPublicUrl } from '../middlewares/upload.js';
 import { ApiError, sendCreated, sendSuccess } from '../utils/response.js';
@@ -32,6 +34,15 @@ const manualBidSchema = Joi.object({
 
 const autoBidSchema = Joi.object({
   maxBidAmount: Joi.number().integer().min(1).required()
+});
+
+const appendDescriptionSchema = Joi.object({
+  content: Joi.string().min(5).max(4000).required()
+});
+
+const rejectBidderSchema = Joi.object({
+  bidderId: Joi.number().integer().min(1).required(),
+  reason: Joi.string().max(2000).allow('', null)
 });
 
 const booleanField = Joi.boolean()
@@ -97,7 +108,7 @@ export const getProductById = async (req, res, next) => {
       );
     }
 
-    const detail = await getProductDetail(value.id);
+    const detail = await getProductDetail(value.id, req.user?.id ?? null);
     return sendSuccess(res, detail);
   } catch (err) {
     next(err);
@@ -310,6 +321,91 @@ export const buyNow = async (req, res, next) => {
     });
 
     return sendSuccess(res, result, 'Purchase successful');
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const appendProductDescription = async (req, res, next) => {
+  try {
+    const { value: params, error: paramsError } = idParamSchema.validate(req.params, {
+      abortEarly: false,
+      convert: true
+    });
+
+    if (paramsError) {
+      throw new ApiError(
+        422,
+        'PRODUCTS.INVALID_ID',
+        'Invalid product identifier',
+        paramsError.details.map(({ message, path }) => ({ message, path }))
+      );
+    }
+
+    const { value, error } = appendDescriptionSchema.validate(req.body, {
+      abortEarly: false,
+      stripUnknown: true
+    });
+
+    if (error) {
+      throw new ApiError(
+        422,
+        'PRODUCTS.INVALID_APPEND',
+        'Invalid description payload',
+        error.details.map(({ message, path }) => ({ message, path }))
+      );
+    }
+
+    const payload = await appendDescriptionService({
+      productId: params.id,
+      sellerId: req.user.id,
+      content: value.content
+    });
+
+    return sendSuccess(res, payload, 'Description updated');
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const rejectBidder = async (req, res, next) => {
+  try {
+    const { value: params, error: paramsError } = idParamSchema.validate(req.params, {
+      abortEarly: false,
+      convert: true
+    });
+
+    if (paramsError) {
+      throw new ApiError(
+        422,
+        'PRODUCTS.INVALID_ID',
+        'Invalid product identifier',
+        paramsError.details.map(({ message, path }) => ({ message, path }))
+      );
+    }
+
+    const { value, error } = rejectBidderSchema.validate(req.body, {
+      abortEarly: false,
+      stripUnknown: true
+    });
+
+    if (error) {
+      throw new ApiError(
+        422,
+        'PRODUCTS.INVALID_REJECTION',
+        'Invalid rejection payload',
+        error.details.map(({ message, path }) => ({ message, path }))
+      );
+    }
+
+    const payload = await rejectBidderService({
+      productId: params.id,
+      sellerId: req.user.id,
+      bidderId: value.bidderId,
+      reason: value.reason || null
+    });
+
+    return sendSuccess(res, payload, 'Bidder rejected');
   } catch (err) {
     next(err);
   }

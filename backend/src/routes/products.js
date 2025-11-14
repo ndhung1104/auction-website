@@ -8,7 +8,7 @@ import {
   submitAutoBid,
   buyNow
 } from '../controllers/product.controller.js';
-import { checkAuth, checkRole } from '../middlewares/auth.js';
+import { checkAuth, checkRole, optionalAuth } from '../middlewares/auth.js';
 import { uploadProductImages } from '../middlewares/upload.js';
 
 const router = Router();
@@ -25,6 +25,18 @@ router.get('/:id/bids', getProductBids);
 router.post('/:id/bid', checkAuth, checkRole('BIDDER'), submitProductBid);
 router.post('/:id/auto-bid', checkAuth, checkRole('BIDDER'), submitAutoBid);
 router.post('/:id/buy-now', checkAuth, checkRole('BIDDER'), buyNow);
-router.get('/:id', getProductById);
+router.post(
+  '/:id/append-description',
+  checkAuth,
+  checkRole('SELLER', 'ADMIN'),
+  appendProductDescription
+);
+router.post(
+  '/:id/reject-bidder',
+  checkAuth,
+  checkRole('SELLER', 'ADMIN'),
+  rejectBidder
+);
+router.get('/:id', optionalAuth, getProductById);
 
 export default router;

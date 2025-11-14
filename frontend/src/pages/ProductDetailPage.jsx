@@ -5,7 +5,13 @@ import {
   fetchProductDetail,
   placeManualBid,
   registerAutoBid,
-  buyNowProduct
+  buyNowProduct,
+  addToWatchlist,
+  removeFromWatchlist,
+  submitQuestion,
+  answerQuestion,
+  appendProductDescription,
+  rejectBidder
 } from '../services/products'
 import { formatVND, formatVNTime } from '../utils/format'
 import ProductCard from '../components/ProductCard'
@@ -26,6 +32,16 @@ export default function ProductDetailPage() {
   const [manualStatus, setManualStatus] = useState(null)
   const [autoStatus, setAutoStatus] = useState(null)
   const [buyNowStatus, setBuyNowStatus] = useState(null)
+  const [watchlistStatus, setWatchlistStatus] = useState(null)
+  const [questionText, setQuestionText] = useState('')
+  const [questionStatus, setQuestionStatus] = useState(null)
+  const [answerDrafts, setAnswerDrafts] = useState({})
+  const [answerStatus, setAnswerStatus] = useState(null)
+  const [appendContent, setAppendContent] = useState('')
+  const [appendStatus, setAppendStatus] = useState(null)
+  const [rejectReason, setRejectReason] = useState('')
+  const [rejectStatus, setRejectStatus] = useState(null)
+  const [watchlistLoading, setWatchlistLoading] = useState(false)
   const [manualSubmitting, setManualSubmitting] = useState(false)
   const [autoSubmitting, setAutoSubmitting] = useState(false)
   const [buyNowSubmitting, setBuyNowSubmitting] = useState(false)
@@ -92,6 +108,8 @@ export default function ProductDetailPage() {
   }, [productId])
 
   const product = detail?.product
+  const watchlistInfo = detail?.watchlist || { isWatchlisted: false, count: 0 }
+  const permissions = detail?.permissions || {}
   const manualMinBid = product ? product.currentPrice + product.priceStep : null
   const autoMinBid = product
     ? product.currentBidderId
@@ -99,8 +117,17 @@ export default function ProductDetailPage() {
       : product.startPrice
     : null
   const isSeller = user && detail?.seller?.id && String(user.id) === String(detail.seller.id)
-  const canBid = isAuthenticated && user?.role === 'BIDDER' && !isSeller
-  const canBuyNow = canBid && Boolean(product?.buyNowPrice)
+  const isActive = product?.status === 'ACTIVE'
+  const canInteract = isAuthenticated && user?.role === 'BIDDER' && !isSeller
+  const canPlaceBid = canInteract && isActive
+  const canBuyNow = canInteract && Boolean(product?.buyNowPrice) && isActive
+  const canUseAutoBid = canPlaceBid
+  const canSubmitQuestion = canInteract && isActive
+  const canUseWatchlist = Boolean(isAuthenticated)
+  const canAppendDescription = Boolean(permissions.canAppendDescription)
+  const canRejectBidder = Boolean(permissions.canRejectBidder)
+  const canAnswerQuestions = Boolean(permissions.canAnswerQuestions)
+  const isWatchlisted = Boolean(watchlistInfo.isWatchlisted)
   const images = useMemo(() => {
     if (!detail?.images?.length) {
       return [{ id: 'placeholder', url: product?.primaryImageUrl || PLACEHOLDER_IMAGE }]
@@ -182,6 +209,88 @@ export default function ProductDetailPage() {
     }
   }
 
+  const handleWatchlistToggle = async () => {
+    if (!product || !canUseWatchlist) return
+    setWatchlistStatus(null)
+    setWatchlistLoading(true)
+    try {
+      if (isWatchlisted) {
+        await removeFromWatchlist(product.id)
+        setWatchlistStatus({ type: 'success', message: 'Removed from watchlist' })
+      } else {
+        await addToWatchlist(product.id)
+        setWatchlistStatus({ type: 'success', message: 'Added to watchlist' })
+      }
+      await reloadProduct()
+    } catch (err) {
+      setWatchlistStatus({ type: 'danger', message: err.message || 'Unable to update watchlist' })
+    } finally {
+      setWatchlistLoading(false)
+    }
+  }
+
+  const handleSubmitQuestion = async (event) => {
+    event.preventDefault()
+    if (!product) return
+    setQuestionStatus(null)
+    try {
+      await submitQuestion(product.id, { questionText })
+      setQuestionText('')
+      setQuestionStatus({ type: 'success', message: 'Question submitted' })
+      await refreshData()
+    } catch (err) {
+      setQuestionStatus({ type: 'danger', message: err.message || 'Unable to submit question' })
+    }
+  }
+
+  const handleAnswerSubmit = async (questionId) => {
+    const text = answerDrafts[questionId]
+    if (!text) {
+      setAnswerStatus({ type: 'danger', message: 'Answer text is required' })
+      return
+    }
+    setAnswerStatus(null)
+    try {
+      await answerQuestion(questionId, { answerText: text })
+      setAnswerDrafts((prev) => ({ ...prev, [questionId]: '' }))
+      setAnswerStatus({ type: 'success', message: 'Answer posted' })
+      await refreshData()
+    } catch (err) {
+      setAnswerStatus({ type: 'danger', message: err.message || 'Unable to submit answer' })
+    }
+  }
+
+  const handleAppendDescription = async (event) => {
+    event.preventDefault()
+    if (!product) return
+    setAppendStatus(null)
+    try {
+      await appendProductDescription(product.id, { content: appendContent })
+      setAppendContent('')
+      setAppendStatus({ type: 'success', message: 'Description updated' })
+      await reloadProduct()
+    } catch (err) {
+      setAppendStatus({ type: 'danger', message: err.message || 'Unable to append description' })
+    }
+  }
+
+  const handleRejectBidder = async (event) => {
+    event.preventDefault()
+    if (!product?.currentBidderId) {
+      setRejectStatus({ type: 'danger', message: 'No bidder to reject' })
+      return
+    }
+    setRejectStatus(null)
+    try {
+      await rejectBidder(product.id, { bidderId: product.currentBidderId, reason: rejectReason })
+      setRejectReason('')
+      setRejectStatus({ type: 'success', message: 'Bidder removed' })
+      await refreshData()
+    } catch (err) {
+      setRejectStatus({ type: 'danger', message: err.message || 'Unable to reject bidder' })
+    }
+  }
+
   if (loading) {
     return <div className="alert alert-info">Loading product…</div>
   }
@@ -196,12 +305,34 @@ export default function ProductDetailPage() {
 
   return (
     <div className="product-detail-page">
-      <div className="d-flex align-items-center gap-3 mb-3">
-        <h1 className="mb-0">{product.name}</h1>
-        {product.isNew && <span className="badge bg-success">New</span>}
-        {product.enableAutoBid && <span className="badge bg-info text-dark">Auto-bid supported</span>}
+      <div className="d-flex align-items-center gap-3 mb-3 flex-wrap">
+        <div className="d-flex align-items-center gap-3">
+          <h1 className="mb-0">{product.name}</h1>
+          {product.isNew && <span className="badge bg-success">New</span>}
+          {product.enableAutoBid && <span className="badge bg-info text-dark">Auto-bid supported</span>}
+          {!isActive && <span className="badge bg-secondary">Ended</span>}
+        </div>
+        {canUseWatchlist && (
+          <button
+            type={watchlistLoading ? 'button' : 'button'}
+            className={`btn btn-sm ${isWatchlisted ? 'btn-outline-light' : 'btn-outline-success'}`}
+            onClick={handleWatchlistToggle}
+            disabled={watchlistLoading}
+          >
+            {watchlistLoading
+              ? 'Updating…'
+              : isWatchlisted
+                ? 'Remove from watchlist'
+                : 'Add to watchlist'}
+          </button>
+        )}
       </div>
-      <p className="text-muted">Auction ends at {formatVNTime(product.endAt)}</p>
+      {watchlistStatus && (
+        <div className={`alert alert-${watchlistStatus.type}`}>{watchlistStatus.message}</div>
+      )}
+      <p className="text-muted">
+        Auction ends at {formatVNTime(product.endAt)} · Watchers: {watchlistInfo.count}
+      </p>
 
       <div className="row g-4">
         <div className="col-lg-7">
@@ -269,10 +400,14 @@ export default function ProductDetailPage() {
           <div className="card shadow-sm mb-3">
             <div className="card-body">
               <h5>Manual bid</h5>
-              {!canBid && (
+              {!canPlaceBid && (
                 <p className="text-muted mb-3">
                   {isAuthenticated
-                    ? 'You cannot bid on this product.'
+                    ? isSeller
+                      ? 'Sellers cannot bid on their own products.'
+                      : isActive
+                        ? 'You must be a bidder to place bids.'
+                        : 'Auction is no longer active.'
                     : 'Please sign in as a bidder to place bids.'}
                 </p>
               )}
@@ -294,7 +429,7 @@ export default function ProductDetailPage() {
                     className="form-control"
                     value={manualBidAmount}
                     onChange={(event) => setManualBidAmount(event.target.value)}
-                    disabled={!canBid || manualSubmitting}
+                    disabled={!canPlaceBid || manualSubmitting}
                   />
                   {manualMinBid && (
                     <small className="text-muted">
@@ -302,24 +437,26 @@ export default function ProductDetailPage() {
                     </small>
                   )}
                 </div>
-                <button type="submit" className="btn btn-primary w-100" disabled={!canBid || manualSubmitting}>
-                  {manualSubmitting ? 'Placing bid…' : 'Place bid'}
-                </button>
-              </form>
+                  <button type="submit" className="btn btn-primary w-100" disabled={!canPlaceBid || manualSubmitting}>
+                    {manualSubmitting ? 'Placing bid…' : 'Place bid'}
+                  </button>
+                </form>
+              </div>
             </div>
-          </div>
 
-          {product.enableAutoBid && (
-            <div className="card shadow-sm mb-3">
-              <div className="card-body">
-                <h5>Auto-bid</h5>
-                {!canBid && (
-                  <p className="text-muted mb-3">
-                    {isAuthenticated
-                      ? 'You cannot register auto-bid for this product.'
-                      : 'Login to register automatic bidding.'}
-                  </p>
-                )}
+            {product.enableAutoBid && (
+              <div className="card shadow-sm mb-3">
+                <div className="card-body">
+                  <h5>Auto-bid</h5>
+                  {!canUseAutoBid && (
+                    <p className="text-muted mb-3">
+                      {isAuthenticated
+                        ? isActive
+                          ? 'You cannot register auto-bid for this product.'
+                          : 'Auction is no longer active.'
+                        : 'Login to register automatic bidding.'}
+                    </p>
+                  )}
                 {autoStatus && (
                   <div className={`alert alert-${autoStatus.type}`} role="alert">
                     {autoStatus.message}
@@ -338,7 +475,7 @@ export default function ProductDetailPage() {
                       className="form-control"
                       value={autoBidAmount}
                       onChange={(event) => setAutoBidAmount(event.target.value)}
-                      disabled={!canBid || autoSubmitting}
+                      disabled={!canUseAutoBid || autoSubmitting}
                     />
                     {autoMinBid && (
                       <small className="text-muted">
@@ -346,7 +483,7 @@ export default function ProductDetailPage() {
                       </small>
                     )}
                   </div>
-                  <button type="submit" className="btn btn-outline-primary w-100" disabled={!canBid || autoSubmitting}>
+                  <button type="submit" className="btn btn-outline-primary w-100" disabled={!canUseAutoBid || autoSubmitting}>
                     {autoSubmitting ? 'Saving…' : 'Save auto-bid'}
                   </button>
                 </form>
@@ -378,6 +515,60 @@ export default function ProductDetailPage() {
               )}
             </div>
           </div>
+
+          {canAppendDescription && (
+            <div className="card shadow-sm mt-3">
+              <div className="card-body">
+                <h5>Append description</h5>
+                {appendStatus && (
+                  <div className={`alert alert-${appendStatus.type}`} role="alert">
+                    {appendStatus.message}
+                  </div>
+                )}
+                <form onSubmit={handleAppendDescription}>
+                  <textarea
+                    className="form-control mb-2"
+                    rows="3"
+                    value={appendContent}
+                    onChange={(event) => setAppendContent(event.target.value)}
+                  />
+                  <button type="submit" className="btn btn-outline-secondary btn-sm">
+                    Append text
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {canRejectBidder && (
+            <div className="card shadow-sm mt-3">
+              <div className="card-body">
+                <h5>Reject current bidder</h5>
+                {rejectStatus && (
+                  <div className={`alert alert-${rejectStatus.type}`} role="alert">
+                    {rejectStatus.message}
+                  </div>
+                )}
+                <form onSubmit={handleRejectBidder}>
+                  <div className="mb-2">
+                    <label className="form-label" htmlFor="rejectReason">
+                      Reason (optional)
+                    </label>
+                    <textarea
+                      id="rejectReason"
+                      className="form-control"
+                      rows="2"
+                      value={rejectReason}
+                      onChange={(event) => setRejectReason(event.target.value)}
+                    />
+                  </div>
+                  <button type="submit" className="btn btn-outline-danger btn-sm">
+                    Reject bidder
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -420,6 +611,35 @@ export default function ProductDetailPage() {
 
       <section className="mt-5">
         <h3>Questions & Answers</h3>
+        {canSubmitQuestion && (
+          <form className="card shadow-sm mb-3" onSubmit={handleSubmitQuestion}>
+            <div className="card-body">
+              <label htmlFor="questionText" className="form-label">
+                Ask a question
+              </label>
+              <textarea
+                id="questionText"
+                className="form-control mb-2"
+                rows="3"
+                value={questionText}
+                onChange={(event) => setQuestionText(event.target.value)}
+              />
+              <button type="submit" className="btn btn-outline-primary btn-sm" disabled={!questionText.trim()}>
+                Submit question
+              </button>
+              {questionStatus && (
+                <div className={`alert alert-${questionStatus.type} mt-2`} role="alert">
+                  {questionStatus.message}
+                </div>
+              )}
+            </div>
+          </form>
+        )}
+        {answerStatus && (
+          <div className={`alert alert-${answerStatus.type}`} role="alert">
+            {answerStatus.message}
+          </div>
+        )}
         {!detail.questions?.length && <div className="alert alert-light mt-3">No questions yet.</div>}
         {detail.questions?.map((question) => (
           <div key={question.id} className="card shadow-sm mb-3">
@@ -436,7 +656,28 @@ export default function ProductDetailPage() {
                   <small className="text-muted d-block">Answered at {formatVNTime(question.answer.createdAt)}</small>
                 </div>
               ) : (
-                <small className="text-muted">Awaiting seller response…</small>
+                <>
+                  <small className="text-muted d-block mb-2">Awaiting seller response…</small>
+                  {canAnswerQuestions && (
+                    <div>
+                      <textarea
+                        className="form-control mb-2"
+                        rows="2"
+                        value={answerDrafts[question.id] || ''}
+                        onChange={(event) =>
+                          setAnswerDrafts((prev) => ({ ...prev, [question.id]: event.target.value }))
+                        }
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-secondary"
+                        onClick={() => handleAnswerSubmit(question.id)}
+                      >
+                        Submit answer
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

@@ -107,11 +107,46 @@ export default function ProfilePage() {
 
   const { user: profileUser, rating, sellerRequest, canRequestSeller } = profile
 
+  const watchlist = profile.watchlist || []
+  const activeBids = profile.activeBids || []
+  const wonAuctions = profile.wonAuctions || []
+
+  const renderProductList = (items, emptyLabel) => {
+    if (!items.length) {
+      return <div className="alert alert-light mb-0">{emptyLabel}</div>
+    }
+    return (
+      <div className="table-responsive">
+        <table className="table table-sm">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Status</th>
+              <th>Price</th>
+              <th>Ends</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item) => (
+              <tr key={item.id}>
+                <td>{item.name}</td>
+                <td>{item.status}</td>
+                <td>{item.currentPrice?.toLocaleString('vi-VN')}</td>
+                <td>{new Date(item.endAt).toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+
   return (
-    <div className="row g-4">
-      <div className="col-lg-5">
-        <div className="card shadow-sm">
-          <div className="card-body">
+    <>
+      <div className="row g-4">
+        <div className="col-lg-5">
+          <div className="card shadow-sm">
+            <div className="card-body">
             <h3 className="card-title mb-3">Account overview</h3>
             <p className="mb-1">
               <strong>Email:</strong> {profileUser.email}
@@ -205,6 +240,18 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
-    </div>
+      <section className="mt-5">
+        <h3>Watchlist</h3>
+        {renderProductList(watchlist, 'Your watchlist is empty.')}
+      </section>
+      <section className="mt-4">
+        <h3>Active bids</h3>
+        {renderProductList(activeBids, 'You have no active bids.')}
+      </section>
+      <section className="mt-4 mb-5">
+        <h3>Won auctions</h3>
+        {renderProductList(wonAuctions, 'You have not won any auctions yet.')}
+      </section>
+    </>
   )
 }

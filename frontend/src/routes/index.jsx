@@ -9,6 +9,7 @@ import ProductListPage from '../pages/ProductListPage'
 import ProductDetailPage from '../pages/ProductDetailPage'
 import ProfilePage from '../pages/ProfilePage'
 import CreateProductPage from '../pages/CreateProductPage'
+import AdminDashboardPage from '../pages/AdminDashboardPage'
 
 const router = createBrowserRouter([
   {
@@ -46,6 +47,10 @@ const router = createBrowserRouter([
       {
         path: 'sell/create',
         element: <CreateProductPage />,
+      },
+      {
+        path: 'admin',
+        element: <AdminDashboardPage />,
       },
     ],
   },

@@ -124,6 +124,13 @@ export default function MainLayout() {
                   </NavLink>
                 </li>
               )}
+              {isAuthenticated && user?.role === 'ADMIN' && (
+                <li className="nav-item">
+                  <NavLink className="nav-link" to="/admin">
+                    Admin
+                  </NavLink>
+                </li>
+              )}
               {renderCategoryDropdown}
             </ul>
 

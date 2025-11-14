@@ -15,3 +15,10 @@ export const updateUser = async (id, updateData, trx = db) =>
   trx('users')
     .where({ id })
     .update(updateData, ['id', 'email', 'full_name', 'role', 'status']);
+
+export const listUsers = ({ limit = 50, offset = 0 } = {}) =>
+  db('users')
+    .select('id', 'email', 'full_name', 'role', 'status', 'created_at')
+    .orderBy('id', 'asc')
+    .limit(limit)
+    .offset(offset);

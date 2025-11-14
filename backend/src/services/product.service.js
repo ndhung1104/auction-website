@@ -16,14 +16,21 @@ import {
   findProductByIdForUpdate
 } from '../repositories/product.repository.js';
 import { findCategoryById } from '../repositories/category.repository.js';
-import { insertBid } from '../repositories/bid.repository.js';
-import { upsertAutoBid, deleteAutoBidsByProductId } from '../repositories/autoBid.repository.js';
+import { insertBid, deleteBidsByUser, findTopBids, countBidsByProduct } from '../repositories/bid.repository.js';
+import {
+  upsertAutoBid,
+  deleteAutoBidsByProductId,
+  deleteAutoBidByUser
+} from '../repositories/autoBid.repository.js';
 import { findUserById } from '../repositories/user.repository.js';
 import { ApiError } from '../utils/response.js';
 import { getExtendSettings, getHighlightNewMinutes } from './setting.service.js';
 import { aggregateRating } from '../utils/rating.js';
 import { maskBidderName } from '../utils/bid.js';
 import { recalcAutoBid } from './autoBid.service.js';
+import { addToBidBlacklist } from '../repositories/bidBlacklist.repository.js';
+import { isProductWatchlisted } from './watchlist.service.js';
+import { isProductWatchlisted } from './watchlist.service.js';
 
 const SORT_FIELDS = {
   'end_at': 'end_at',
@@ -243,10 +250,10 @@ export const listProducts = async ({ page, limit, sort, categoryId }) => {
   };
 };
 
-export const getProductDetail = async (productId) => {
+export const getProductDetail = async (productId, viewerId = null) => {
   const productRow = await findProductByIdWithSeller(productId);
-  if (!productRow || productRow.status !== 'ACTIVE') {
-    throw new ApiError(404, 'PRODUCTS.NOT_FOUND', 'Product not found or inactive');
+  if (!productRow || productRow.status === 'REMOVED') {
+    throw new ApiError(404, 'PRODUCTS.NOT_FOUND', 'Product not found');
   }
 
   const highlightWindowMinutes = await getHighlightNewMinutes();
@@ -267,9 +274,11 @@ export const getProductDetail = async (productId) => {
 
   const relatedImageMap = await findPrimaryImagesForProducts(relatedRows.map((row) => row.id));
 
-  const [sellerRating, keeperRating] = await Promise.all([
+  const [sellerRating, keeperRating, watchlisted, watchlistCount] = await Promise.all([
     aggregateRating(productRow.seller_id),
-    productRow.current_bidder_id ? aggregateRating(productRow.current_bidder_id) : Promise.resolve(null)
+    productRow.current_bidder_id ? aggregateRating(productRow.current_bidder_id) : Promise.resolve(null),
+    isProductWatchlisted(viewerId, productRow.id),
+    db('watchlist').where({ product_id: productRow.id }).count({ count: '*' }).first()
   ]);
 
   const firstImageUrl = imagesRows[0]?.image_url ?? null;
@@ -304,7 +313,8 @@ export const getProductDetail = async (productId) => {
                 }
               : null
           }
-        : null
+        : null,
+      isAnswered: Boolean(answer)
     };
   });
 
@@ -330,13 +340,24 @@ export const getProductDetail = async (productId) => {
       }
     : null;
 
+  const viewerIsSeller = viewerId && String(viewerId) === String(productRow.seller_id);
+
   return {
     product,
     seller,
     keeper,
     images,
     questions,
-    relatedProducts
+    relatedProducts,
+    watchlist: {
+      isWatchlisted: Boolean(watchlisted),
+      count: Number(watchlistCount?.count || 0)
+    },
+    permissions: {
+      canAppendDescription: Boolean(viewerIsSeller),
+      canRejectBidder: Boolean(viewerIsSeller && productRow.current_bidder_id),
+      canAnswerQuestions: Boolean(viewerIsSeller)
+    }
   };
 };
 
@@ -630,6 +651,95 @@ export const buyNowProduct = async ({ productId, userId }) => {
     return {
       product: summarizeProduct(updatedRow),
       bid: bidRow
+    };
+  });
+};
+
+export const appendProductDescription = async ({ productId, sellerId, content }) => {
+  const trimmed = content?.trim();
+  if (!trimmed) {
+    throw new ApiError(422, 'PRODUCTS.EMPTY_APPEND', 'Description update cannot be empty');
+  }
+
+  return db.transaction(async (trx) => {
+    const product = await findProductByIdForUpdate(productId, trx);
+    if (!product) {
+      throw new ApiError(404, 'PRODUCTS.NOT_FOUND', 'Product not found');
+    }
+    if (String(product.seller_id) !== String(sellerId)) {
+      throw new ApiError(403, 'PRODUCTS.SELLER_REQUIRED', 'Only the seller can update this product');
+    }
+
+    await trx('product_description_history').insert({
+      product_id: productId,
+      content_added: trimmed
+    });
+
+    const baseDescription = product.description ? `${product.description}\n\n` : '';
+    const nextDescription = `${baseDescription}${trimmed}`.trim();
+
+    const [updated] = await trx('products')
+      .where({ id: productId })
+      .update(
+        {
+          description: nextDescription,
+          updated_at: trx.fn.now()
+        },
+        ['id', 'description']
+      );
+
+    return { description: updated.description };
+  });
+};
+
+export const rejectBidder = async ({ productId, sellerId, bidderId, reason }) => {
+  return db.transaction(async (trx) => {
+    const product = await findProductByIdForUpdate(productId, trx);
+    if (!product) {
+      throw new ApiError(404, 'PRODUCTS.NOT_FOUND', 'Product not found');
+    }
+    if (String(product.seller_id) !== String(sellerId)) {
+      throw new ApiError(403, 'PRODUCTS.SELLER_REQUIRED', 'Only the seller can reject bidders');
+    }
+
+    await addToBidBlacklist(productId, bidderId, reason || null, trx);
+    await deleteBidsByUser(productId, bidderId, trx);
+    await deleteAutoBidByUser(productId, bidderId, trx);
+
+    const [topBid] = await findTopBids(productId, 1, trx);
+    const bidCountRow = await countBidsByProduct(productId, trx);
+    const remainingCount = Number(bidCountRow?.count || 0);
+
+    let updatePayload;
+    if (topBid) {
+      updatePayload = {
+        current_price: topBid.bid_amount,
+        current_bidder_id: topBid.user_id,
+        bid_count: remainingCount
+      };
+    } else {
+      updatePayload = {
+        current_price: product.start_price,
+        current_bidder_id: null,
+        bid_count: 0
+      };
+    }
+
+    const [updated] = await trx('products')
+      .where({ id: productId })
+      .update(
+        {
+          ...updatePayload,
+          updated_at: trx.fn.now()
+        },
+        ['id', 'current_price', 'current_bidder_id', 'bid_count', 'end_at', 'status']
+      );
+
+    const autoBidResult = await recalcAutoBid(productId, trx, { product: { ...product, ...updated } });
+
+    return {
+      product: summarizeProduct(autoBidResult?.product || updated, product),
+      autoBidTriggered: Boolean(autoBidResult?.triggered)
     };
   });
 };

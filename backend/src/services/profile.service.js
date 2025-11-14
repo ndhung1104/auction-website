@@ -1,7 +1,9 @@
+import db from '../db/knex.js';
 import { findUserById, updateUser } from '../repositories/user.repository.js';
 import { ApiError } from '../utils/response.js';
 import { aggregateRating } from '../utils/rating.js';
 import { getLatestSellerRequest } from './seller.service.js';
+import { findWatchlistByUser } from '../repositories/watchlist.repository.js';
 
 const mapUserProfile = (row) => ({
   id: row.id,
@@ -24,22 +26,50 @@ const canRequestSeller = (userRow, latestRequest) => {
   return latestRequest.expireAt && new Date(latestRequest.expireAt) < new Date();
 };
 
+const mapProductSummary = (row) => ({
+  id: row.id,
+  name: row.name,
+  currentPrice: Number(row.current_price),
+  endAt: row.end_at,
+  status: row.status
+});
+
 export const getProfile = async (userId) => {
   const user = await findUserById(userId);
   if (!user) {
     throw new ApiError(404, 'PROFILE.NOT_FOUND', 'User profile not found');
   }
 
-  const [rating, sellerRequest] = await Promise.all([
+  const [rating, sellerRequest, watchlistRows, activeRows, wonRows] = await Promise.all([
     aggregateRating(userId),
-    getLatestSellerRequest(userId)
+    getLatestSellerRequest(userId),
+    findWatchlistByUser(userId),
+    db('products')
+      .where({ current_bidder_id: userId, status: 'ACTIVE' })
+      .orderBy('end_at', 'asc')
+      .limit(10),
+    db('products')
+      .where({ current_bidder_id: userId, status: 'ENDED' })
+      .orderBy('end_at', 'desc')
+      .limit(10)
   ]);
 
   return {
     user: mapUserProfile(user),
     rating,
     sellerRequest,
-    canRequestSeller: canRequestSeller(user, sellerRequest)
+    canRequestSeller: canRequestSeller(user, sellerRequest),
+    watchlist: watchlistRows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      slug: row.slug,
+      currentPrice: Number(row.current_price),
+      endAt: row.end_at,
+      status: row.status,
+      addedAt: row.added_at
+    })),
+    activeBids: activeRows.map(mapProductSummary),
+    wonAuctions: wonRows.map(mapProductSummary)
   };
 };
 
