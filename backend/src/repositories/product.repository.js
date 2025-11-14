@@ -60,6 +60,19 @@ export const findActiveProducts = (filters = {}, options = {}) => {
 export const findProductStatusById = (id) =>
   db('products').select('id', 'status').where({ id }).first();
 
+export const findProductBySlug = (slug) =>
+  db('products').select('id').where({ slug }).first();
+
+export const insertProduct = (productData, trx = db) =>
+  trx('products')
+    .insert(productData)
+    .returning(BASE_COLUMNS);
+
+export const insertProductImages = (images, trx = db) => {
+  if (!Array.isArray(images) || !images.length) return [];
+  return trx('product_images').insert(images);
+};
+
 export const findProductByIdWithSeller = (id) =>
   db('products as p')
     .select([

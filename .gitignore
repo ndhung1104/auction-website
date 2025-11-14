@@ -12,3 +12,5 @@ npm-debug.log
 frontend/dist/
 frontend/.vite/
 .venv
+backend/uploads/*
+!backend/uploads/.gitkeep

@@ -8,12 +8,17 @@ import {
   findRelatedProducts,
   findPrimaryImagesForProducts,
   findProductBidsWithUsers,
-  findProductStatusById
+  findProductStatusById,
+  insertProduct,
+  insertProductImages,
+  findProductBySlug
 } from '../repositories/product.repository.js';
+import { findCategoryById } from '../repositories/category.repository.js';
 import { ApiError } from '../utils/response.js';
 import { getHighlightNewMinutes } from './setting.service.js';
 import { aggregateRating } from '../utils/rating.js';
 import { maskBidderName } from '../utils/bid.js';
+import db from '../db/knex.js';
 
 const SORT_FIELDS = {
   'end_at': 'end_at',
@@ -30,6 +35,7 @@ const QUESTIONS_LIMIT = 10;
 const RELATED_LIMIT = 5;
 const BID_HISTORY_DEFAULT_LIMIT = 20;
 const BID_HISTORY_MAX_LIMIT = 50;
+const PRODUCT_SLUG_MAX_ATTEMPTS = 5;
 
 const normalizeSort = (sortRaw) => {
   if (!sortRaw) return DEFAULT_SORT;
@@ -51,6 +57,14 @@ const normalizePagination = ({ page, limit }) => {
   const offset = (safePage - 1) * safeLimit;
   return { page: safePage, limit: safeLimit, offset };
 };
+
+const slugify = (input) =>
+  input
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)+/g, '');
 
 const mapProduct = (row, { highlightWindowMinutes = 60, primaryImageUrl = null } = {}) => {
   const createdAtIso = row.created_at ? new Date(row.created_at) : null;
@@ -245,3 +259,95 @@ export const getProductBidHistory = async (productId, limit = BID_HISTORY_DEFAUL
 };
 
 export { mapProduct };
+
+const generateUniqueSlug = async (name) => {
+  const baseSlug = slugify(name) || `product-${Date.now()}`;
+  for (let attempt = 0; attempt < PRODUCT_SLUG_MAX_ATTEMPTS; attempt += 1) {
+    const suffix = attempt === 0 ? '' : `-${Math.random().toString(36).slice(2, 6)}`;
+    const candidate = `${baseSlug}${suffix}`;
+    const existing = await findProductBySlug(candidate);
+    if (!existing) return candidate;
+  }
+  throw new ApiError(500, 'PRODUCTS.SLUG_FAILURE', 'Unable to allocate unique product slug');
+};
+
+export const createProductListing = async ({
+  sellerId,
+  name,
+  description,
+  categoryId,
+  startPrice,
+  priceStep,
+  buyNowPrice,
+  autoExtend,
+  enableAutoBid,
+  startAt,
+  endAt,
+  images
+}) => {
+  if (!Array.isArray(images) || images.length < 3) {
+    throw new ApiError(422, 'PRODUCTS.MIN_IMAGES', 'At least three images are required');
+  }
+
+  const category = await findCategoryById(categoryId);
+  if (!category) {
+    throw new ApiError(404, 'PRODUCTS.CATEGORY_NOT_FOUND', 'Category not found');
+  }
+
+  const highlightWindowMinutes = await getHighlightNewMinutes();
+  const slug = await generateUniqueSlug(name);
+  const now = new Date();
+  const startDate = startAt ? new Date(startAt) : now;
+  const endDate = new Date(endAt);
+
+  const result = await db.transaction(async (trx) => {
+    const [productRow] = await insertProduct(
+      {
+        seller_id: sellerId,
+        category_id: categoryId,
+        name,
+        slug,
+        description: description || null,
+        start_price: startPrice,
+        price_step: priceStep,
+        current_price: startPrice,
+        buy_now_price: buyNowPrice ?? null,
+        auto_extend: autoExtend,
+        enable_auto_bid: enableAutoBid,
+        current_bidder_id: null,
+        bid_count: 0,
+        highlight_until: null,
+        status: 'ACTIVE',
+        start_at: startDate,
+        end_at: endDate,
+        created_at: now,
+        updated_at: now
+      },
+      trx
+    );
+
+    const imageRecords = images.map((image, index) => ({
+      product_id: productRow.id,
+      image_url: image.url,
+      display_order: index + 1
+    }));
+
+    await insertProductImages(imageRecords, trx);
+
+    return {
+      product: productRow,
+      images: imageRecords
+    };
+  });
+
+  return {
+    product: mapProduct(result.product, {
+      highlightWindowMinutes,
+      primaryImageUrl: images[0]?.url || null
+    }),
+    images: result.images.map((row) => ({
+      url: row.image_url,
+      displayOrder: row.display_order
+    }))
+  };
+};
