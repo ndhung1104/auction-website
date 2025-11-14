@@ -30,7 +30,6 @@ import { maskBidderName } from '../utils/bid.js';
 import { recalcAutoBid } from './autoBid.service.js';
 import { addToBidBlacklist } from '../repositories/bidBlacklist.repository.js';
 import { isProductWatchlisted } from './watchlist.service.js';
-import { isProductWatchlisted } from './watchlist.service.js';
 
 const SORT_FIELDS = {
   'end_at': 'end_at',

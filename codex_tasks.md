@@ -75,15 +75,15 @@
 
 ## Week 6 – Admin & Advanced Management
 ### DBA
-- [ ] Provide queries for finding the second-highest bidder to support reject-bidder flows.
+- [x] Provide queries for finding the second-highest bidder to support reject-bidder flows.
 ### Backend
-- [ ] Build admin-only endpoints for category CRUD, product soft delete, user and seller-request management, and viewing auto-bids per product.
-- [ ] Provide seller tools: append-only product description updates and `/reject-bidder` handling that reassigns the highest bidder.
-- [ ] Provide bidder tools: ask question, add to watchlist, and profile views for watchlist/bidding/won items.
+- [x] Build admin-only endpoints for category CRUD, product soft delete, user and seller-request management, and viewing auto-bids per product.
+- [x] Provide seller tools: append-only product description updates and `/reject-bidder` handling that reassigns the highest bidder.
+- [x] Provide bidder tools: ask question, add to watchlist, and profile views for watchlist/bidding/won items.
 ### Frontend
-- [ ] Implement an admin dashboard (tables, pagination) for categories, products, users, and seller requests.
-- [ ] Extend Profile sections to list active bids and won auctions.
-- [ ] Add watchlist and Q&A controls on `ProductDetailPage`, plus seller-only actions for appending description or rejecting bidders.
+- [x] Implement an admin dashboard (tables, pagination) for categories, products, users, and seller requests.
+- [x] Extend Profile sections to list active bids and won auctions.
+- [x] Add watchlist and Q&A controls on `ProductDetailPage`, plus seller-only actions for appending description or rejecting bidders.
 
 ## Week 7 – Systems & Flow Completion
 ### DBA

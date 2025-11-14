@@ -142,101 +142,102 @@ export default function ProfilePage() {
   }
 
   return (
-    <>
+    <div className="profile-page">
       <div className="row g-4">
         <div className="col-lg-5">
           <div className="card shadow-sm">
             <div className="card-body">
-            <h3 className="card-title mb-3">Account overview</h3>
-            <p className="mb-1">
-              <strong>Email:</strong> {profileUser.email}
-            </p>
-            <p className="mb-1">
-              <strong>Role:</strong> {profileUser.role}
-            </p>
-            <p className="mb-3">
-              <strong>Status:</strong> {profileUser.status}
-            </p>
-            <div className="mb-3">
-              <strong>Rating:</strong>{' '}
-              <span className="badge bg-success me-2">+{rating?.positive || 0}</span>
-              <span className="badge bg-danger">-{rating?.negative || 0}</span>
-            </div>
-            {sellerRequest && (
-              <div className="alert alert-secondary">
-                <p className="mb-1">
-                  <strong>Seller request:</strong> {sellerRequest.status}
-                </p>
-                <small className="text-muted">
-                  Requested at {new Date(sellerRequest.requestedAt).toLocaleString()}
-                </small>
+              <h3 className="card-title mb-3">Account overview</h3>
+              <p className="mb-1">
+                <strong>Email:</strong> {profileUser.email}
+              </p>
+              <p className="mb-1">
+                <strong>Role:</strong> {profileUser.role}
+              </p>
+              <p className="mb-3">
+                <strong>Status:</strong> {profileUser.status}
+              </p>
+              <div className="mb-3">
+                <strong>Rating:</strong>{' '}
+                <span className="badge bg-success me-2">+{rating?.positive || 0}</span>
+                <span className="badge bg-danger">-{rating?.negative || 0}</span>
               </div>
-            )}
-            {profileUser.role === 'BIDDER' && (
-              <button
-                type="button"
-                className="btn btn-outline-primary"
-                onClick={handleSellerRequest}
-                disabled={!canRequestSeller || requesting}
-              >
-                {requesting ? 'Submitting…' : 'Request Seller Upgrade'}
-              </button>
-            )}
+              {sellerRequest && (
+                <div className="alert alert-secondary">
+                  <p className="mb-1">
+                    <strong>Seller request:</strong> {sellerRequest.status}
+                  </p>
+                  <small className="text-muted">
+                    Requested at {new Date(sellerRequest.requestedAt).toLocaleString()}
+                  </small>
+                </div>
+              )}
+              {profileUser.role === 'BIDDER' && (
+                <button
+                  type="button"
+                  className="btn btn-outline-primary"
+                  onClick={handleSellerRequest}
+                  disabled={!canRequestSeller || requesting}
+                >
+                  {requesting ? 'Submitting…' : 'Request Seller Upgrade'}
+                </button>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-      <div className="col-lg-7">
-        <div className="card shadow-sm">
-          <div className="card-body">
-            <h3 className="card-title mb-3">Edit profile</h3>
-            {alert && (
-              <div className={`alert alert-${alert.type}`} role="alert">
-                {alert.message}
-              </div>
-            )}
-            <form onSubmit={handleSubmit}>
-              <div className="mb-3">
-                <label htmlFor="fullName" className="form-label">
-                  Full name
-                </label>
-                <input
-                  id="fullName"
-                  name="fullName"
-                  className="form-control"
-                  value={form.fullName}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <div className="mb-3">
-                <label htmlFor="phoneNumber" className="form-label">
-                  Phone number
-                </label>
-                <input
-                  id="phoneNumber"
-                  name="phoneNumber"
-                  className="form-control"
-                  value={form.phoneNumber}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="mb-4">
-                <label htmlFor="address" className="form-label">
-                  Address
-                </label>
-                <textarea
-                  id="address"
-                  name="address"
-                  className="form-control"
-                  rows="3"
-                  value={form.address}
-                  onChange={handleChange}
-                />
-              </div>
-              <button type="submit" className="btn btn-primary" disabled={updating}>
-                {updating ? 'Saving…' : 'Save changes'}
-              </button>
-            </form>
+        <div className="col-lg-7">
+          <div className="card shadow-sm">
+            <div className="card-body">
+              <h3 className="card-title mb-3">Edit profile</h3>
+              {alert && (
+                <div className={`alert alert-${alert.type}`} role="alert">
+                  {alert.message}
+                </div>
+              )}
+              <form onSubmit={handleSubmit}>
+                <div className="mb-3">
+                  <label htmlFor="fullName" className="form-label">
+                    Full name
+                  </label>
+                  <input
+                    id="fullName"
+                    name="fullName"
+                    className="form-control"
+                    value={form.fullName}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="phoneNumber" className="form-label">
+                    Phone number
+                  </label>
+                  <input
+                    id="phoneNumber"
+                    name="phoneNumber"
+                    className="form-control"
+                    value={form.phoneNumber}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="mb-4">
+                  <label htmlFor="address" className="form-label">
+                    Address
+                  </label>
+                  <textarea
+                    id="address"
+                    name="address"
+                    className="form-control"
+                    rows="3"
+                    value={form.address}
+                    onChange={handleChange}
+                  />
+                </div>
+                <button type="submit" className="btn btn-primary" disabled={updating}>
+                  {updating ? 'Saving…' : 'Save changes'}
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       </div>
@@ -252,6 +253,6 @@ export default function ProfilePage() {
         <h3>Won auctions</h3>
         {renderProductList(wonAuctions, 'You have not won any auctions yet.')}
       </section>
-    </>
+    </div>
   )
 }

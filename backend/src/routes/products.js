@@ -6,7 +6,9 @@ import {
   getProducts,
   submitProductBid,
   submitAutoBid,
-  buyNow
+  buyNow,
+  appendProductDescription,
+  rejectBidder
 } from '../controllers/product.controller.js';
 import { checkAuth, checkRole, optionalAuth } from '../middlewares/auth.js';
 import { uploadProductImages } from '../middlewares/upload.js';
