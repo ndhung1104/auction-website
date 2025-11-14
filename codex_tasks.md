@@ -37,16 +37,16 @@
 
 ## Week 3 – Complete View & Homepage
 ### DBA
-- [ ] Write optimized queries for homepage sections (top price, ending soon, most bidded) and add supporting indexes.
+- [x] Write optimized queries for homepage sections (top price, ending soon, most bidded) and add supporting indexes.
 ### Backend
-- [ ] Implement `GET /api/homepage` powered by the curated queries.
-- [ ] Complete `GET /api/products/:id` with seller info, keeper stats, Q&A, and related products, including the `auto_bid_enabled` flag.
-- [ ] Update `GET /api/products` to surface `is_new` using `highlight_new_minutes`.
-- [ ] Implement `GET /api/products/:id/bids` with masked bidder identities.
+- [x] Implement `GET /api/homepage` powered by the curated queries.
+- [x] Complete `GET /api/products/:id` with seller info, keeper stats, Q&A, and related products, including the `auto_bid_enabled` flag.
+- [x] Update `GET /api/products` to surface `is_new` using `highlight_new_minutes`.
+- [x] Implement `GET /api/products/:id/bids` with masked bidder identities.
 ### Frontend
-- [ ] Build `HomePage` components wired to the homepage API.
-- [ ] Finish `ProductDetailPage` with media, seller info, Q&A, related products, manual bid UI skeleton, and the auto-bid support badge.
-- [ ] Update `ProductCard` to show the “new” badge when `is_new` is true.
+- [x] Build `HomePage` components wired to the homepage API.
+- [x] Finish `ProductDetailPage` with media, seller info, Q&A, related products, manual bid UI skeleton, and the auto-bid support badge.
+- [x] Update `ProductCard` to show the “new” badge when `is_new` is true.
 
 ## Week 4 – Seller Product & Profile
 ### DBA

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { fetchProducts } from '../services/products'
-import { formatVND } from '../utils/format'
+import ProductCard from '../components/ProductCard'
 
 const SORT_OPTIONS = [
   { value: 'end_at,asc', label: 'Ending soon' },
@@ -101,16 +101,7 @@ export default function ProductListPage() {
       <div className="row g-4">
         {items.map((product) => (
           <div key={product.id} className="col-12 col-sm-6 col-lg-4">
-            <div className="card h-100 shadow-sm">
-              <div className="card-body d-flex flex-column">
-                <h5 className="card-title">{product.name}</h5>
-                <p className="card-text text-muted mb-2">
-                  Current price: <strong>{formatVND(product.currentPrice)}</strong>
-                </p>
-                <p className="card-text text-muted mb-2">Bids: {product.bidCount}</p>
-                <p className="card-text small text-muted mt-auto">Ends at: {new Date(product.endAt).toLocaleString()}</p>
-              </div>
-            </div>
+            <ProductCard product={product} />
           </div>
         ))}
       </div>
