@@ -10,6 +10,10 @@ import ProductDetailPage from '../pages/ProductDetailPage'
 import ProfilePage from '../pages/ProfilePage'
 import CreateProductPage from '../pages/CreateProductPage'
 import AdminDashboardPage from '../pages/AdminDashboardPage'
+import SearchResultsPage from '../pages/SearchResultsPage'
+import ResetPasswordPage from '../pages/ResetPasswordPage'
+import OrdersPage from '../pages/OrdersPage'
+import OrderDetailPage from '../pages/OrderDetailPage'
 
 const router = createBrowserRouter([
   {
@@ -33,6 +37,10 @@ const router = createBrowserRouter([
         element: <ForgotPasswordPage />,
       },
       {
+        path: 'reset-password',
+        element: <ResetPasswordPage />,
+      },
+      {
         path: 'products',
         element: <ProductListPage />,
       },
@@ -52,6 +60,18 @@ const router = createBrowserRouter([
         path: 'admin',
         element: <AdminDashboardPage />,
       },
+      {
+        path: 'search',
+        element: <SearchResultsPage />,
+      },
+      {
+        path: 'orders',
+        element: <OrdersPage />,
+      },
+      {
+        path: 'orders/:orderId',
+        element: <OrderDetailPage />,
+      }
     ],
   },
 ])

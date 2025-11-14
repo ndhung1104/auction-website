@@ -1,5 +1,5 @@
 import Joi from 'joi';
-import { authenticateUser, createPasswordResetRequest, registerUser } from '../services/auth.service.js';
+import { authenticateUser, createPasswordResetRequest, registerUser, resetPassword } from '../services/auth.service.js';
 import { ApiError, sendCreated, sendSuccess } from '../utils/response.js';
 
 const registerSchema = Joi.object({
@@ -69,6 +69,11 @@ const forgotPasswordSchema = Joi.object({
   email: Joi.string().email().required()
 });
 
+const resetPasswordSchema = Joi.object({
+  token: Joi.string().required(),
+  newPassword: Joi.string().min(8).max(128).required()
+});
+
 export const forgotPassword = async (req, res, next) => {
   try {
     const { value, error } = forgotPasswordSchema.validate(req.body, {
@@ -91,6 +96,29 @@ export const forgotPassword = async (req, res, next) => {
       data,
       'If the account exists, password reset instructions have been recorded'
     );
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const resetPasswordController = async (req, res, next) => {
+  try {
+    const { value, error } = resetPasswordSchema.validate(req.body, {
+      abortEarly: false,
+      stripUnknown: true
+    });
+
+    if (error) {
+      throw new ApiError(
+        422,
+        'AUTH.INVALID_RESET_PAYLOAD',
+        'Invalid reset password payload',
+        error.details.map(({ message, path }) => ({ message, path }))
+      );
+    }
+
+    await resetPassword(value);
+    return sendSuccess(res, { reset: true }, 'Password updated successfully');
   } catch (err) {
     next(err);
   }

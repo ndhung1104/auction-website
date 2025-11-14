@@ -2,6 +2,8 @@ import { ApiError } from '../utils/response.js';
 import { findProductStatusById, findProductByIdWithSeller } from '../repositories/product.repository.js';
 import { createQuestion, findQuestionById } from '../repositories/question.repository.js';
 import { createAnswer, findAnswerByQuestionId } from '../repositories/answer.repository.js';
+import { findUserById } from '../repositories/user.repository.js';
+import { sendAnswerNotification, sendQuestionNotification } from './mail.service.js';
 
 export const askQuestion = async ({ productId, userId, questionText }) => {
   const product = await findProductStatusById(productId);
@@ -23,6 +25,19 @@ export const askQuestion = async ({ productId, userId, questionText }) => {
     user_id: userId,
     question_text: trimmed
   });
+
+  try {
+    const seller = await findUserById(product.seller_id);
+    if (seller?.email) {
+      await sendQuestionNotification({
+        email: seller.email,
+        productName: product.name,
+        questionText: trimmed
+      });
+    }
+  } catch (err) {
+    console.warn('[mail] question notification skipped', err.message);
+  }
 
   return {
     id: question.id,
@@ -59,6 +74,20 @@ export const answerQuestion = async ({ questionId, userId, answerText }) => {
     user_id: userId,
     answer_text: trimmed
   });
+
+  try {
+    const asker = await findUserById(question.user_id);
+    const product = await findProductByIdWithSeller(question.product_id);
+    if (asker?.email) {
+      await sendAnswerNotification({
+        email: asker.email,
+        productName: product?.name || 'product',
+        answerText: trimmed
+      });
+    }
+  } catch (err) {
+    console.warn('[mail] answer notification skipped', err.message);
+  }
 
   return {
     id: answer.id,

@@ -8,6 +8,7 @@ export default function MainLayout() {
   const { isAuthenticated, user, logout } = useAuth()
   const [categories, setCategories] = useState([])
   const [categoryError, setCategoryError] = useState(null)
+  const [searchValue, setSearchValue] = useState('')
 
   useEffect(() => {
     let isMounted = true
@@ -29,6 +30,13 @@ export default function MainLayout() {
   const handleLogout = () => {
     logout()
     navigate('/login')
+  }
+
+  const handleSearch = (event) => {
+    event.preventDefault()
+    const term = searchValue.trim()
+    if (!term) return
+    navigate(`/search?q=${encodeURIComponent(term)}`)
   }
 
   const renderCategoryDropdown = useMemo(() => {
@@ -117,6 +125,13 @@ export default function MainLayout() {
                   </NavLink>
                 </li>
               )}
+              {isAuthenticated && (
+                <li className="nav-item">
+                  <NavLink className="nav-link" to="/orders">
+                    Orders
+                  </NavLink>
+                </li>
+              )}
               {isAuthenticated && (user?.role === 'SELLER' || user?.role === 'ADMIN') && (
                 <li className="nav-item">
                   <NavLink className="nav-link" to="/sell/create">
@@ -135,6 +150,20 @@ export default function MainLayout() {
             </ul>
 
             <ul className="navbar-nav ms-auto">
+              <li className="nav-item me-3">
+                <form className="d-flex gap-2" onSubmit={handleSearch}>
+                  <input
+                    type="search"
+                    className="form-control form-control-sm"
+                    placeholder="Search products..."
+                    value={searchValue}
+                    onChange={(event) => setSearchValue(event.target.value)}
+                  />
+                  <button className="btn btn-outline-light btn-sm" type="submit">
+                    Go
+                  </button>
+                </form>
+              </li>
               {isAuthenticated ? (
                 <>
                   <li className="nav-item">

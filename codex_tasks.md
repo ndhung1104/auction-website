@@ -87,17 +87,17 @@
 
 ## Week 7 – Systems & Flow Completion
 ### DBA
-- [ ] Configure PostgreSQL full-text search on product names (and related fields as needed).
+- [x] Configure PostgreSQL full-text search on product names (and related fields as needed).
 ### Backend
-- [ ] Integrate Nodemailer/SendGrid mailing hooks for registration, bidding (manual + auto), auction end, and Q&A events.
-- [ ] Implement `GET /api/search` leveraging FTS.
-- [ ] Implement `POST /api/auth/reset-password` and optional social logins (Google/Facebook) if time permits.
-- [ ] Build post-auction order APIs covering the four-step workflow, chat, rating updates, and order cancellation.
+- [x] Integrate Nodemailer/SendGrid mailing hooks for registration, bidding (manual + auto), auction end, and Q&A events.
+- [x] Implement `GET /api/search` leveraging FTS.
+- [x] Implement `POST /api/auth/reset-password` and optional social logins (Google/Facebook) if time permits.
+- [x] Build post-auction order APIs covering the four-step workflow, chat, rating updates, and order cancellation.
 ### Frontend
-- [ ] Add a global search bar and search results page.
-- [ ] Build `ResetPasswordPage` and wire it to the reset API.
-- [ ] Implement the order completion UI with progress steps, chat, rating, and seller cancel controls.
-- [ ] Surface a “Cancel transaction” action for sellers where applicable.
+- [x] Add a global search bar and search results page.
+- [x] Build `ResetPasswordPage` and wire it to the reset API.
+- [x] Implement the order completion UI with progress steps, chat, rating, and seller cancel controls.
+- [x] Surface a "Cancel transaction" action for sellers where applicable.
 
 ## Week 8 – Testing, Seeding & Launch Prep
 ### DBA

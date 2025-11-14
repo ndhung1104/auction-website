@@ -11,3 +11,7 @@ export function loginUser(payload) {
 export function requestPasswordReset(payload) {
   return apiClient.post('/auth/forgot-password', payload)
 }
+
+export function resetPassword(payload) {
+  return apiClient.post('/auth/reset-password', payload)
+}

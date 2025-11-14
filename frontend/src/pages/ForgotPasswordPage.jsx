@@ -1,4 +1,5 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { requestPasswordReset } from '../services/auth'
 
 export default function ForgotPasswordPage() {
@@ -37,7 +38,12 @@ export default function ForgotPasswordPage() {
         <h1 className="mb-4">Forgot password</h1>
         {alert && (
           <div className={`alert alert-${alert.type}`} role="alert">
-            {alert.message}
+            {alert.message}{' '}
+            {alert.type === 'success' && (
+              <span>
+                Ready to reset? <Link to="/reset-password">Enter your new password here.</Link>
+              </span>
+            )}
           </div>
         )}
         <form onSubmit={handleSubmit}>
@@ -55,7 +61,7 @@ export default function ForgotPasswordPage() {
             />
           </div>
           <button type="submit" className="btn btn-primary w-100" disabled={submitting}>
-            {submitting ? 'Sending…' : 'Send reset instructions'}
+            {submitting ? 'Sending...' : 'Send reset instructions'}
           </button>
         </form>
       </div>

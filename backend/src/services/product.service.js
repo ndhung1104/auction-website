@@ -30,6 +30,8 @@ import { maskBidderName } from '../utils/bid.js';
 import { recalcAutoBid } from './autoBid.service.js';
 import { addToBidBlacklist } from '../repositories/bidBlacklist.repository.js';
 import { isProductWatchlisted } from './watchlist.service.js';
+import { ensureOrderForProduct } from './order.service.js';
+import { sendBidNotification } from './mail.service.js';
 
 const SORT_FIELDS = {
   'end_at': 'end_at',
@@ -547,6 +549,19 @@ export const placeManualBid = async ({ productId, userId, amount }) => {
       }
     }
 
+    try {
+      const seller = await findUserById(product.seller_id);
+      if (seller?.email) {
+        await sendBidNotification({
+          email: seller.email,
+          productName: product.name,
+          amount: bidAmount
+        });
+      }
+    } catch (err) {
+      console.warn('[mail] bid notification skipped', err.message);
+    }
+
     return {
       product: summary,
       bid: bidRow,
@@ -646,6 +661,16 @@ export const buyNowProduct = async ({ productId, userId }) => {
         },
         ['id', 'current_price', 'current_bidder_id', 'bid_count', 'end_at', 'status']
       );
+
+    await ensureOrderForProduct(
+      {
+        productId,
+        sellerId: product.seller_id,
+        winnerId: userId,
+        finalPrice: buyNowPrice
+      },
+      trx
+    );
 
     return {
       product: summarizeProduct(updatedRow),

@@ -9,6 +9,8 @@ import sellerRouter from './seller.js';
 import watchlistRouter from './watchlist.js';
 import adminRouter from './admin.js';
 import questionRouter from './questions.js';
+import searchRouter from './search.js';
+import ordersRouter from './orders.js';
 
 const router = Router();
 router.use('/health', healthRouter);
@@ -21,5 +23,7 @@ router.use('/seller', sellerRouter);
 router.use('/watchlist', watchlistRouter);
 router.use('/admin', adminRouter);
 router.use('/questions', questionRouter);
+router.use('/search', searchRouter);
+router.use('/orders', ordersRouter);
 
 export default router;

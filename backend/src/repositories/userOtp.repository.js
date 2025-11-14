@@ -12,3 +12,15 @@ export const consumeActiveResetOtps = (userId, trx = db) =>
     .where({ user_id: userId, purpose: 'RESET_PASSWORD' })
     .whereNull('consumed_at')
     .update({ consumed_at: db.fn.now() });
+
+export const findActiveResetToken = (token) =>
+  db(TABLE)
+    .where({ code: token, purpose: 'RESET_PASSWORD' })
+    .where('expires_at', '>', db.fn.now())
+    .whereNull('consumed_at')
+    .first();
+
+export const consumeTokenById = (id, trx = db) =>
+  (trx || db)(TABLE)
+    .where({ id })
+    .update({ consumed_at: db.fn.now() });
