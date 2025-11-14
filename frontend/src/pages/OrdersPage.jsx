@@ -67,36 +67,65 @@ export default function OrdersPage() {
       return <div className="alert alert-light">You have no orders yet.</div>
     }
     return (
-      <div className="table-responsive">
-        <table className="table align-middle">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Product</th>
-              <th>Status</th>
-              <th>Price</th>
-              <th>Created</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders.map((order) => (
-              <tr key={order.id}>
-                <td>#{order.id}</td>
-                <td>
-                  <Link to={`/orders/${order.id}`}>{order.productName}</Link>
-                </td>
-                <td>
-                  <span className={`badge ${getStatusBadgeClass(order.status)}`}>
-                    {STATUS_LABELS[order.status] || order.status}
-                  </span>
-                </td>
-                <td>{formatVND(order.finalPrice)}</td>
-                <td>{formatVNTime(order.createdAt)}</td>
+      <>
+        <div className="table-responsive d-none d-lg-block">
+          <table className="table align-middle">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Product</th>
+                <th>Status</th>
+                <th>Price</th>
+                <th>Created</th>
               </tr>
+            </thead>
+            <tbody>
+              {orders.map((order) => (
+                <tr key={order.id}>
+                  <td>#{order.id}</td>
+                  <td>
+                    <Link to={`/orders/${order.id}`}>{order.productName}</Link>
+                  </td>
+                  <td>
+                    <span className={`badge ${getStatusBadgeClass(order.status)}`}>
+                      {STATUS_LABELS[order.status] || order.status}
+                    </span>
+                  </td>
+                  <td>{formatVND(order.finalPrice)}</td>
+                  <td>{formatVNTime(order.createdAt)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="d-lg-none">
+          <div className="row g-3">
+            {orders.map((order) => (
+              <div key={order.id} className="col-12">
+                <div className="card shadow-sm">
+                  <div className="card-body">
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <span className="fw-semibold">Order #{order.id}</span>
+                      <span className={`badge ${getStatusBadgeClass(order.status)}`}>
+                        {STATUS_LABELS[order.status] || order.status}
+                      </span>
+                    </div>
+                    <p className="mb-1">
+                      <strong>Product:</strong>{' '}
+                      <Link to={`/orders/${order.id}`}>{order.productName}</Link>
+                    </p>
+                    <p className="mb-1">
+                      <strong>Total:</strong> {formatVND(order.finalPrice)}
+                    </p>
+                    <p className="text-muted mb-0">Created {formatVNTime(order.createdAt)}</p>
+                  </div>
+                </div>
+              </div>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </div>
+        </div>
+      </>
     )
   }, [error, isAuthenticated, loading, orders])
 

@@ -98,9 +98,9 @@ export default function SearchResultsPage() {
       {!loading && term && !items.length && !error && (
         <div className="alert alert-light">No products match "{term}". Try another keyword.</div>
       )}
-      <div className="row g-4">
+      <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
         {items.map((product) => (
-          <div className="col-12 col-md-6 col-lg-4" key={product.id}>
+          <div className="col" key={product.id}>
             <ProductCard product={product} compact />
           </div>
         ))}

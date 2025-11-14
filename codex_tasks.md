@@ -1,6 +1,6 @@
-# Codex Task Checklist
+﻿# Codex Task Checklist
 
-## Week 1 – Foundation & Design
+## Week 1 â€“ Foundation & Design
 ### DBA
 - [x] Design a detailed ERD that captures every auction flow.
 - [x] Select and configure Knex (or another migration tool) for PostgreSQL.
@@ -21,7 +21,7 @@
 ### Admin/Other
 - [x] Create the GitHub repository and configure `main`/`develop` branches.
 
-## Week 2 – Auth & Basic View
+## Week 2 â€“ Auth & Basic View
 ### DBA
 - [x] Run the Week 1 migrations to materialize the schema.
 ### Backend
@@ -35,7 +35,7 @@
 - [x] Implement the shared layout (Navbar/Footer) and load categories into the Navbar.
 - [x] Build `ProductListPage` with pagination and sorting hooked to the API.
 
-## Week 3 – Complete View & Homepage
+## Week 3 â€“ Complete View & Homepage
 ### DBA
 - [x] Write optimized queries for homepage sections (top price, ending soon, most bidded) and add supporting indexes.
 ### Backend
@@ -46,9 +46,9 @@
 ### Frontend
 - [x] Build `HomePage` components wired to the homepage API.
 - [x] Finish `ProductDetailPage` with media, seller info, Q&A, related products, manual bid UI skeleton, and the auto-bid support badge.
-- [x] Update `ProductCard` to show the “new” badge when `is_new` is true.
+- [x] Update `ProductCard` to show the â€œnewâ€ badge when `is_new` is true.
 
-## Week 4 – Seller Product & Profile
+## Week 4 â€“ Seller Product & Profile
 ### DBA
 - [x] Verify that `product_images` and `seller_requests` tables and constraints behave as expected.
 ### Backend
@@ -57,10 +57,10 @@
 - [x] Implement `POST /api/seller/request-upgrade` that sets `expire_at = now() + 7 days`.
 - [x] Expose `GET/PUT /api/profile` for profile viewing and updates.
 ### Frontend
-- [x] Build `ProfilePage` showing account data and conditional “Request Seller” button.
+- [x] Build `ProfilePage` showing account data and conditional â€œRequest Sellerâ€ button.
 - [x] Build `CreateProductPage` with multi-image upload, buy-now, auto-extend, and auto-bid toggle controls.
 
-## Week 5 – Core Bidding & Auto-Bid
+## Week 5 â€“ Core Bidding & Auto-Bid
 ### DBA
 - [x] Author transactions for manual bids, auto-bid registrations, and auto-bid recalculations.
 ### Backend
@@ -73,7 +73,7 @@
 - [x] Add the auto-bid form (currency input + submit) and refresh logic after registration.
 - [x] Annotate bid history entries to indicate auto-bid generated events.
 
-## Week 6 – Admin & Advanced Management
+## Week 6 â€“ Admin & Advanced Management
 ### DBA
 - [x] Provide queries for finding the second-highest bidder to support reject-bidder flows.
 ### Backend
@@ -85,7 +85,7 @@
 - [x] Extend Profile sections to list active bids and won auctions.
 - [x] Add watchlist and Q&A controls on `ProductDetailPage`, plus seller-only actions for appending description or rejecting bidders.
 
-## Week 7 – Systems & Flow Completion
+## Week 7 â€“ Systems & Flow Completion
 ### DBA
 - [x] Configure PostgreSQL full-text search on product names (and related fields as needed).
 ### Backend
@@ -99,15 +99,25 @@
 - [x] Implement the order completion UI with progress steps, chat, rating, and seller cancel controls.
 - [x] Surface a "Cancel transaction" action for sellers where applicable.
 
-## Week 8 – Testing, Seeding & Launch Prep
+## Week 8 - Testing, Seeding & Launch Prep
 ### DBA
-- [ ] Write seeding scripts (4–5 categories, ~20 products) including sample auto-bid data.
-- [ ] Review and add any missing indexes before freeze.
+- [x] Write seeding scripts (4-5 categories, ~20 products) including sample auto-bid data.
+- [x] Review and add any missing indexes before freeze.
 ### Backend
-- [ ] Execute comprehensive API testing (manual + auto-bid interactions, auto-extend) and fix defects.
-- [ ] Re-verify security for JWT handling and role checks.
+- [x] Execute comprehensive API testing (manual + auto-bid interactions, auto-extend) and fix defects.
+- [x] Re-verify security for JWT handling and role checks.
 ### Frontend
-- [ ] Fix outstanding UI/responsive issues uncovered during testing.
+- [x] Fix outstanding UI/responsive issues uncovered during testing.
 ### Admin/Other
-- [ ] Conduct cross-team end-to-end rehearsals (list product → auto-bid → manual bid → win → chat → rate).
-- [ ] Prepare final demo assets (slides, video walkthrough, live demo script).
+- [x] Conduct cross-team end-to-end rehearsals (list product + auto-bid + manual bid + win + chat + rate).
+
+## Week 9 - Demo & Wrap-up
+### Backend
+- [ ] Add post-registration email/OTP confirmation so new accounts stay unconfirmed until the code is verified.
+- [ ] Extend bidding eligibility so sellers can explicitly allow unrated bidders per product instead of enforcing the global 80% cap.
+- [ ] Apply the automatic -1 rating with the “Buyer failed to pay” note whenever sellers cancel an order during the settlement flow.
+- [ ] Broaden email notifications to cover every event in the requirement list (bid updates, prior keepers, auction-end alerts, Q&A, etc.).
+### Frontend
+- [ ] Update product listing cards to show highest bidder alias, buy-now price, posted date, and remaining time per the spec.
+- [ ] Integrate a WYSIWYG editor for seller product descriptions and surface “active/ended listings” on the seller profile area.
+- [ ] Expand the profile area to edit email + date of birth, expose a change-password flow, and list rating history entries.
