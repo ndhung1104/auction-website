@@ -13,6 +13,7 @@ const BASE_COLUMNS = [
   'buy_now_price',
   'auto_extend',
   'enable_auto_bid',
+  'allow_unrated_bidders',
   'current_bidder_id',
   'bid_count',
   'highlight_until',
@@ -26,10 +27,13 @@ const BASE_COLUMNS = [
 const withAlias = (alias) => BASE_COLUMNS.map((column) => `${alias}.${column}`);
 
 const buildBaseQuery = (filters = {}) => {
-  const query = db('products').select(BASE_COLUMNS).where({ status: 'ACTIVE' });
+  const query = db('products as p')
+    .leftJoin('users as bidder', 'bidder.id', 'p.current_bidder_id')
+    .select([...withAlias('p'), 'bidder.full_name as current_bidder_full_name'])
+    .where('p.status', 'ACTIVE');
 
   if (filters.categoryId) {
-    query.andWhere('category_id', filters.categoryId);
+    query.andWhere('p.category_id', filters.categoryId);
   }
 
   return query;

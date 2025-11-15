@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { fetchCategories } from '../services/categories'
 import { createProduct } from '../services/products'
+import ReactQuill from 'react-quill'
+import 'react-quill/dist/quill.snow.css'
 
 const formatDateInput = (date) => {
   const offset = date.getTimezoneOffset()
@@ -45,6 +47,7 @@ export default function CreateProductPage() {
     buyNowPrice: '',
     autoExtend: true,
     enableAutoBid: true,
+    allowUnratedBidders: false,
     startAt: defaultStart,
     endAt: defaultEnd
   })
@@ -157,13 +160,11 @@ export default function CreateProductPage() {
                 <label htmlFor="description" className="form-label">
                   Description
                 </label>
-                <textarea
+                <ReactQuill
                   id="description"
-                  name="description"
-                  className="form-control"
-                  rows="4"
+                  theme="snow"
                   value={form.description}
-                  onChange={handleChange}
+                  onChange={(value) => setForm((prev) => ({ ...prev, description: value }))}
                 />
               </div>
               <div className="row g-3">
@@ -262,8 +263,8 @@ export default function CreateProductPage() {
                     required
                   />
                 </div>
-                <div className="col-md-6 d-flex align-items-center">
-                  <div className="form-check me-4">
+                <div className="col-md-6">
+                  <div className="form-check mb-2">
                     <input
                       id="autoExtend"
                       name="autoExtend"
@@ -276,7 +277,7 @@ export default function CreateProductPage() {
                       Auto extend
                     </label>
                   </div>
-                  <div className="form-check">
+                  <div className="form-check mb-2">
                     <input
                       id="enableAutoBid"
                       name="enableAutoBid"
@@ -288,6 +289,20 @@ export default function CreateProductPage() {
                     <label className="form-check-label" htmlFor="enableAutoBid">
                       Allow auto-bid
                     </label>
+                  </div>
+                  <div className="form-check">
+                    <input
+                      id="allowUnratedBidders"
+                      name="allowUnratedBidders"
+                      type="checkbox"
+                      className="form-check-input"
+                      checked={form.allowUnratedBidders}
+                      onChange={handleCheckbox}
+                    />
+                    <label className="form-check-label" htmlFor="allowUnratedBidders">
+                      Allow unrated bidders
+                    </label>
+                    <div className="form-text">Let bidders without any feedback join your auction.</div>
                   </div>
                 </div>
               </div>

@@ -113,11 +113,17 @@
 
 ## Week 9 - Demo & Wrap-up
 ### Backend
-- [ ] Add post-registration email/OTP confirmation so new accounts stay unconfirmed until the code is verified.
-- [ ] Extend bidding eligibility so sellers can explicitly allow unrated bidders per product instead of enforcing the global 80% cap.
-- [ ] Apply the automatic -1 rating with the “Buyer failed to pay” note whenever sellers cancel an order during the settlement flow.
-- [ ] Broaden email notifications to cover every event in the requirement list (bid updates, prior keepers, auction-end alerts, Q&A, etc.).
+- [x] Add post-registration email/OTP confirmation so new accounts stay unconfirmed until the code is verified.
+- [x] Extend bidding eligibility so sellers can explicitly allow unrated bidders per product instead of enforcing the global 80% cap.
+- [x] Apply the automatic -1 rating with the "Buyer failed to pay" note whenever sellers cancel an order during the settlement flow.
+- [x] Broaden email notifications to cover every event in the requirement list (bid updates, prior keepers, auction-end alerts, Q&A, etc.).
 ### Frontend
-- [ ] Update product listing cards to show highest bidder alias, buy-now price, posted date, and remaining time per the spec.
-- [ ] Integrate a WYSIWYG editor for seller product descriptions and surface “active/ended listings” on the seller profile area.
-- [ ] Expand the profile area to edit email + date of birth, expose a change-password flow, and list rating history entries.
+- [x] Update product listing cards to show highest bidder alias, buy-now price, posted date, and remaining time per the spec.
+- [x] Integrate a WYSIWYG editor for seller product descriptions and surface "active/ended listings" on the seller profile area.
+- [x] Expand the profile area to edit email + date of birth, expose a change-password flow, and list rating history entries.
+
+### Admin/Other
+- [x] Prepare final demo assets (slides, video walkthrough, live demo script).
+
+
+

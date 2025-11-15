@@ -64,6 +64,7 @@ const createProductSchema = Joi.object({
     .optional(),
   autoExtend: booleanField.default(true),
   enableAutoBid: booleanField.default(true),
+  allowUnratedBidders: booleanField.default(false),
   startAt: Joi.date().iso().optional(),
   endAt: Joi.date().iso().required()
 });

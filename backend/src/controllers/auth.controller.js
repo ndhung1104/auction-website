@@ -1,5 +1,12 @@
 import Joi from 'joi';
-import { authenticateUser, createPasswordResetRequest, registerUser, resetPassword } from '../services/auth.service.js';
+import {
+  authenticateUser,
+  changePassword,
+  createPasswordResetRequest,
+  registerUser,
+  resetPassword,
+  verifyRegistrationOtp
+} from '../services/auth.service.js';
 import { ApiError, sendCreated, sendSuccess } from '../utils/response.js';
 
 const registerSchema = Joi.object({
@@ -74,6 +81,16 @@ const resetPasswordSchema = Joi.object({
   newPassword: Joi.string().min(8).max(128).required()
 });
 
+const verifyEmailSchema = Joi.object({
+  email: Joi.string().email().required(),
+  code: Joi.string().trim().min(4).max(10).required()
+});
+
+const changePasswordSchema = Joi.object({
+  currentPassword: Joi.string().min(8).max(128).required(),
+  newPassword: Joi.string().min(8).max(128).required()
+});
+
 export const forgotPassword = async (req, res, next) => {
   try {
     const { value, error } = forgotPasswordSchema.validate(req.body, {
@@ -119,6 +136,52 @@ export const resetPasswordController = async (req, res, next) => {
 
     await resetPassword(value);
     return sendSuccess(res, { reset: true }, 'Password updated successfully');
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const verifyEmail = async (req, res, next) => {
+  try {
+    const { value, error } = verifyEmailSchema.validate(req.body, {
+      abortEarly: false,
+      stripUnknown: true
+    });
+    if (error) {
+      throw new ApiError(
+        422,
+        'AUTH.INVALID_VERIFICATION_PAYLOAD',
+        'Invalid verification payload',
+        error.details
+      );
+    }
+    const payload = await verifyRegistrationOtp(value);
+    return sendSuccess(res, payload, 'Account verified successfully');
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const changePasswordController = async (req, res, next) => {
+  try {
+    const { value, error } = changePasswordSchema.validate(req.body, {
+      abortEarly: false,
+      stripUnknown: true
+    });
+    if (error) {
+      throw new ApiError(
+        422,
+        'AUTH.INVALID_CHANGE_PASSWORD',
+        'Invalid change password payload',
+        error.details
+      );
+    }
+    await changePassword({
+      userId: req.user.id,
+      currentPassword: value.currentPassword,
+      newPassword: value.newPassword
+    });
+    return sendSuccess(res, { updated: true }, 'Password updated successfully');
   } catch (err) {
     next(err);
   }

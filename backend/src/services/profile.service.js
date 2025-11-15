@@ -1,9 +1,10 @@
 import db from '../db/knex.js';
-import { findUserById, updateUser } from '../repositories/user.repository.js';
+import { findUserByEmail, findUserById, updateUser } from '../repositories/user.repository.js';
 import { ApiError } from '../utils/response.js';
 import { aggregateRating } from '../utils/rating.js';
 import { getLatestSellerRequest } from './seller.service.js';
 import { findWatchlistByUser } from '../repositories/watchlist.repository.js';
+import { findRatingsReceivedByUser } from '../repositories/rating.repository.js';
 
 const mapUserProfile = (row) => ({
   id: row.id,
@@ -15,6 +16,7 @@ const mapUserProfile = (row) => ({
   status: row.status,
   positiveScore: Number(row.positive_score || 0),
   negativeScore: Number(row.negative_score || 0),
+  dateOfBirth: row.date_of_birth,
   createdAt: row.created_at,
   updatedAt: row.updated_at
 });
@@ -29,6 +31,7 @@ const canRequestSeller = (userRow, latestRequest) => {
 const mapProductSummary = (row) => ({
   id: row.id,
   name: row.name,
+  slug: row.slug,
   currentPrice: Number(row.current_price),
   endAt: row.end_at,
   status: row.status
@@ -40,7 +43,7 @@ export const getProfile = async (userId) => {
     throw new ApiError(404, 'PROFILE.NOT_FOUND', 'User profile not found');
   }
 
-  const [rating, sellerRequest, watchlistRows, activeRows, wonRows] = await Promise.all([
+  const [rating, sellerRequest, watchlistRows, activeRows, wonRows, sellerActiveRows, sellerEndedRows, ratingRows] = await Promise.all([
     aggregateRating(userId),
     getLatestSellerRequest(userId),
     findWatchlistByUser(userId),
@@ -51,7 +54,20 @@ export const getProfile = async (userId) => {
     db('products')
       .where({ current_bidder_id: userId, status: 'ENDED' })
       .orderBy('end_at', 'desc')
-      .limit(10)
+      .limit(10),
+    user.role === 'SELLER'
+      ? db('products')
+          .where({ seller_id: userId, status: 'ACTIVE' })
+          .orderBy('end_at', 'asc')
+          .limit(10)
+      : Promise.resolve([]),
+    user.role === 'SELLER'
+      ? db('products')
+          .where({ seller_id: userId, status: 'ENDED' })
+          .orderBy('end_at', 'desc')
+          .limit(10)
+      : Promise.resolve([]),
+    findRatingsReceivedByUser(userId, 20)
   ]);
 
   return {
@@ -69,7 +85,22 @@ export const getProfile = async (userId) => {
       addedAt: row.added_at
     })),
     activeBids: activeRows.map(mapProductSummary),
-    wonAuctions: wonRows.map(mapProductSummary)
+    wonAuctions: wonRows.map(mapProductSummary),
+    sellerListings: {
+      active: sellerActiveRows.map(mapProductSummary),
+      ended: sellerEndedRows.map(mapProductSummary)
+    },
+    ratingHistory: ratingRows.map((row) => ({
+      id: row.id,
+      orderId: row.order_id,
+      score: row.score,
+      comment: row.comment,
+      createdAt: row.created_at,
+      rater: {
+        name: row.rater_name,
+        email: row.rater_email
+      }
+    }))
   };
 };
 
@@ -79,10 +110,19 @@ export const updateProfile = async (userId, payload) => {
     throw new ApiError(404, 'PROFILE.NOT_FOUND', 'User profile not found');
   }
 
+  if (payload.email && payload.email !== user.email) {
+    const existing = await findUserByEmail(payload.email);
+    if (existing && String(existing.id) !== String(userId)) {
+      throw new ApiError(409, 'PROFILE.EMAIL_IN_USE', 'Email is already associated with another account');
+    }
+  }
+
   const updateData = {
     full_name: payload.fullName ?? user.full_name,
     phone_number: payload.phoneNumber ?? user.phone_number,
-    address: payload.address ?? user.address
+    address: payload.address ?? user.address,
+    date_of_birth: payload.dateOfBirth ?? user.date_of_birth,
+    email: payload.email ?? user.email
   };
 
   const [updated] = await updateUser(userId, updateData);

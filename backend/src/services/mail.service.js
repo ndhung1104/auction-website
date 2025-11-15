@@ -36,11 +36,18 @@ const sendMail = async ({ to, subject, text }) => {
   });
 };
 
-export const sendRegistrationEmail = async (user) =>
+export const sendRegistrationEmail = async ({ email, fullName, code, expiresAt }) =>
   sendMail({
-    to: user.email,
-    subject: 'Welcome to AuctionApp',
-    text: `Hello ${user.fullName || user.email},\n\nThanks for registering!`
+    to: email,
+    subject: 'Verify your AuctionApp account',
+    text: `Hello ${fullName || email},\n\nUse the verification code ${code} to activate your account. The code expires at ${expiresAt}.`
+  });
+
+export const sendRegistrationConfirmedEmail = async ({ email, fullName }) =>
+  sendMail({
+    to: email,
+    subject: 'Your AuctionApp account is ready',
+    text: `Hello ${fullName || email},\n\nYour account has been verified successfully.`
   });
 
 export const sendPasswordResetEmail = async ({ email, token }) =>
@@ -55,6 +62,27 @@ export const sendBidNotification = async ({ email, productName, amount }) =>
     to: email,
     subject: 'New bid received',
     text: `New bid on ${productName}: ${amount}`
+  });
+
+export const sendBidderReceipt = async ({ email, productName, amount }) =>
+  sendMail({
+    to: email,
+    subject: 'You placed a bid',
+    text: `Your bid of ${amount} on ${productName} is now the leading offer.`
+  });
+
+export const sendOutbidNotification = async ({ email, productName, amount }) =>
+  sendMail({
+    to: email,
+    subject: 'You have been outbid',
+    text: `Another bidder has surpassed your offer on ${productName}. Latest price: ${amount}.`
+  });
+
+export const sendBidRejectedNotification = async ({ email, productName, reason }) =>
+  sendMail({
+    to: email,
+    subject: 'Bid access revoked',
+    text: `The seller rejected your participation for ${productName}. Reason: ${reason || 'No reason provided.'}`
   });
 
 export const sendOrderNotification = async ({ email, productName, status }) =>
@@ -76,4 +104,11 @@ export const sendAnswerNotification = async ({ email, productName, answerText })
     to: email,
     subject: 'Your question has been answered',
     text: `Answer on ${productName}: ${answerText}`
+  });
+
+export const sendAuctionResultNotification = async ({ email, productName, outcome }) =>
+  sendMail({
+    to: email,
+    subject: 'Auction update',
+    text: `Auction "${productName}" has ${outcome}.`
   });

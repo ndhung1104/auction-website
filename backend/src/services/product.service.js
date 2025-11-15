@@ -31,7 +31,12 @@ import { recalcAutoBid } from './autoBid.service.js';
 import { addToBidBlacklist } from '../repositories/bidBlacklist.repository.js';
 import { isProductWatchlisted } from './watchlist.service.js';
 import { ensureOrderForProduct } from './order.service.js';
-import { sendBidNotification } from './mail.service.js';
+import {
+  sendBidNotification,
+  sendBidderReceipt,
+  sendOutbidNotification,
+  sendBidRejectedNotification
+} from './mail.service.js';
 
 const SORT_FIELDS = {
   'end_at': 'end_at',
@@ -99,7 +104,9 @@ const mapProduct = (row, { highlightWindowMinutes = 60, primaryImageUrl = null }
     buyNowPrice: row.buy_now_price !== null ? Number(row.buy_now_price) : null,
     autoExtend: row.auto_extend,
     enableAutoBid: row.enable_auto_bid,
+    allowUnratedBidders: Boolean(row.allow_unrated_bidders),
     currentBidderId: row.current_bidder_id,
+    currentBidderAlias: row.current_bidder_full_name ? maskBidderName(row.current_bidder_full_name) : null,
     bidCount: Number(row.bid_count),
     highlightUntil: row.highlight_until,
     status: row.status,
@@ -151,7 +158,8 @@ const calculateRatingPercent = (rating) => {
   return (positive / total) * 100;
 };
 
-const ensureBidderEligibility = async (userId, sellerId) => {
+const ensureBidderEligibility = async (userId, sellerId, options = {}) => {
+  const { allowUnrated = false } = options;
   const user = await findUserById(userId);
   if (!user) {
     throw new ApiError(404, 'BIDDER.NOT_FOUND', 'Bidder not found');
@@ -167,6 +175,15 @@ const ensureBidderEligibility = async (userId, sellerId) => {
   }
 
   const rating = await aggregateRating(userId);
+  const totalRatings = Number(rating?.positive || 0) + Number(rating?.negative || 0);
+  if (totalRatings === 0 && !allowUnrated) {
+    throw new ApiError(
+      403,
+      'BIDDER.RATING_REQUIRED',
+      'Seller has restricted unrated bidders for this product'
+    );
+  }
+
   const ratingPercent = calculateRatingPercent(rating);
 
   if (ratingPercent < MIN_BIDDER_RATING_PERCENT) {
@@ -405,6 +422,7 @@ export const createProductListing = async ({
   buyNowPrice,
   autoExtend,
   enableAutoBid,
+  allowUnratedBidders,
   startAt,
   endAt,
   images
@@ -438,6 +456,7 @@ export const createProductListing = async ({
         buy_now_price: buyNowPrice ?? null,
         auto_extend: autoExtend,
         enable_auto_bid: enableAutoBid,
+        allow_unrated_bidders: Boolean(allowUnratedBidders),
         current_bidder_id: null,
         bid_count: 0,
         highlight_until: null,
@@ -487,7 +506,10 @@ export const placeManualBid = async ({ productId, userId, amount }) => {
   return db.transaction(async (trx) => {
     const product = await findProductByIdForUpdate(productId, trx);
     ensureAuctionWindowOpen(product);
-    await ensureBidderEligibility(userId, product.seller_id);
+    await ensureBidderEligibility(userId, product.seller_id, {
+      allowUnrated: Boolean(product.allow_unrated_bidders)
+    });
+    const previousBidderId = product.current_bidder_id;
 
     const startPrice = Number(product.start_price);
     const priceStep = Number(product.price_step);
@@ -550,12 +572,34 @@ export const placeManualBid = async ({ productId, userId, amount }) => {
     }
 
     try {
-      const seller = await findUserById(product.seller_id);
+      const [seller, bidder, previousBidder] = await Promise.all([
+        findUserById(product.seller_id),
+        findUserById(userId),
+        previousBidderId ? findUserById(previousBidderId) : Promise.resolve(null)
+      ]);
       if (seller?.email) {
         await sendBidNotification({
           email: seller.email,
           productName: product.name,
+          amount: summary.product.currentPrice
+        });
+      }
+      if (bidder?.email) {
+        await sendBidderReceipt({
+          email: bidder.email,
+          productName: product.name,
           amount: bidAmount
+        });
+      }
+      if (
+        previousBidder &&
+        previousBidder.email &&
+        String(previousBidder.id) !== String(userId)
+      ) {
+        await sendOutbidNotification({
+          email: previousBidder.email,
+          productName: product.name,
+          amount: summary.product.currentPrice
         });
       }
     } catch (err) {
@@ -585,7 +629,9 @@ export const registerAutoBid = async ({ productId, userId, maxBidAmount }) => {
       throw new ApiError(400, 'AUTO_BID.DISABLED', 'Auto-bid is disabled for this product');
     }
 
-    await ensureBidderEligibility(userId, product.seller_id);
+    await ensureBidderEligibility(userId, product.seller_id, {
+      allowUnrated: Boolean(product.allow_unrated_bidders)
+    });
 
     const startPrice = Number(product.start_price);
     const priceStep = Number(product.price_step);
@@ -627,7 +673,9 @@ export const buyNowProduct = async ({ productId, userId }) => {
   return db.transaction(async (trx) => {
     const product = await findProductByIdForUpdate(productId, trx);
     ensureAuctionWindowOpen(product);
-    await ensureBidderEligibility(userId, product.seller_id);
+    await ensureBidderEligibility(userId, product.seller_id, {
+      allowUnrated: Boolean(product.allow_unrated_bidders)
+    });
 
     if (product.buy_now_price === null) {
       throw new ApiError(400, 'PRODUCTS.NO_BUY_NOW', 'Buy-now option is not available for this product');
@@ -667,7 +715,8 @@ export const buyNowProduct = async ({ productId, userId }) => {
         productId,
         sellerId: product.seller_id,
         winnerId: userId,
-        finalPrice: buyNowPrice
+        finalPrice: buyNowPrice,
+        productName: product.name
       },
       trx
     );
@@ -760,6 +809,19 @@ export const rejectBidder = async ({ productId, sellerId, bidderId, reason }) =>
       );
 
     const autoBidResult = await recalcAutoBid(productId, trx, { product: { ...product, ...updated } });
+
+    try {
+      const rejectedUser = await findUserById(bidderId);
+      if (rejectedUser?.email) {
+        await sendBidRejectedNotification({
+          email: rejectedUser.email,
+          productName: product.name,
+          reason
+        });
+      }
+    } catch (err) {
+      console.warn('[mail] reject notification skipped', err.message);
+    }
 
     return {
       product: summarizeProduct(autoBidResult?.product || updated, product),

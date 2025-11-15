@@ -4,9 +4,20 @@ import https from 'node:https';
 import jwt from 'jsonwebtoken';
 import { URLSearchParams } from 'node:url';
 import { ApiError } from '../utils/response.js';
-import { createUser, findUserByEmail, updateUser } from '../repositories/user.repository.js';
-import { consumeActiveResetOtps, createUserOtp, findActiveResetToken, consumeTokenById } from '../repositories/userOtp.repository.js';
-import { sendPasswordResetEmail, sendRegistrationEmail } from './mail.service.js';
+import { createUser, findUserByEmail, updateUser, findUserById } from '../repositories/user.repository.js';
+import {
+  consumeActiveResetOtps,
+  createUserOtp,
+  findActiveResetToken,
+  consumeTokenById,
+  consumeActiveOtpsByPurpose,
+  findActiveOtpByPurpose
+} from '../repositories/userOtp.repository.js';
+import {
+  sendPasswordResetEmail,
+  sendRegistrationEmail,
+  sendRegistrationConfirmedEmail
+} from './mail.service.js';
 
 const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 10);
 const RECAPTCHA_ENDPOINT = {
@@ -15,6 +26,7 @@ const RECAPTCHA_ENDPOINT = {
 };
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
 const RESET_TOKEN_TTL_MINUTES = Number(process.env.RESET_TOKEN_TTL_MINUTES || 15);
+const REGISTRATION_OTP_TTL_MINUTES = Number(process.env.REGISTRATION_OTP_TTL_MINUTES || 30);
 
 const buildSafeUserPayload = (userRow) => ({
   id: userRow.id,
@@ -142,6 +154,28 @@ const verifyRecaptcha = async (captchaToken, remoteIp) => {
   }
 };
 
+const generateOtpCode = () => Math.floor(100000 + Math.random() * 900000).toString();
+
+const issueRegistrationOtp = async (userRow) => {
+  const expiresAt = new Date(Date.now() + REGISTRATION_OTP_TTL_MINUTES * 60 * 1000);
+  await consumeActiveOtpsByPurpose(userRow.id, 'REGISTER');
+  const code = generateOtpCode();
+  await createUserOtp({
+    user_id: userRow.id,
+    code,
+    purpose: 'REGISTER',
+    expires_at: expiresAt,
+    consumed_at: null
+  });
+  await sendRegistrationEmail({
+    email: userRow.email,
+    fullName: userRow.full_name,
+    code,
+    expiresAt
+  });
+  return { code, expiresAt };
+};
+
 export const registerUser = async ({
   email,
   password,
@@ -168,15 +202,44 @@ export const registerUser = async ({
     full_name: fullName,
     phone_number: phoneNumber || null,
     role: 'BIDDER',
-    status: 'CONFIRMED'
+    status: 'CREATED'
   });
 
-  await sendRegistrationEmail({
-    email,
-    fullName
+  await issueRegistrationOtp(createdUser);
+
+  return {
+    ...buildSafeUserPayload(createdUser),
+    requiresVerification: true
+  };
+};
+
+export const verifyRegistrationOtp = async ({ email, code }) => {
+  if (!email || !code) {
+    throw new ApiError(400, 'AUTH.MISSING_VERIFICATION', 'Email and verification code are required');
+  }
+
+  const user = await findUserByEmail(email);
+  if (!user) {
+    throw new ApiError(404, 'AUTH.USER_NOT_FOUND', 'Account not found for verification');
+  }
+
+  if (user.status === 'CONFIRMED') {
+    return buildAuthResponse(user);
+  }
+
+  const otp = await findActiveOtpByPurpose(code, 'REGISTER');
+  if (!otp || String(otp.user_id) !== String(user.id)) {
+    throw new ApiError(400, 'AUTH.INVALID_VERIFICATION', 'Verification code is invalid or expired');
+  }
+
+  await consumeTokenById(otp.id);
+  const [updatedUser] = await updateUser(user.id, { status: 'CONFIRMED' });
+  await sendRegistrationConfirmedEmail({
+    email: updatedUser.email,
+    fullName: updatedUser.full_name
   });
 
-  return buildSafeUserPayload(createdUser);
+  return buildAuthResponse(updatedUser);
 };
 
 export const authenticateUser = async ({ email, password }) => {
@@ -254,4 +317,29 @@ export const resetPassword = async ({ token, newPassword }) => {
 
   await consumeTokenById(otp.id);
   return { reset: true };
+};
+
+export const changePassword = async ({ userId, currentPassword, newPassword }) => {
+  if (!currentPassword || !newPassword) {
+    throw new ApiError(400, 'AUTH.MISSING_PASSWORD', 'Current and new passwords are required');
+  }
+
+  const user = await findUserById(userId);
+  if (!user) {
+    throw new ApiError(404, 'AUTH.USER_NOT_FOUND', 'User not found');
+  }
+
+  const passwordValid = await bcrypt.compare(currentPassword, user.password_hash);
+  if (!passwordValid) {
+    throw new ApiError(401, 'AUTH.INVALID_CREDENTIALS', 'Current password is incorrect');
+  }
+
+  if (currentPassword === newPassword) {
+    throw new ApiError(422, 'AUTH.PASSWORD_UNCHANGED', 'New password must be different');
+  }
+
+  const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+  await updateUser(userId, { password_hash: passwordHash });
+
+  return { updated: true };
 };

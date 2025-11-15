@@ -14,6 +14,7 @@ import SearchResultsPage from '../pages/SearchResultsPage'
 import ResetPasswordPage from '../pages/ResetPasswordPage'
 import OrdersPage from '../pages/OrdersPage'
 import OrderDetailPage from '../pages/OrderDetailPage'
+import VerifyEmailPage from '../pages/VerifyEmailPage'
 
 const router = createBrowserRouter([
   {
@@ -39,6 +40,10 @@ const router = createBrowserRouter([
       {
         path: 'reset-password',
         element: <ResetPasswordPage />,
+      },
+      {
+        path: 'verify-email',
+        element: <VerifyEmailPage />,
       },
       {
         path: 'products',

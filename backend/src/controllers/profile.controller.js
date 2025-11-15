@@ -3,9 +3,11 @@ import { getProfile as getProfileService, updateProfile as updateProfileService 
 import { sendSuccess, ApiError } from '../utils/response.js';
 
 const updateProfileSchema = Joi.object({
+  email: Joi.string().email().optional(),
   fullName: Joi.string().min(2).max(120).optional(),
   phoneNumber: Joi.string().max(30).allow('', null),
-  address: Joi.string().max(255).allow('', null)
+  address: Joi.string().max(255).allow('', null),
+  dateOfBirth: Joi.date().iso().allow(null)
 }).min(1);
 
 export const getProfile = async (req, res, next) => {
@@ -36,7 +38,8 @@ export const updateProfile = async (req, res, next) => {
     const sanitized = {
       ...value,
       phoneNumber: value.phoneNumber === '' ? null : value.phoneNumber,
-      address: value.address === '' ? null : value.address
+      address: value.address === '' ? null : value.address,
+      dateOfBirth: value.dateOfBirth || null
     };
 
     const updatedUser = await updateProfileService(req.user.id, sanitized);

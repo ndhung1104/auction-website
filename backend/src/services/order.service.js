@@ -11,7 +11,7 @@ import {
   upsertRating
 } from '../repositories/order.repository.js';
 import { findProductByIdWithSeller } from '../repositories/product.repository.js';
-import { sendOrderNotification } from './mail.service.js';
+import { sendOrderNotification, sendAuctionResultNotification } from './mail.service.js';
 import { findUserById } from '../repositories/user.repository.js';
 
 const ensureParticipant = (order, userId) => {
@@ -26,7 +26,7 @@ const ensureParticipant = (order, userId) => {
 const syncOrdersForUser = async (userId) => {
   const pendingProducts = await db('products as p')
     .leftJoin('orders as o', 'o.product_id', 'p.id')
-    .select('p.id', 'p.seller_id', 'p.current_bidder_id', 'p.current_price')
+    .select('p.id', 'p.seller_id', 'p.current_bidder_id', 'p.current_price', 'p.name')
     .where('p.status', 'ENDED')
     .whereNotNull('p.current_bidder_id')
     .whereNull('o.id')
@@ -44,16 +44,20 @@ const syncOrdersForUser = async (userId) => {
         productId: row.id,
         sellerId: row.seller_id,
         winnerId: row.current_bidder_id,
-        finalPrice: Number(row.current_price)
+        finalPrice: Number(row.current_price),
+        productName: row.name
       })
     )
   );
 };
 
-export const ensureOrderForProduct = async ({ productId, sellerId, winnerId, finalPrice }, trx = null) => {
+export const ensureOrderForProduct = async (
+  { productId, sellerId, winnerId, finalPrice, productName },
+  trx = null
+) => {
   if (!trx) {
     return db.transaction((innerTrx) =>
-      ensureOrderForProduct({ productId, sellerId, winnerId, finalPrice }, innerTrx)
+      ensureOrderForProduct({ productId, sellerId, winnerId, finalPrice, productName }, innerTrx)
     );
   }
 
@@ -69,6 +73,30 @@ export const ensureOrderForProduct = async ({ productId, sellerId, winnerId, fin
     },
     trx
   );
+  try {
+    const [seller, winner] = await Promise.all([
+      findUserById(sellerId),
+      findUserById(winnerId)
+    ]);
+    const productLabel = productName || `Product #${productId}`;
+    if (seller?.email) {
+      await sendAuctionResultNotification({
+        email: seller.email,
+        productName: productLabel,
+        outcome: 'ended with a winning bidder'
+      });
+    }
+    if (winner?.email) {
+      await sendAuctionResultNotification({
+        email: winner.email,
+        productName: productLabel,
+        outcome: 'has been awarded to you. Please complete payment promptly.'
+      });
+    }
+  } catch (err) {
+    console.warn('[mail] auction result notification skipped', err.message);
+  }
+
   return created;
 };
 
@@ -157,7 +185,18 @@ export const cancelOrder = async ({ orderId, userId, reason }) => {
   if (order.status === 'COMPLETED') {
     throw new ApiError(400, 'ORDERS.ALREADY_COMPLETED', 'Completed orders cannot be cancelled');
   }
-  return changeOrderStatus({ orderId, userId, nextStatus: 'CANCELLED', reason });
+  const sellerInitiated = String(order.seller_id) === String(userId);
+  const payload = await changeOrderStatus({ orderId, userId, nextStatus: 'CANCELLED', reason });
+  if (sellerInitiated) {
+    await upsertRating({
+      orderId,
+      raterId: userId,
+      ratedUserId: order.winner_id,
+      score: -1,
+      comment: reason || 'Buyer failed to pay'
+    });
+  }
+  return payload;
 };
 
 export const leaveRating = async ({ orderId, userId, score, comment }) => {

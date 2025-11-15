@@ -27,8 +27,11 @@ export default function RegisterPage() {
     setAlert(null)
     try {
       await registerUser(form)
-      setAlert({ type: 'success', message: 'Registration successful. You can now log in.' })
-      setTimeout(() => navigate('/login'), 1200)
+      setAlert({
+        type: 'success',
+        message: 'Registration successful. Enter the OTP we emailed to verify your account.'
+      })
+      setTimeout(() => navigate('/verify-email', { state: { email: form.email } }), 1200)
     } catch (error) {
       setAlert({
         type: 'danger',

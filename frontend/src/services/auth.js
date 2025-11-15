@@ -15,3 +15,11 @@ export function requestPasswordReset(payload) {
 export function resetPassword(payload) {
   return apiClient.post('/auth/reset-password', payload)
 }
+
+export function verifyEmail(payload) {
+  return apiClient.post('/auth/verify-email', payload)
+}
+
+export function changePassword(payload) {
+  return apiClient.post('/auth/change-password', payload)
+}
