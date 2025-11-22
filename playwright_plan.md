@@ -1,105 +1,102 @@
-You are a codebase automation agent (Codex) working in an existing fullstack repository.
+﻿# Playwright E2E Setup Plan
 
-## Absolute constraints (very important)
+## Absolute Constraints (Very Important)
 
-You are working in **file-edit–only mode**:
+You are working in **file-edit-only mode**:
 
-- ❌ Do NOT run any shell commands (no `npm`, `npx`, `playwright`, `node`, etc.).
-- ❌ Do NOT install packages or tools.
-- ❌ Do NOT start dev servers or tests.
-- ✅ Only **read, create, and edit files** in the repo.
-- ✅ Your goal is to fully wire up configuration & test code so that a human can later run the commands successfully.
-
-If something “needs to be installed” (like `@playwright/test`), you must:
-- Only **edit `package.json`** to include the dependency and scripts.
-- Do NOT execute any install commands yourself.
-
-Do NOT touch `node_modules` in any way.
+- Do NOT run any shell commands (no `npm`, `npx`, `playwright`, `node`, etc.).
+- Do NOT install packages or tools.
+- Do NOT start dev servers or tests.
+- Only **read, create, and edit files** in the repo.
+- Your goal is to wire up configuration and test code so a human can run the commands later.
+- If something needs to be installed (for example `@playwright/test`):
+  - Only edit the relevant `package.json` to add the dependency and scripts.
+  - Do NOT execute installation commands yourself.
+- Do NOT touch `node_modules/` in any way.
 
 ---
 
 ## Goal
 
-Set up **Playwright E2E testing** for the frontend, by:
+Set up **Playwright E2E testing** for the frontend by completing all of the following:
 
-1. Adding the right Playwright dependency and `test:e2e` scripts to the correct `package.json`.
-2. Creating a `playwright.config.(ts|js)` file.
-3. Creating E2E tests for the main flows:
+1. Add the Playwright dependency and the `test:e2e` scripts to the correct `package.json`.
+2. Create a `playwright.config.(ts|js)` file.
+3. Add E2E tests covering:
    - Authentication (login, register, forgot password).
-   - Product listing (sorting + pagination).
-   - Product detail (if applicable).
-4. Creating a **short documentation file** explaining how a human should:
-   - Install dependencies.
-   - Start backend + frontend.
-   - Run Playwright tests.
+   - Product listing (sorting and pagination).
+   - Product detail (if the page exists).
+4. Write a short documentation file explaining how to install deps, start the apps, and run the Playwright suite.
 
-You must **only modify code and config files**. Do not run anything.
+Only modify code and configuration files. Do not run any commands while doing this work.
 
 ---
 
-## Project assumptions (adapt to actual code)
+## Project Assumptions (Adapt to Actual Code)
 
-From earlier backend work, the project likely has:
-
-- Backend: Node + Express, with endpoints such as:
+- Backend: Node + Express with endpoints similar to:
   - `POST /api/auth/register`
   - `POST /api/auth/login`
   - `POST /api/auth/forgot-password`
-  - `GET /api/products` with `status='ACTIVE'`, `categoryId`, `sort`, `page`, `limit`, and meta `{ page, limit, total, totalPages, sort: { field, direction } }`.
+  - `GET /api/products` supporting `status`, `categoryId`, `sort`, `page`, and `limit`, returning meta `{ page, limit, total, totalPages, sort: { field, direction } }`.
 - Frontend: React SPA consuming these APIs.
 
-You must inspect the repo and adapt to actual filenames/routes, but keep the above in mind for test scenarios.
+Investigate the repository to confirm actual filenames, routes, and behavior before writing tests.
 
 ---
 
-## Step 1 – Detect project structure (read-only)
+## Requirement Trace (project_plan_raw.md)
 
-1. Locate the relevant `package.json` files:
-   - Root and/or `frontend/`, `apps/*/`, etc.
-2. Identify the **frontend app package** where E2E tests should live:
-   - If there is a dedicated frontend package (e.g. `frontend/package.json`), use that.
-   - Otherwise, use the root `package.json`.
-3. Determine:
-   - How the frontend is started (e.g. `npm run dev`, `npm run start`, Vite, CRA, etc.).
-   - The typical frontend base URL (e.g. `http://localhost:5173` or `http://localhost:3000`).
+`project_plan_raw.md` enumerates features by week. The Playwright plan must verify the following deliverables end-to-end:
 
-Do NOT modify files in this step — just analyze internally, then proceed.
+- **Foundation (Week 1)**: Core layout, navigation, category dropdown, search box, timezone/currency helpers, and the presence of `Home`, `Products`, `Login`, and `Register` routes.
+- **Week 2 (Auth & Basic View)**: Register/Login/Forgot Password pages, categories rendered in the navbar, `ProductListPage` with pagination + sorting.
+- **Week 3 (Homepage & Detail)**: Homepage hero + curated sections (top price, ending soon, most bidded), `ProductDetailPage` with badges, bid UIs, Q&A placeholders, watchlist toggle, and related products list.
+- **Week 4 (Seller & Profile)**: `ProfilePage` for bidders, `/sell/create` flow for sellers with upload form, and navbar links that change by role.
+- **Week 5 (Bidding & Auto-Bid)**: Manual bid form, auto-bid registration form, buy-now CTA, and watchlist/question interactions on the product detail view.
+- **Week 6 (Admin & Advanced Management)**: Admin dashboard entry point plus seller/bidder tooling (watchlist, Q&A buttons, seller-only nav items).
+- **Week 7 (Search, Reset, Orders)**: Search bar and results page, reset password entry point, multi-step order workflow surface on `/orders`.
+- **Week 8 (Testing & Seeding)**: Seeded fixtures for multiple products so pagination + sorting + bid history make sense.
+- **Week 9 (Demo polish)**: Admin-only features (reject bidder, append description) appear in UI, seller-only actions show up, card metadata such as buy-now price/highest bidder/remaining time is visible.
+
+Every Playwright spec referenced below should assert at least one UI artifact tied to these requirements.
 
 ---
 
-## Step 2 – Add Playwright dependency & scripts (edit only)
+### Step 1 - Detect project structure (read-only)
 
-In the chosen `package.json` (root or frontend package):
+1. Locate all relevant `package.json` files (root, `frontend/`, `apps/*/`, etc.).
+2. Identify the frontend package where the E2E tests belong. Use that package (for example `frontend/package.json`) unless there is only a root package.
+3. Determine how the frontend is started (e.g., `npm run dev`, `npm run start`, Vite, CRA) and what base URL it uses (e.g., `http://localhost:5173` or `http://localhost:3000`).
 
-1. Add `@playwright/test` as a `devDependency` (if not already present).  
-   - Use a recent stable version (for example `"@playwright/test": "^1.48.0"`).
-   - Do NOT run any install commands; just edit the file.
+Do **not** modify files in this step; only analyze.
 
-2. Add scripts (merging with existing ones, not deleting anything):
+---
 
-   ```jsonc
-   "scripts": {
-     // keep all existing scripts
-     "test:e2e": "playwright test",
-     "test:e2e:ui": "playwright test --ui"
-   }
-Make sure you keep valid JSON and do not break the structure.
+### Step 2 – Add Playwright dependency and scripts (edit only)
 
-Step 3 – Create Playwright config file
+Inside the chosen `package.json`:
 
-In the same package where you updated package.json, create:
+1. Add `@playwright/test` as a `devDependency` (use a recent stable release such as `"^1.48.0"`). Do not run installation commands.
+2. Merge the following scripts with any existing ones:
 
-playwright.config.ts if the repo already uses TypeScript there,
-otherwise playwright.config.js.
+```jsonc
+"scripts": {
+  // keep existing scripts
+  "test:e2e": "playwright test",
+  "test:e2e:ui": "playwright test --ui"
+}
+```
 
-Config requirements:
+Ensure the JSON stays valid.
 
-Import from @playwright/test.
+---
 
-Set testDir to a clean folder, e.g. "tests/e2e".
+### Step 3 – Create the Playwright config file
 
-Configure at least one project, "chromium":
+Create `playwright.config.ts` if the package already uses TypeScript, otherwise `playwright.config.js`. Place it next to the chosen `package.json` and configure it as follows:
 
+```js
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
@@ -109,7 +106,7 @@ export default defineConfig({
     timeout: 5_000,
   },
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:5173', // adjust default based on frontend
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:5173',
     headless: true,
   },
   projects: [
@@ -119,115 +116,62 @@ export default defineConfig({
     },
   ],
 });
+```
 
+Adjust `baseURL` so that it matches the frontend dev server in this repo (Vite usually uses `http://localhost:5173`, CRA often uses `http://localhost:3000`). If the repo already exposes an env var for the frontend URL, follow that pattern and document it later.
 
-Adjust baseURL default according to the frontend dev URL used in this repo:
+---
 
-Vite: usually http://localhost:5173.
+### Step 4 – Create the E2E test directory and helpers
 
-CRA / custom: often http://localhost:3000.
+1. Create `tests/e2e/` alongside the Playwright config.
+2. Inside it, add `tests/e2e/test-utils.(ts|js)` with shared helpers, including a login helper that:
+   - Navigates to the login route defined in the frontend router.
+   - Fills the email and password fields using stable selectors (`getByLabelText`, `getByRole`, or `data-testid`).
+   - Submits the form and waits for the logged-in state (navigation or visible indicator).
+3. If you need reliable selectors, minimally add `data-testid` attributes to the frontend components. Do not refactor components heavily; add only what is necessary.
 
-If the repo already defines an env var for frontend URL, prefer that pattern and document it later in the docs.
+---
 
-Step 4 – Create E2E test directory and helper
+### Step 5 – Implement concrete Playwright tests
 
-Create directory:
+Create the following spec files in `tests/e2e/` (match the language you chose for the config):
 
-tests/e2e/ at the same level as playwright.config.(ts|js).
+#### 5.1 `tests/e2e/auth.spec.(ts|js)`
 
-Inside it, create:
+Scenarios to cover:
 
-tests/e2e/test-utils.(ts|js) with helpers:
+- **Login success**
+  - Go to the login page.
+  - Fill valid credentials for a known seeded user (document this user later).
+  - Submit and assert that the app navigates to the logged-in area (home/dashboard) and shows a logged-in indicator (user info, logout button, etc.).
+- **Login failure (invalid credentials)**
+  - Submit the form with the wrong password.
+  - Assert that the error message shown by the UI appears.
+- **Forgot password UI**
+  - Navigate to the forgot-password page, fill the email, and submit.
+  - Assert that the UI displays the expected success or info message (e.g., “If the account exists…“).
 
-A login helper that:
+Do not rely on backend internals; assert only what the UI exposes.
 
-Navigates to the login page route (deduce route from frontend router).
+#### 5.2 `tests/e2e/register.spec.(ts|js)`
 
-Fills email/password fields (use stable selectors: getByLabelText, getByRole, or data-testid if present).
+- **Happy-path registration**
+  - Visit the register page, fill all required fields (email, password, full name, phone, etc.).
+  - If the form requires a RECAPTCHA bypass token, provide the expected token from the backend/test env.
+  - Submit and assert the success path (toast, redirect, etc.).
+- **Duplicate email error**
+  - Attempt to register again with the same email.
+  - Assert that the UI surfaces the error that the backend returns (e.g., `AUTH.EMAIL_EXISTS` message or the UI’s generic error state).
 
-Submits the form and waits for successful navigation.
+#### 5.3 `tests/e2e/products-list.spec.(ts|js)`
 
-If you need data-testid attributes to make selectors stable, minimally add them to frontend components (e.g. login form inputs/buttons). Do not refactor components heavily — only small attribute additions.
+Use the expected `/api/products` behavior for reference:
 
-Step 5 – Implement concrete Playwright tests
-
-Create these spec files in tests/e2e/ (TypeScript or JS matching the config):
-
-5.1 tests/e2e/auth.spec.(ts|js)
-
-Scenarios:
-
-Login success
-
-Go to login page.
-
-Fill valid email/password for a known test user.
-
-Assume a seeded user or document later that tests expect such a user.
-
-Submit.
-
-Assert:
-
-The URL changes to a logged-in area (e.g. /, /dashboard, etc.).
-
-Some logged-in indicator appears (user name, logout button, etc.).
-
-Login failure (invalid credentials)
-
-Use a wrong password.
-
-Assert an error message is visible (match actual text from the app).
-
-Forgot password UI
-
-Navigate to forgot password page.
-
-Fill email.
-
-Submit.
-
-Assert:
-
-A success toast or message like “If the account exists, password reset instructions have been recorded” (adjust to actual UI text).
-
-Do NOT rely on backend internals; just ensure UI reacts correctly.
-
-5.2 tests/e2e/register.spec.(ts|js)
-
-Scenarios:
-
-Happy path registration
-
-Go to register page.
-
-Fill email, password, full name, phone.
-
-If the registration form sends a RECAPTCHA bypass token (e.g. captchaToken), fill it appropriately (you may assume there is a bypass token in .env used by the backend).
-
-Submit.
-
-Assert a success state: success message and/or redirect, according to actual UI.
-
-Duplicate email error
-
-Attempt to register again with the same email.
-
-Assert the app shows an error message that matches the backend’s AUTH.EMAIL_EXISTS handling (or the UI’s generic error).
-
-5.3 tests/e2e/products-list.spec.(ts|js)
-
-Based on the existing backend /api/products behavior:
-
-It returns only ACTIVE products.
-
-It supports query ?sort=end_at,desc&page=1&limit=5.
-
-It returns a root-level meta object:
-
+```json
 {
   "success": true,
-  "data": { "items": [ ... ] },
+  "data": { "items": [/* ... */] },
   "meta": {
     "page": 1,
     "limit": 5,
@@ -239,151 +183,124 @@ It returns a root-level meta object:
     }
   }
 }
+```
 
+Tests to add:
 
-Tests:
+- List renders products: navigate to the product list page and assert that product cards/rows appear (showing only ACTIVE items if the UI labels that state).
+- Sorting and pagination wiring: trigger the UI control that corresponds to `sort=end_at,desc` (e.g., “Ending soon”), move to the next page via pagination, then assert that:
+  - The URL reflects the expected query params if the frontend syncs them (`?sort=end_at,desc&page=2`).
+  - The visible results change between pages.
 
-List renders products
+If the UI lacks sorting or pagination, adapt the tests to what is actually implemented; do not invent behavior.
 
-Navigate to the product list page (deduce route).
+#### 5.4 `tests/e2e/product-detail.spec.(ts|js)` (optional but recommended)
 
-Assert that product cards/rows render.
+If a product detail page exists:
 
-Optionally check that only products with visible “ACTIVE” state are shown if the UI displays that status.
+- Click a product from the list and assert that the detail URL contains the slug or ID.
+- Verify that the detail page shows the correct name, price, and relevant actions (Bid/Buy now) for ACTIVE products.
+- Assert that manual bid, auto-bid, watchlist, buy-now, and Q&A widgets render to satisfy Weeks 3–5 + 6 requirements.
 
-Sorting & pagination wiring
+---
 
-Use the UI to:
+#### 5.5 `tests/e2e/navigation.spec.(ts|js)`
 
-Apply a sort that corresponds to end_at,desc (e.g. “Ending soon”).
+- Covers Week 1/2 navbar requirements:
+  - Anonymous users see `Home`, `Products`, `Login`, `Register`, `Categories`, and the search form.
+  - After bidder login the navbar should expose `Profile`, `Orders`, `Logout`, and hide seller/admin-only entries.
+  - Verifies category dropdown + search controls exist and that the layout honors timezone/currency formatting cues on visible cards.
 
-Navigate to next page via pagination controls.
+#### 5.6 `tests/e2e/search.spec.(ts|js)`
 
-Assert:
+- Exercises the global search UX from Week 7: submit a keyword, ensure the router navigates to `/search?q=value`, and assert that product cards render with the same visual treatment as the listing grid.
 
-URL reflects the expected query parameters, if the frontend syncs them (e.g. ?sort=end_at,desc&page=2).
+#### 5.7 `tests/e2e/profile.spec.(ts|js)`
 
-The visible list changes between pages (e.g. different product names).
+- Authenticated bidder journey for Week 4 + Week 7:
+  - After login, visit `/profile` and ensure profile, watchlist, bidder stats, and seller request controls render.
+  - Visit `/orders` and confirm the multi-step order list/table is visible together with reset-password entry points or helpful CTAs.
 
-If sorting/pagination are not visible in the UI, do not fabricate UI; adapt tests to what actually exists.
+#### 5.8 `tests/e2e/seller.spec.(ts|js)`
 
-5.4 tests/e2e/product-detail.spec.(ts|js) (optional but recommended)
+- Seller-only coverage for Week 4/6:
+  - Login with a seeded seller, verify navbar shows `Create product`, click it, and confirm the listing form (with multi-image upload, buy-now, auto-extend, auto-bid toggle) renders.
+  - Optionally assert that seller-only controls (append description, reject bidder) appear on their product detail page if seeded data exposes them.
 
-If the app has a product detail page:
+#### 5.9 `tests/e2e/admin.spec.(ts|js)`
 
-From the list, click a product.
+- Administrative tooling for Week 6/9:
+  - Login as the seeded admin account, confirm the `Admin` link appears, and navigate to `/admin` to ensure dashboard widgets/tables render for categories/products/users/seller requests.
+  - If seller/bidder rejection controls exist, assert that the view exposes them (even if they are disabled in test data).
 
-Assert:
+---
 
-URL includes the product’s slug or id.
+### Step 6 - Document how to run Playwright
 
-The detail page shows correct name/price.
+Create `docs/playwright-e2e.md` (create the `docs/` folder at the repo root if needed) with the following sections:
 
-If applicable, “Bid” / “Buy now” buttons exist and are enabled for ACTIVE products.
+- **Prerequisites**: Node.js version, backend/frontend readiness, required environment variables (`JWT_SECRET`, `RECAPTCHA_BYPASS_TOKEN`, etc., plus optional `PLAYWRIGHT_BASE_URL`).
+- **Install dependencies** (instructions for humans):
 
-Step 6 – Add documentation file for how to run Playwright
+  ```bash
+  npm install
+  npx playwright install
+  ```
 
-Create a markdown file, for example:
+  (Run these inside the package where Playwright was configured.)
 
-docs/playwright-e2e.md
-(If a docs/ folder doesn’t exist, create it at repo root.)
+- **Run the apps** in separate terminals:
 
-Contents (adapt to actual scripts):
+  ```bash
+  # Terminal 1 – backend
+  cd backend
+  npm run dev
 
-Prerequisites
+  # Terminal 2 – frontend
+  cd frontend
+  npm run dev
+  ```
 
-Node.js version.
+  Mention any monorepo scripts if they exist.
 
-Backend and frontend must be configured and runnable.
+- **Run the Playwright suite**:
 
-Any required env vars:
+  ```bash
+  npm run test:e2e       # headless
+  npm run test:e2e:ui    # with UI
+  ```
 
-JWT_SECRET, RECAPTCHA_BYPASS_TOKEN, etc.
+- **Config notes**: explain how `baseURL` is derived (from `PLAYWRIGHT_BASE_URL` or the default in `playwright.config.*`) and document any test users the specs depend on.
+- **How to add more tests**: include a short example snippet (see below) and note the folder to place new specs in.
 
-PLAYWRIGHT_BASE_URL (optional override for baseURL).
+Example snippet to include:
 
-Install dependencies (these are instructions for a human, not actions you perform):
-
-# From the package where Playwright was configured
-npm install
-npx playwright install
-
-
-Run the app(s) (again, instructions only):
-
-# Terminal 1 – backend
-cd backend
-npm run dev
-
-# Terminal 2 – frontend
-cd frontend
-npm run dev
-
-
-Or equivalent npm run dev from root if the repo uses a monorepo dev script.
-
-Run Playwright tests (headless)
-
-npm run test:e2e
-
-
-Run Playwright tests with UI
-
-npm run test:e2e:ui
-
-
-Config notes
-
-Explain how baseURL is determined:
-
-By PLAYWRIGHT_BASE_URL env var OR
-
-By default value from playwright.config.(ts|js).
-
-Describe any test users that the tests assume (e.g. seeded user tester@example.com with known password).
-
-How to add more tests
-
-Short example of a new spec file in tests/e2e:
-
+```js
 import { test, expect } from '@playwright/test';
 
 test('example home page test', async ({ page }) => {
   await page.goto('/');
   await expect(page).toHaveTitle(/Your App Title/);
 });
+```
 
-Step 7 – (Optional) Update checklist/task file
+---
 
-If the repo contains a checklist file such as task_list.md, and there is an item for setting up Playwright / E2E tests:
+## Final Requirement
 
-After completing everything above, mark that item as done, e.g.:
+When all steps are complete, provide a short summary to the hooman reviewer detailing:
 
-- [x] Setup Playwright E2E tests (auth + products)
+- Which files were created.
+- Which files were modified.
+- Which scripts are now available.
 
+Remind them to run:
 
-Do not mark unrelated items as done.
-
-Final requirement
-
-When you finish:
-
-Summarize in a short message (for the human) exactly:
-
-Which files you created.
-
-Which files you modified.
-
-What scripts are now available.
-
-Do not show extremely long file contents unless necessary; focus on diffs or key snippets.
-
-Remind the human that they must run:
-
+```bash
 npm install
-
 npx playwright install
+```
 
-Then start backend/frontend and run npm run test:e2e.
+Then start the backend and frontend, and finally run `npm run test:e2e` (or `npm run test:e2e:ui`).
 
-Remember: do not run any commands yourself; only edit files.
+**Remember:** do not run any commands yourself; only edit files.

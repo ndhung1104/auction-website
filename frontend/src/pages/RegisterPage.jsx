@@ -33,9 +33,11 @@ export default function RegisterPage() {
       })
       setTimeout(() => navigate('/verify-email', { state: { email: form.email } }), 1200)
     } catch (error) {
+      const message =
+        error?.status === 409 ? 'This email is already registered.' : error?.message || 'Unable to register.'
       setAlert({
         type: 'danger',
-        message: error.message || 'Unable to register. Please try again.'
+        message
       })
     } finally {
       setSubmitting(false)

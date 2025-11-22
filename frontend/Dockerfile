@@ -1,5 +1,5 @@
 # Sử dụng base image Node.js 22
-FROM node:22-alpine
+FROM node:22-bullseye
 
 # Set thư mục làm việc
 WORKDIR /usr/src/app
