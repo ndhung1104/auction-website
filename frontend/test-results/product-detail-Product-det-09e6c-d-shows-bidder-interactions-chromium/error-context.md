@@ -1,0 +1,115 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - navigation [ref=e3]:
+    - generic [ref=e4]:
+      - link "AuctionApp" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e6]:
+        - list [ref=e7]:
+          - listitem [ref=e8]:
+            - link "Home" [ref=e9] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=e10]:
+            - link "Products" [ref=e11] [cursor=pointer]:
+              - /url: /products
+          - listitem [ref=e12]:
+            - link "Profile" [ref=e13] [cursor=pointer]:
+              - /url: /profile
+          - listitem [ref=e14]:
+            - link "Orders" [ref=e15] [cursor=pointer]:
+              - /url: /orders
+          - listitem [ref=e16]:
+            - link "Create product" [ref=e17] [cursor=pointer]:
+              - /url: /sell/create
+          - listitem [ref=e18]:
+            - button "Categories" [ref=e19] [cursor=pointer]
+        - list [ref=e20]:
+          - listitem [ref=e21]:
+            - generic [ref=e22]:
+              - searchbox "Search products..." [ref=e23]
+              - button "Go" [ref=e24] [cursor=pointer]
+          - listitem [ref=e25]: Bidder_W6
+          - listitem [ref=e26]:
+            - button "Logout" [ref=e27] [cursor=pointer]
+  - main [ref=e28]:
+    - generic [ref=e29]:
+      - generic [ref=e30]:
+        - generic [ref=e31]:
+          - heading "Vintage camera kit" [level=1] [ref=e32]
+          - generic [ref=e33]: Auto-bid supported
+        - button "Add to watchlist" [ref=e34] [cursor=pointer]
+      - paragraph [ref=e35]: "Auction ends at 15:56 15/11/2025 · Watchers: 0"
+      - generic [ref=e36]:
+        - generic [ref=e37]:
+          - img "Vintage camera kit" [ref=e39]
+          - generic [ref=e40]:
+            - heading "Description" [level=4] [ref=e41]
+            - paragraph [ref=e42]: Vintage camera kit with lenses and bag.
+        - generic [ref=e43]:
+          - generic [ref=e45]:
+            - 'heading "Current price: 900.000 ₫" [level=4] [ref=e46]'
+            - paragraph [ref=e47]: "Start price: 900.000 ₫"
+            - paragraph [ref=e48]: "Price step: 50.000 ₫"
+            - paragraph [ref=e49]: "Buy now: 2.000.000 ₫"
+            - paragraph [ref=e50]: "Total bids: 0"
+            - paragraph [ref=e51]: "Status: ACTIVE"
+            - button "Buy now for 2.000.000 ₫" [disabled]
+            - generic [ref=e52]: You cannot buy this product now.
+          - generic [ref=e54]:
+            - heading "Manual bid" [level=5] [ref=e55]
+            - paragraph [ref=e56]: You must be a bidder to place bids.
+            - generic [ref=e57]:
+              - generic [ref=e58]:
+                - generic [ref=e59]: Enter your bid amount
+                - spinbutton "Enter your bid amount" [disabled] [ref=e60]: "950000"
+                - generic [ref=e61]: "Minimum next bid: 950.000 ₫"
+              - button "Place bid" [disabled]
+          - generic [ref=e63]:
+            - heading "Auto-bid" [level=5] [ref=e64]
+            - paragraph [ref=e65]: You cannot register auto-bid for this product.
+            - generic [ref=e66]:
+              - generic [ref=e67]:
+                - generic [ref=e68]: Maximum amount you are willing to pay
+                - spinbutton "Maximum amount you are willing to pay" [disabled] [ref=e69]: "900000"
+                - generic [ref=e70]: "Minimum auto-bid: 900.000 ₫"
+              - button "Save auto-bid" [disabled]
+          - generic [ref=e72]:
+            - heading "Seller" [level=5] [ref=e73]
+            - paragraph [ref=e74]: seller_w7
+            - generic [ref=e75]: "Rating: +1 / -0 (score 1)"
+      - generic [ref=e76]:
+        - generic [ref=e77]:
+          - heading "Bid history" [level=3] [ref=e78]
+          - generic [ref=e79]: Latest 20 entries
+        - generic [ref=e80]: No bids yet.
+      - generic [ref=e81]:
+        - heading "Questions & Answers" [level=3] [ref=e82]
+        - generic [ref=e83]: No questions yet.
+      - generic [ref=e84]:
+        - heading "Related products" [level=3] [ref=e85]
+        - generic [ref=e88]:
+          - generic [ref=e89]:
+            - img "Retro gaming console" [ref=e90]
+            - generic [ref=e91]: Auto-bid
+          - generic [ref=e92]:
+            - heading "Retro gaming console" [level=5] [ref=e93]:
+              - link "Retro gaming console" [ref=e94] [cursor=pointer]:
+                - /url: /products/38
+            - paragraph [ref=e95]:
+              - text: "Current price:"
+              - strong [ref=e96]: 900.000 ₫
+            - paragraph [ref=e97]:
+              - text: "Highest bidder:"
+              - strong [ref=e98]: No bids yet
+            - paragraph [ref=e99]: "Bids: 0"
+            - paragraph [ref=e100]:
+              - text: "Buy now:"
+              - strong [ref=e101]: 2.000.000 ₫
+            - generic [ref=e102]:
+              - paragraph [ref=e103]: Posted on 15:56 14/11/2025
+              - paragraph [ref=e104]: Auction ended
+  - contentinfo [ref=e105]:
+    - generic [ref=e107]: © 2025 AuctionApp — All rights reserved.
+```

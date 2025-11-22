@@ -1,0 +1,55 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - navigation [ref=e3]:
+    - generic [ref=e4]:
+      - link "AuctionApp" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e6]:
+        - list [ref=e7]:
+          - listitem [ref=e8]:
+            - link "Home" [ref=e9] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=e10]:
+            - link "Products" [ref=e11] [cursor=pointer]:
+              - /url: /products
+          - listitem [ref=e12]:
+            - button "Categories" [ref=e13] [cursor=pointer]
+        - list [ref=e14]:
+          - listitem [ref=e15]:
+            - generic [ref=e16]:
+              - searchbox "Search products..." [ref=e17]
+              - button "Go" [ref=e18] [cursor=pointer]
+          - listitem [ref=e19]:
+            - link "Login" [ref=e20] [cursor=pointer]:
+              - /url: /login
+          - listitem [ref=e21]:
+            - link "Register" [ref=e22] [cursor=pointer]:
+              - /url: /register
+  - main [ref=e23]:
+    - generic [ref=e24]:
+      - generic [ref=e25]:
+        - heading "Discover top auctions" [level=1] [ref=e26]
+        - paragraph [ref=e27]: "Browse curated highlights: premium items, auctions ending soon, and the most competitive bidding wars."
+      - generic [ref=e28]:
+        - generic [ref=e29]:
+          - heading "Top price highlights" [level=2] [ref=e30]
+          - link "View all →" [ref=e31] [cursor=pointer]:
+            - /url: /products
+        - generic [ref=e32]: Loading top price highlights…
+      - generic [ref=e33]:
+        - generic [ref=e34]:
+          - heading "Ending soon" [level=2] [ref=e35]
+          - link "View all →" [ref=e36] [cursor=pointer]:
+            - /url: /products
+        - generic [ref=e37]: Loading ending soon…
+      - generic [ref=e38]:
+        - generic [ref=e39]:
+          - heading "Most bidded items" [level=2] [ref=e40]
+          - link "View all →" [ref=e41] [cursor=pointer]:
+            - /url: /products
+        - generic [ref=e42]: Loading most bidded items…
+  - contentinfo [ref=e43]:
+    - generic [ref=e45]: © 2025 AuctionApp — All rights reserved.
+```

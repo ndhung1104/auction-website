@@ -1,0 +1,54 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - navigation [ref=e3]:
+    - generic [ref=e4]:
+      - link "AuctionApp" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e6]:
+        - list [ref=e7]:
+          - listitem [ref=e8]:
+            - link "Home" [ref=e9] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=e10]:
+            - link "Products" [ref=e11] [cursor=pointer]:
+              - /url: /products
+          - listitem [ref=e12]:
+            - button "Categories" [ref=e13] [cursor=pointer]
+        - list [ref=e14]:
+          - listitem [ref=e15]:
+            - generic [ref=e16]:
+              - searchbox "Search products..." [ref=e17]
+              - button "Go" [ref=e18] [cursor=pointer]
+          - listitem [ref=e19]:
+            - link "Login" [ref=e20] [cursor=pointer]:
+              - /url: /login
+          - listitem [ref=e21]:
+            - link "Register" [ref=e22] [cursor=pointer]:
+              - /url: /register
+  - main [ref=e23]:
+    - generic [ref=e25]:
+      - heading "Create an Account" [level=1] [ref=e26]
+      - alert [ref=e27]: This email is already registered.
+      - generic [ref=e28]:
+        - generic [ref=e29]:
+          - generic [ref=e30]: Full name
+          - textbox "Full name" [ref=e31]: Playwright Bidder
+        - generic [ref=e32]:
+          - generic [ref=e33]: Email
+          - textbox "Email" [ref=e34]: pw-bidder-1763799430073-br7lmu@example.com
+        - generic [ref=e35]:
+          - generic [ref=e36]: Phone number
+          - textbox "Phone number" [ref=e37]: "0909000111"
+        - generic [ref=e38]:
+          - generic [ref=e39]: Password
+          - textbox "Password" [ref=e40]: PlaywrightPass123!
+        - generic [ref=e41]:
+          - generic [ref=e42]: Captcha token
+          - textbox "Captcha token" [ref=e43]: local-dev
+          - generic [ref=e44]: Use your reCAPTCHA token or the configured bypass token.
+        - button "Register" [ref=e45] [cursor=pointer]
+  - contentinfo [ref=e46]:
+    - generic [ref=e48]: © 2025 AuctionApp — All rights reserved.
+```

@@ -1,0 +1,423 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - navigation [ref=e3]:
+    - generic [ref=e4]:
+      - link "AuctionApp" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e6]:
+        - list [ref=e7]:
+          - listitem [ref=e8]:
+            - link "Home" [ref=e9] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=e10]:
+            - link "Products" [ref=e11] [cursor=pointer]:
+              - /url: /products
+          - listitem [ref=e12]:
+            - link "Profile" [ref=e13] [cursor=pointer]:
+              - /url: /profile
+          - listitem [ref=e14]:
+            - link "Orders" [ref=e15] [cursor=pointer]:
+              - /url: /orders
+          - listitem [ref=e16]:
+            - link "Create product" [ref=e17] [cursor=pointer]:
+              - /url: /sell/create
+          - listitem [ref=e18]:
+            - button "Categories" [ref=e19] [cursor=pointer]
+        - list [ref=e20]:
+          - listitem [ref=e21]:
+            - generic [ref=e22]:
+              - searchbox "Search products..." [ref=e23]
+              - button "Go" [ref=e24] [cursor=pointer]
+          - listitem [ref=e25]: Bidder_W6
+          - listitem [ref=e26]:
+            - button "Logout" [ref=e27] [cursor=pointer]
+  - main [ref=e28]:
+    - generic [ref=e29]:
+      - generic [ref=e30]:
+        - heading "Discover top auctions" [level=1] [ref=e31]
+        - paragraph [ref=e32]: "Browse curated highlights: premium items, auctions ending soon, and the most competitive bidding wars."
+      - generic [ref=e33]:
+        - generic [ref=e34]:
+          - heading "Top price highlights" [level=2] [ref=e35]
+          - link "View all →" [ref=e36] [cursor=pointer]:
+            - /url: /products
+        - generic [ref=e37]:
+          - generic [ref=e39]:
+            - generic [ref=e40]:
+              - img "Asus ROG Phone 8" [ref=e41]
+              - generic [ref=e42]: Auto-bid
+            - generic [ref=e43]:
+              - heading "Asus ROG Phone 8" [level=5] [ref=e44]:
+                - link "Asus ROG Phone 8" [ref=e45] [cursor=pointer]:
+                  - /url: /products/10
+              - paragraph [ref=e46]:
+                - text: "Current price:"
+                - strong [ref=e47]: 18.000.000 ₫
+              - paragraph [ref=e48]:
+                - text: "Highest bidder:"
+                - strong [ref=e49]: No bids yet
+              - paragraph [ref=e50]: "Bids: 0"
+              - paragraph [ref=e51]:
+                - text: "Buy now:"
+                - strong [ref=e52]: 26.000.000 ₫
+              - generic [ref=e53]:
+                - paragraph [ref=e54]: Posted on 22:18 13/11/2025
+                - paragraph [ref=e55]: Auction ended
+          - generic [ref=e57]:
+            - generic [ref=e58]:
+              - img "iPhone 15 Pro" [ref=e59]
+              - generic [ref=e60]: Auto-bid
+            - generic [ref=e61]:
+              - heading "iPhone 15 Pro" [level=5] [ref=e62]:
+                - link "iPhone 15 Pro" [ref=e63] [cursor=pointer]:
+                  - /url: /products/1
+              - paragraph [ref=e64]:
+                - text: "Current price:"
+                - strong [ref=e65]: 15.000.000 ₫
+              - paragraph [ref=e66]:
+                - text: "Highest bidder:"
+                - strong [ref=e67]: No bids yet
+              - paragraph [ref=e68]: "Bids: 0"
+              - paragraph [ref=e69]:
+                - text: "Buy now:"
+                - strong [ref=e70]: 25.000.000 ₫
+              - generic [ref=e71]:
+                - paragraph [ref=e72]: Posted on 22:15 13/11/2025
+                - paragraph [ref=e73]: Auction ended
+          - generic [ref=e75]:
+            - generic [ref=e76]:
+              - img "Huawei Mate 60 Pro" [ref=e77]
+              - generic [ref=e78]: Auto-bid
+            - generic [ref=e79]:
+              - heading "Huawei Mate 60 Pro" [level=5] [ref=e80]:
+                - link "Huawei Mate 60 Pro" [ref=e81] [cursor=pointer]:
+                  - /url: /products/12
+              - paragraph [ref=e82]:
+                - text: "Current price:"
+                - strong [ref=e83]: 14.000.000 ₫
+              - paragraph [ref=e84]:
+                - text: "Highest bidder:"
+                - strong [ref=e85]: No bids yet
+              - paragraph [ref=e86]: "Bids: 0"
+              - paragraph [ref=e87]:
+                - text: "Buy now:"
+                - strong [ref=e88]: 23.000.000 ₫
+              - generic [ref=e89]:
+                - paragraph [ref=e90]: Posted on 22:18 13/11/2025
+                - paragraph [ref=e91]: Auction ended
+          - generic [ref=e93]:
+            - generic [ref=e94]:
+              - img "Samsung Galaxy S24" [ref=e95]
+              - generic [ref=e96]: Auto-bid
+            - generic [ref=e97]:
+              - heading "Samsung Galaxy S24" [level=5] [ref=e98]:
+                - link "Samsung Galaxy S24" [ref=e99] [cursor=pointer]:
+                  - /url: /products/5
+              - paragraph [ref=e100]:
+                - text: "Current price:"
+                - strong [ref=e101]: 12.000.000 ₫
+              - paragraph [ref=e102]:
+                - text: "Highest bidder:"
+                - strong [ref=e103]: No bids yet
+              - paragraph [ref=e104]: "Bids: 0"
+              - paragraph [ref=e105]:
+                - text: "Buy now:"
+                - strong [ref=e106]: 20.000.000 ₫
+              - generic [ref=e107]:
+                - paragraph [ref=e108]: Posted on 22:18 13/11/2025
+                - paragraph [ref=e109]: Auction ended
+          - generic [ref=e111]:
+            - generic [ref=e112]:
+              - img "Google Pixel 8 Pro" [ref=e113]
+              - generic [ref=e114]: Auto-bid
+            - generic [ref=e115]:
+              - heading "Google Pixel 8 Pro" [level=5] [ref=e116]:
+                - link "Google Pixel 8 Pro" [ref=e117] [cursor=pointer]:
+                  - /url: /products/6
+              - paragraph [ref=e118]:
+                - text: "Current price:"
+                - strong [ref=e119]: 11.000.000 ₫
+              - paragraph [ref=e120]:
+                - text: "Highest bidder:"
+                - strong [ref=e121]: No bids yet
+              - paragraph [ref=e122]: "Bids: 0"
+              - paragraph [ref=e123]:
+                - text: "Buy now:"
+                - strong [ref=e124]: 18.000.000 ₫
+              - generic [ref=e125]:
+                - paragraph [ref=e126]: Posted on 22:18 13/11/2025
+                - paragraph [ref=e127]: Auction ended
+          - generic [ref=e129]:
+            - generic [ref=e130]:
+              - img "Xiaomi 14 Ultra" [ref=e131]
+              - generic [ref=e132]: Auto-bid
+            - generic [ref=e133]:
+              - heading "Xiaomi 14 Ultra" [level=5] [ref=e134]:
+                - link "Xiaomi 14 Ultra" [ref=e135] [cursor=pointer]:
+                  - /url: /products/7
+              - paragraph [ref=e136]:
+                - text: "Current price:"
+                - strong [ref=e137]: 10.000.000 ₫
+              - paragraph [ref=e138]:
+                - text: "Highest bidder:"
+                - strong [ref=e139]: No bids yet
+              - paragraph [ref=e140]: "Bids: 0"
+              - paragraph [ref=e141]:
+                - text: "Buy now:"
+                - strong [ref=e142]: 17.000.000 ₫
+              - generic [ref=e143]:
+                - paragraph [ref=e144]: Posted on 22:18 13/11/2025
+                - paragraph [ref=e145]: Auction ended
+      - generic [ref=e146]:
+        - generic [ref=e147]:
+          - heading "Ending soon" [level=2] [ref=e148]
+          - link "View all →" [ref=e149] [cursor=pointer]:
+            - /url: /products
+        - generic [ref=e150]:
+          - generic [ref=e152]:
+            - generic [ref=e153]:
+              - img "Vintage camera kit" [ref=e154]
+              - generic [ref=e155]: Auto-bid
+            - generic [ref=e156]:
+              - heading "Vintage camera kit" [level=5] [ref=e157]:
+                - link "Vintage camera kit" [ref=e158] [cursor=pointer]:
+                  - /url: /products/37
+              - paragraph [ref=e159]:
+                - text: "Current price:"
+                - strong [ref=e160]: 900.000 ₫
+              - paragraph [ref=e161]:
+                - text: "Highest bidder:"
+                - strong [ref=e162]: No bids yet
+              - paragraph [ref=e163]: "Bids: 0"
+              - paragraph [ref=e164]:
+                - text: "Buy now:"
+                - strong [ref=e165]: 2.000.000 ₫
+              - generic [ref=e166]:
+                - paragraph [ref=e167]: Posted on 15:56 14/11/2025
+                - paragraph [ref=e168]: Auction ended
+          - generic [ref=e170]:
+            - generic [ref=e171]:
+              - img "Retro gaming console" [ref=e172]
+              - generic [ref=e173]: Auto-bid
+            - generic [ref=e174]:
+              - heading "Retro gaming console" [level=5] [ref=e175]:
+                - link "Retro gaming console" [ref=e176] [cursor=pointer]:
+                  - /url: /products/38
+              - paragraph [ref=e177]:
+                - text: "Current price:"
+                - strong [ref=e178]: 900.000 ₫
+              - paragraph [ref=e179]:
+                - text: "Highest bidder:"
+                - strong [ref=e180]: No bids yet
+              - paragraph [ref=e181]: "Bids: 0"
+              - paragraph [ref=e182]:
+                - text: "Buy now:"
+                - strong [ref=e183]: 2.000.000 ₫
+              - generic [ref=e184]:
+                - paragraph [ref=e185]: Posted on 15:56 14/11/2025
+                - paragraph [ref=e186]: Auction ended
+          - generic [ref=e188]:
+            - generic [ref=e189]:
+              - img "Vintage Leather Belt" [ref=e190]
+              - generic [ref=e191]: Auto-bid
+            - generic [ref=e192]:
+              - heading "Vintage Leather Belt" [level=5] [ref=e193]:
+                - link "Vintage Leather Belt" [ref=e194] [cursor=pointer]:
+                  - /url: /products/20
+              - paragraph [ref=e195]:
+                - text: "Current price:"
+                - strong [ref=e196]: 240.000 ₫
+              - paragraph [ref=e197]:
+                - text: "Highest bidder:"
+                - strong [ref=e198]: No bids yet
+              - paragraph [ref=e199]: "Bids: 4"
+              - generic [ref=e200]:
+                - paragraph [ref=e201]: Posted on 22:18 13/11/2025
+                - paragraph [ref=e202]: Auction ended
+          - generic [ref=e204]:
+            - generic [ref=e205]:
+              - img "Casual T-Shirt Pack" [ref=e206]
+              - generic [ref=e207]: Auto-bid
+            - generic [ref=e208]:
+              - heading "Casual T-Shirt Pack" [level=5] [ref=e209]:
+                - link "Casual T-Shirt Pack" [ref=e210] [cursor=pointer]:
+                  - /url: /products/23
+              - paragraph [ref=e211]:
+                - text: "Current price:"
+                - strong [ref=e212]: 300.000 ₫
+              - paragraph [ref=e213]:
+                - text: "Highest bidder:"
+                - strong [ref=e214]: No bids yet
+              - paragraph [ref=e215]: "Bids: 0"
+              - generic [ref=e216]:
+                - paragraph [ref=e217]: Posted on 22:18 13/11/2025
+                - paragraph [ref=e218]: Auction ended
+          - generic [ref=e220]:
+            - generic [ref=e221]:
+              - img "Kids Cartoon Hoodie" [ref=e222]
+              - generic [ref=e223]: Auto-bid
+            - generic [ref=e224]:
+              - heading "Kids Cartoon Hoodie" [level=5] [ref=e225]:
+                - link "Kids Cartoon Hoodie" [ref=e226] [cursor=pointer]:
+                  - /url: /products/25
+              - paragraph [ref=e227]:
+                - text: "Current price:"
+                - strong [ref=e228]: 250.000 ₫
+              - paragraph [ref=e229]:
+                - text: "Highest bidder:"
+                - strong [ref=e230]: No bids yet
+              - paragraph [ref=e231]: "Bids: 0"
+              - generic [ref=e232]:
+                - paragraph [ref=e233]: Posted on 22:18 13/11/2025
+                - paragraph [ref=e234]: Auction ended
+          - generic [ref=e236]:
+            - generic [ref=e237]:
+              - img "Week4 Camera 76c727" [ref=e238]
+              - generic [ref=e239]: Auto-bid
+            - generic [ref=e240]:
+              - heading "Week4 Camera 76c727" [level=5] [ref=e241]:
+                - link "Week4 Camera 76c727" [ref=e242] [cursor=pointer]:
+                  - /url: /products/31
+              - paragraph [ref=e243]:
+                - text: "Current price:"
+                - strong [ref=e244]: 1.000.000 ₫
+              - paragraph [ref=e245]:
+                - text: "Highest bidder:"
+                - strong [ref=e246]: No bids yet
+              - paragraph [ref=e247]: "Bids: 0"
+              - paragraph [ref=e248]:
+                - text: "Buy now:"
+                - strong [ref=e249]: 2.000.000 ₫
+              - generic [ref=e250]:
+                - paragraph [ref=e251]: Posted on 11:49 14/11/2025
+                - paragraph [ref=e252]: Auction ended
+      - generic [ref=e253]:
+        - generic [ref=e254]:
+          - heading "Most bidded items" [level=2] [ref=e255]
+          - link "View all →" [ref=e256] [cursor=pointer]:
+            - /url: /products
+        - generic [ref=e257]:
+          - generic [ref=e259]:
+            - generic [ref=e260]:
+              - img "Vintage Leather Belt" [ref=e261]
+              - generic [ref=e262]: Auto-bid
+            - generic [ref=e263]:
+              - heading "Vintage Leather Belt" [level=5] [ref=e264]:
+                - link "Vintage Leather Belt" [ref=e265] [cursor=pointer]:
+                  - /url: /products/20
+              - paragraph [ref=e266]:
+                - text: "Current price:"
+                - strong [ref=e267]: 240.000 ₫
+              - paragraph [ref=e268]:
+                - text: "Highest bidder:"
+                - strong [ref=e269]: No bids yet
+              - paragraph [ref=e270]: "Bids: 4"
+              - generic [ref=e271]:
+                - paragraph [ref=e272]: Posted on 22:18 13/11/2025
+                - paragraph [ref=e273]: Auction ended
+          - generic [ref=e275]:
+            - generic [ref=e276]:
+              - img "Week8 Product 09" [ref=e277]
+              - generic [ref=e278]: Auto-bid
+            - generic [ref=e279]:
+              - heading "Week8 Product 09" [level=5] [ref=e280]:
+                - link "Week8 Product 09" [ref=e281] [cursor=pointer]:
+                  - /url: /products/47
+              - paragraph [ref=e282]:
+                - text: "Current price:"
+                - strong [ref=e283]: 850.000 ₫
+              - paragraph [ref=e284]:
+                - text: "Highest bidder:"
+                - strong [ref=e285]: No bids yet
+              - paragraph [ref=e286]: "Bids: 1"
+              - paragraph [ref=e287]:
+                - text: "Buy now:"
+                - strong [ref=e288]: 1.600.000 ₫
+              - generic [ref=e289]:
+                - paragraph [ref=e290]: Posted on 06:24 20/11/2025
+                - paragraph [ref=e291]: Auction ended
+          - generic [ref=e293]:
+            - generic [ref=e294]:
+              - img "Week8 Product 15" [ref=e295]
+              - generic [ref=e296]: Auto-bid
+            - generic [ref=e297]:
+              - heading "Week8 Product 15" [level=5] [ref=e298]:
+                - link "Week8 Product 15" [ref=e299] [cursor=pointer]:
+                  - /url: /products/53
+              - paragraph [ref=e300]:
+                - text: "Current price:"
+                - strong [ref=e301]: 1.000.000 ₫
+              - paragraph [ref=e302]:
+                - text: "Highest bidder:"
+                - strong [ref=e303]: No bids yet
+              - paragraph [ref=e304]: "Bids: 1"
+              - paragraph [ref=e305]:
+                - text: "Buy now:"
+                - strong [ref=e306]: 1.900.000 ₫
+              - generic [ref=e307]:
+                - paragraph [ref=e308]: Posted on 06:24 20/11/2025
+                - paragraph [ref=e309]: Auction ended
+          - generic [ref=e311]:
+            - generic [ref=e312]:
+              - img "Week8 Product 03" [ref=e313]
+              - generic [ref=e314]: Auto-bid
+            - generic [ref=e315]:
+              - heading "Week8 Product 03" [level=5] [ref=e316]:
+                - link "Week8 Product 03" [ref=e317] [cursor=pointer]:
+                  - /url: /products/41
+              - paragraph [ref=e318]:
+                - text: "Current price:"
+                - strong [ref=e319]: 700.000 ₫
+              - paragraph [ref=e320]:
+                - text: "Highest bidder:"
+                - strong [ref=e321]: No bids yet
+              - paragraph [ref=e322]: "Bids: 1"
+              - paragraph [ref=e323]:
+                - text: "Buy now:"
+                - strong [ref=e324]: 1.300.000 ₫
+              - generic [ref=e325]:
+                - paragraph [ref=e326]: Posted on 06:24 20/11/2025
+                - paragraph [ref=e327]: Auction ended
+          - generic [ref=e329]:
+            - img "Week8 Product 12" [ref=e331]
+            - generic [ref=e332]:
+              - heading "Week8 Product 12" [level=5] [ref=e333]:
+                - link "Week8 Product 12" [ref=e334] [cursor=pointer]:
+                  - /url: /products/50
+              - paragraph [ref=e335]:
+                - text: "Current price:"
+                - strong [ref=e336]: 925.000 ₫
+              - paragraph [ref=e337]:
+                - text: "Highest bidder:"
+                - strong [ref=e338]: No bids yet
+              - paragraph [ref=e339]: "Bids: 1"
+              - paragraph [ref=e340]:
+                - text: "Buy now:"
+                - strong [ref=e341]: 1.750.000 ₫
+              - generic [ref=e342]:
+                - paragraph [ref=e343]: Posted on 06:24 20/11/2025
+                - paragraph [ref=e344]: Auction ended
+          - generic [ref=e346]:
+            - img "Week8 Product 06" [ref=e348]
+            - generic [ref=e349]:
+              - heading "Week8 Product 06" [level=5] [ref=e350]:
+                - link "Week8 Product 06" [ref=e351] [cursor=pointer]:
+                  - /url: /products/44
+              - paragraph [ref=e352]:
+                - text: "Current price:"
+                - strong [ref=e353]: 775.000 ₫
+              - paragraph [ref=e354]:
+                - text: "Highest bidder:"
+                - strong [ref=e355]: No bids yet
+              - paragraph [ref=e356]: "Bids: 1"
+              - paragraph [ref=e357]:
+                - text: "Buy now:"
+                - strong [ref=e358]: 1.450.000 ₫
+              - generic [ref=e359]:
+                - paragraph [ref=e360]: Posted on 06:24 20/11/2025
+                - paragraph [ref=e361]: Auction ended
+  - contentinfo [ref=e362]:
+    - generic [ref=e364]: © 2025 AuctionApp — All rights reserved.
+```
