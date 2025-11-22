@@ -12,10 +12,7 @@ export default function ProductCard({ product, compact = false, showEndsAt = tru
   const postedAt = formatVNTime(product.createdAt, { year: 'numeric', month: '2-digit', day: '2-digit' })
 
   return (
-    <div
-      className={`card h-100 shadow-sm position-relative ${compact ? 'product-card-compact' : ''}`}
-      data-testid="product-card"
-    >
+    <div className={`card h-100 shadow-sm position-relative ${compact ? 'product-card-compact' : ''}`}>
       <div className="position-relative">
         <img src={imageSrc} alt={product.name} className="card-img-top product-card-image" />
         {product.isNew && (

@@ -11,9 +11,6 @@ npm-debug.log
 # Bỏ qua build artifacts
 frontend/dist/
 frontend/.vite/
-frontend/playwright-report/
-frontend/test-results/
-frontend/.playwright/
 .venv
 backend/uploads/*
 !backend/uploads/.gitkeep

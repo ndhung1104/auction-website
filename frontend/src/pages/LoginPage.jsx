@@ -28,10 +28,9 @@ export default function LoginPage() {
       login(token, user)
       navigate('/')
     } catch (error) {
-      const message = error?.status === 401 ? 'Invalid email or password.' : error?.message || 'Unable to sign in.'
       setAlert({
         type: 'danger',
-        message
+        message: error.message || 'Invalid email or password'
       })
     } finally {
       setSubmitting(false)

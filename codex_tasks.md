@@ -126,6 +126,4 @@
 - [x] Prepare final demo assets (slides, video walkthrough, live demo script).
 
 
-- [ ] Adjust full text search to automatically lower case character and remove á ả ạ to a and vice versa. 
-
 

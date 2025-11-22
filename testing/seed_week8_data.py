@@ -66,11 +66,11 @@ def seed_categories(conn):
                 continue
             cur.execute(
                 """
-                INSERT INTO categories (name, created_at, updated_at)
-                VALUES (%s, now(), now())
+                INSERT INTO categories (name, description, created_at, updated_at)
+                VALUES (%s, %s, now(), now())
                 RETURNING id
                 """,
-                (name,),
+                (name, description),
             )
             ids.append(cur.fetchone()[0])
     return ids
