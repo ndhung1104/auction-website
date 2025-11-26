@@ -399,11 +399,11 @@ export default function ProductDetailPage() {
               {product.buyNowPrice && (
                 <button
                   type="button"
-                  className="btn btn-success w-100 fw-bold py-2 shadow-sm"
+                  className="btn btn-dark w-100 fw-bold py-3 shadow-sm"
                   onClick={handleBuyNow}
                   disabled={!canBuyNow || buyNowSubmitting}
                 >
-                  {buyNowSubmitting ? 'Processing…' : `Buy now for ${formatVND(product.buyNowPrice)}`}
+                  {buyNowSubmitting ? 'Processing…' : `Buy Now - ${formatVND(product.buyNowPrice)}`}
                 </button>
               )}
               {product.buyNowPrice && !canBuyNow && (
@@ -454,7 +454,7 @@ export default function ProductDetailPage() {
                       onChange={(event) => setManualBidAmount(event.target.value)}
                       disabled={!canPlaceBid || manualSubmitting}
                     />
-                    <button type="submit" className="btn btn-primary fw-medium" disabled={!canPlaceBid || manualSubmitting}>
+                    <button type="submit" className="btn btn-primary fw-bold px-4" disabled={!canPlaceBid || manualSubmitting}>
                       {manualSubmitting ? 'Placing...' : 'Place Bid'}
                     </button>
                   </div>

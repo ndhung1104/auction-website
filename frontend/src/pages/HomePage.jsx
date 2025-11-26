@@ -41,9 +41,9 @@ export default function HomePage() {
   const renderSection = (title, items, fallbackLink = '/products') => (
     <section className="mb-5" key={title}>
       <div className="d-flex align-items-center justify-content-between mb-4">
-        <h2 className="h3 fw-bold text-primary mb-0">{title}</h2>
-        <Link to={fallbackLink} className="btn btn-outline-primary btn-sm">
-          View all
+        <h2 className="h3 fw-bold text-dark mb-0">{title}</h2>
+        <Link to={fallbackLink} className="text-primary fw-bold text-decoration-none">
+          View All
         </Link>
       </div>
       {loading && (
@@ -71,18 +71,32 @@ export default function HomePage() {
   )
 
   return (
-    <div className="py-4">
-      <div className="text-center mb-5 py-5 bg-surface rounded-3 shadow-sm border">
-        <h1 className="display-4 fw-bold text-primary mb-3">Discover Top Auctions</h1>
-        <p className="lead text-secondary mb-0 mx-auto" style={{ maxWidth: '600px' }}>
-          Browse curated highlights: premium items, auctions ending soon, and the most competitive bidding wars.
-        </p>
-        {error && <div className="alert alert-danger mt-4 mx-auto" style={{ maxWidth: '500px' }}>{error}</div>}
+    <div>
+      <div className="hero-section rounded-3 p-5 mb-5 text-center text-lg-start d-flex flex-column flex-lg-row align-items-center justify-content-between gap-4">
+        <div className="py-lg-4" style={{ maxWidth: '600px' }}>
+          <h1 className="display-4 fw-bold mb-3">Discover Rare Treasures at Auction</h1>
+          <p className="lead mb-4 opacity-75">
+            Join thousands of collectors bidding on unique items from around the world. From luxury watches to fine art, find your next prized possession.
+          </p>
+          <div className="d-flex gap-3 justify-content-center justify-content-lg-start">
+            <Link to="/products" className="btn btn-light text-primary fw-bold px-4 py-2">
+              Start Bidding
+            </Link>
+            <Link to="/sell/create" className="btn btn-outline-light fw-bold px-4 py-2">
+              Sell an Item
+            </Link>
+          </div>
+        </div>
+        {/* Optional: Add a hero image here if available, or keep it clean as per image 0 which has a gradient/solid background */}
       </div>
 
-      {renderSection('Top Price Highlights', sections.topPrice)}
-      {renderSection('Ending Soon', sections.endingSoon)}
-      {renderSection('Most Bidded Items', sections.mostBidded)}
+      <div className="px-0">
+        {error && <div className="alert alert-danger mt-4 mx-auto">{error}</div>}
+
+        {renderSection('Top Auctions', sections.topPrice)}
+        {renderSection('Ending Soon', sections.endingSoon)}
+        {renderSection('Most Bidded', sections.mostBidded)}
+      </div>
     </div>
   )
 }
