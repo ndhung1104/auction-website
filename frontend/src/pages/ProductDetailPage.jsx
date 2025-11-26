@@ -304,18 +304,18 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <div className="product-detail-page">
+    <div className="product-detail-page py-4">
       <div className="d-flex align-items-center gap-3 mb-3 flex-wrap">
         <div className="d-flex align-items-center gap-3">
-          <h1 className="mb-0">{product.name}</h1>
-          {product.isNew && <span className="badge bg-success">New</span>}
-          {product.enableAutoBid && <span className="badge bg-info text-dark">Auto-bid supported</span>}
-          {!isActive && <span className="badge bg-secondary">Ended</span>}
+          <h1 className="h2 fw-bold text-primary mb-0">{product.name}</h1>
+          {product.isNew && <span className="badge bg-success shadow-sm">New</span>}
+          {product.enableAutoBid && <span className="badge bg-info text-white shadow-sm">Auto-bid supported</span>}
+          {!isActive && <span className="badge bg-secondary shadow-sm">Ended</span>}
         </div>
         {canUseWatchlist && (
           <button
             type={watchlistLoading ? 'button' : 'button'}
-            className={`btn btn-sm ${isWatchlisted ? 'btn-outline-light' : 'btn-outline-success'}`}
+            className={`btn btn-sm ${isWatchlisted ? 'btn-outline-danger' : 'btn-outline-primary'} fw-medium`}
             onClick={handleWatchlistToggle}
             disabled={watchlistLoading}
           >
@@ -328,10 +328,10 @@ export default function ProductDetailPage() {
         )}
       </div>
       {watchlistStatus && (
-        <div className={`alert alert-${watchlistStatus.type}`}>{watchlistStatus.message}</div>
+        <div className={`alert alert-${watchlistStatus.type} shadow-sm`}>{watchlistStatus.message}</div>
       )}
-      <p className="text-muted">
-        Auction ends at {formatVNTime(product.endAt)} · Watchers: {watchlistInfo.count}
+      <p className="text-secondary mb-4">
+        Auction ends at <span className="fw-medium text-dark">{formatVNTime(product.endAt)}</span> · Watchers: <span className="fw-medium text-dark">{watchlistInfo.count}</span>
       </p>
 
       <div className="row g-4">
@@ -359,25 +359,47 @@ export default function ProductDetailPage() {
             </div>
           )}
 
-          <div className="mt-4">
-            <h4>Description</h4>
-            <p>{product.description || 'No description provided yet.'}</p>
+          <div className="mt-5">
+            <h4 className="h5 fw-bold text-primary border-bottom pb-2 mb-3">Description</h4>
+            <div className="text-secondary" style={{ lineHeight: '1.8' }}>
+              {product.description || 'No description provided yet.'}
+            </div>
           </div>
         </div>
 
         <div className="col-lg-5">
-          <div className="card shadow-sm mb-3">
-            <div className="card-body">
-              <h4>Current price: {formatVND(product.currentPrice)}</h4>
-              <p className="mb-1">Start price: {formatVND(product.startPrice)}</p>
-              <p className="mb-1">Price step: {formatVND(product.priceStep)}</p>
-              {product.buyNowPrice && <p className="mb-1">Buy now: {formatVND(product.buyNowPrice)}</p>}
-              <p className="mb-1">Total bids: {product.bidCount}</p>
-              <p className="text-muted mb-0">Status: {product.status}</p>
+          <div className="card shadow-sm border-0 mb-4">
+            <div className="card-body p-4">
+              <h4 className="h3 fw-bold text-primary mb-3">{formatVND(product.currentPrice)}</h4>
+              <div className="d-flex flex-column gap-2 text-secondary mb-4">
+                <div className="d-flex justify-content-between">
+                  <span>Start price:</span>
+                  <span className="fw-medium text-dark">{formatVND(product.startPrice)}</span>
+                </div>
+                <div className="d-flex justify-content-between">
+                  <span>Price step:</span>
+                  <span className="fw-medium text-dark">{formatVND(product.priceStep)}</span>
+                </div>
+                {product.buyNowPrice && (
+                  <div className="d-flex justify-content-between">
+                    <span>Buy now:</span>
+                    <span className="fw-medium text-success">{formatVND(product.buyNowPrice)}</span>
+                  </div>
+                )}
+                <div className="d-flex justify-content-between">
+                  <span>Total bids:</span>
+                  <span className="fw-medium text-dark">{product.bidCount}</span>
+                </div>
+                <div className="d-flex justify-content-between">
+                  <span>Status:</span>
+                  <span className={`badge ${isActive ? 'bg-success' : 'bg-secondary'}`}>{product.status}</span>
+                </div>
+              </div>
+
               {product.buyNowPrice && (
                 <button
                   type="button"
-                  className="btn btn-success w-100 mt-3"
+                  className="btn btn-success w-100 fw-bold py-2 shadow-sm"
                   onClick={handleBuyNow}
                   disabled={!canBuyNow || buyNowSubmitting}
                 >
@@ -385,7 +407,7 @@ export default function ProductDetailPage() {
                 </button>
               )}
               {product.buyNowPrice && !canBuyNow && (
-                <small className="text-muted d-block mt-2">
+                <small className="text-muted d-block mt-2 text-center">
                   {isAuthenticated ? 'You cannot buy this product now.' : 'Please login as a bidder to buy now.'}
                 </small>
               )}
@@ -397,11 +419,11 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
-          <div className="card shadow-sm mb-3">
-            <div className="card-body">
-              <h5>Manual bid</h5>
+          <div className="card shadow-sm border-0 mb-4">
+            <div className="card-body p-4">
+              <h5 className="fw-bold text-dark mb-3">Manual Bid</h5>
               {!canPlaceBid && (
-                <p className="text-muted mb-3">
+                <p className="text-muted mb-3 small">
                   {isAuthenticated
                     ? isSeller
                       ? 'Sellers cannot bid on their own products.'
@@ -412,51 +434,53 @@ export default function ProductDetailPage() {
                 </p>
               )}
               {manualStatus && (
-                <div className={`alert alert-${manualStatus.type}`} role="alert">
+                <div className={`alert alert-${manualStatus.type} small`} role="alert">
                   {manualStatus.message}
                 </div>
               )}
               <form onSubmit={handleManualBid} className="mt-3">
                 <div className="mb-3">
-                  <label htmlFor="manualBidAmount" className="form-label">
+                  <label htmlFor="manualBidAmount" className="form-label text-secondary small fw-medium">
                     Enter your bid amount
                   </label>
-                  <input
-                    id="manualBidAmount"
-                    type="number"
-                    min={manualMinBid || undefined}
-                    step={product.priceStep}
-                    className="form-control"
-                    value={manualBidAmount}
-                    onChange={(event) => setManualBidAmount(event.target.value)}
-                    disabled={!canPlaceBid || manualSubmitting}
-                  />
+                  <div className="input-group">
+                    <input
+                      id="manualBidAmount"
+                      type="number"
+                      min={manualMinBid || undefined}
+                      step={product.priceStep}
+                      className="form-control"
+                      value={manualBidAmount}
+                      onChange={(event) => setManualBidAmount(event.target.value)}
+                      disabled={!canPlaceBid || manualSubmitting}
+                    />
+                    <button type="submit" className="btn btn-primary fw-medium" disabled={!canPlaceBid || manualSubmitting}>
+                      {manualSubmitting ? 'Placing...' : 'Place Bid'}
+                    </button>
+                  </div>
                   {manualMinBid && (
-                    <small className="text-muted">
-                      Minimum next bid: {formatVND(manualMinBid)}
+                    <small className="text-muted mt-1 d-block">
+                      Minimum next bid: <span className="fw-medium text-dark">{formatVND(manualMinBid)}</span>
                     </small>
                   )}
                 </div>
-                  <button type="submit" className="btn btn-primary w-100" disabled={!canPlaceBid || manualSubmitting}>
-                    {manualSubmitting ? 'Placing bid…' : 'Place bid'}
-                  </button>
-                </form>
-              </div>
+              </form>
             </div>
+          </div>
 
-            {product.enableAutoBid && (
-              <div className="card shadow-sm mb-3">
-                <div className="card-body">
-                  <h5>Auto-bid</h5>
-                  {!canUseAutoBid && (
-                    <p className="text-muted mb-3">
-                      {isAuthenticated
-                        ? isActive
-                          ? 'You cannot register auto-bid for this product.'
-                          : 'Auction is no longer active.'
-                        : 'Login to register automatic bidding.'}
-                    </p>
-                  )}
+          {product.enableAutoBid && (
+            <div className="card shadow-sm mb-3">
+              <div className="card-body">
+                <h5>Auto-bid</h5>
+                {!canUseAutoBid && (
+                  <p className="text-muted mb-3">
+                    {isAuthenticated
+                      ? isActive
+                        ? 'You cannot register auto-bid for this product.'
+                        : 'Auction is no longer active.'
+                      : 'Login to register automatic bidding.'}
+                  </p>
+                )}
                 {autoStatus && (
                   <div className={`alert alert-${autoStatus.type}`} role="alert">
                     {autoStatus.message}
@@ -580,27 +604,27 @@ export default function ProductDetailPage() {
         {bidLoading && <div className="alert alert-info">Loading bid history…</div>}
         {!bidLoading && !bidHistory.length && <div className="alert alert-light">No bids yet.</div>}
         {!bidLoading && bidHistory.length > 0 && (
-          <div className="table-responsive">
-            <table className="table">
-              <thead>
+          <div className="table-responsive shadow-sm rounded-3 border">
+            <table className="table table-hover mb-0 align-middle">
+              <thead className="bg-light">
                 <tr>
-                  <th>Bidder</th>
-                  <th>Amount</th>
-                  <th>Type</th>
-                  <th>Time</th>
+                  <th className="py-3 ps-4">Bidder</th>
+                  <th className="py-3">Amount</th>
+                  <th className="py-3">Type</th>
+                  <th className="py-3 pe-4">Time</th>
                 </tr>
               </thead>
               <tbody>
                 {bidHistory.map((bid) => (
                   <tr key={bid.id}>
-                    <td>{bid.bidderAlias || 'Hidden'}</td>
-                    <td>{formatVND(bid.amount)}</td>
+                    <td className="ps-4 fw-medium text-dark">{bid.bidderAlias || 'Hidden'}</td>
+                    <td className="fw-bold text-primary">{formatVND(bid.amount)}</td>
                     <td>
-                      <span className={`badge ${bid.isAutoBid ? 'bg-info text-dark' : 'bg-secondary'}`}>
+                      <span className={`badge ${bid.isAutoBid ? 'bg-info text-white' : 'bg-secondary'}`}>
                         {bid.isAutoBid ? 'Auto bid' : 'Manual'}
                       </span>
                     </td>
-                    <td>{formatVNTime(bid.createdAt)}</td>
+                    <td className="text-secondary pe-4">{formatVNTime(bid.createdAt)}</td>
                   </tr>
                 ))}
               </tbody>

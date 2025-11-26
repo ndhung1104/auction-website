@@ -38,50 +38,63 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="row justify-content-center">
-      <div className="col-md-5 col-lg-4">
-        <h1 className="mb-4">Sign in</h1>
-        {alert && (
-          <div className={`alert alert-${alert.type}`} role="alert">
-            {alert.message}
+    <div className="row justify-content-center align-items-center" style={{ minHeight: '80vh' }}>
+      <div className="col-md-6 col-lg-5 col-xl-4">
+        <div className="card shadow-lg border-0 rounded-lg">
+          <div className="card-body p-5">
+            <h1 className="h3 fw-bold text-center mb-4 text-primary">Sign In</h1>
+
+            {alert && (
+              <div className={`alert alert-${alert.type} d-flex align-items-center`} role="alert">
+                <small>{alert.message}</small>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit}>
+              <div className="mb-3">
+                <label htmlFor="email" className="form-label text-secondary small fw-medium">
+                  Email Address
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  className="form-control form-control-lg fs-6"
+                  placeholder="name@example.com"
+                  value={form.email}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <div className="d-flex justify-content-between align-items-center mb-1">
+                  <label htmlFor="password" className="form-label text-secondary small fw-medium mb-0">
+                    Password
+                  </label>
+                  <Link to="/forgot-password" class="text-decoration-none small">
+                    Forgot password?
+                  </Link>
+                </div>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  className="form-control form-control-lg fs-6"
+                  placeholder="••••••••"
+                  value={form.password}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <button type="submit" className="btn btn-primary w-100 btn-lg fs-6 fw-bold mb-3" disabled={submitting}>
+                {submitting ? 'Signing in…' : 'Sign In'}
+              </button>
+            </form>
+
+            <div className="text-center text-muted small">
+              Don't have an account? <Link to="/register" className="fw-bold text-decoration-none">Create account</Link>
+            </div>
           </div>
-        )}
-        <form onSubmit={handleSubmit}>
-          <div className="mb-3">
-            <label htmlFor="email" className="form-label">
-              Email
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              className="form-control"
-              value={form.email}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div className="mb-4">
-            <label htmlFor="password" className="form-label">
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              className="form-control"
-              value={form.password}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <button type="submit" className="btn btn-primary w-100" disabled={submitting}>
-            {submitting ? 'Signing in…' : 'Login'}
-          </button>
-        </form>
-        <div className="d-flex justify-content-between mt-3">
-          <Link to="/forgot-password">Forgot password?</Link>
-          <Link to="/register">Create account</Link>
         </div>
       </div>
     </div>

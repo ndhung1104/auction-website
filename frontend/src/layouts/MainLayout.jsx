@@ -88,9 +88,9 @@ export default function MainLayout() {
 
   return (
     <>
-      <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
+      <nav className="navbar navbar-expand-lg navbar-light bg-surface sticky-top">
         <div className="container">
-          <Link className="navbar-brand" to="/">
+          <Link className="navbar-brand text-primary" to="/">
             AuctionApp
           </Link>
 
@@ -149,8 +149,8 @@ export default function MainLayout() {
               {renderCategoryDropdown}
             </ul>
 
-            <ul className="navbar-nav ms-auto">
-              <li className="nav-item me-3">
+            <ul className="navbar-nav ms-auto align-items-lg-center">
+              <li className="nav-item me-lg-3 mb-2 mb-lg-0">
                 <form className="d-flex gap-2" onSubmit={handleSearch}>
                   <input
                     type="search"
@@ -159,7 +159,7 @@ export default function MainLayout() {
                     value={searchValue}
                     onChange={(event) => setSearchValue(event.target.value)}
                   />
-                  <button className="btn btn-outline-light btn-sm" type="submit">
+                  <button className="btn btn-primary btn-sm" type="submit">
                     Go
                   </button>
                 </form>
@@ -167,10 +167,10 @@ export default function MainLayout() {
               {isAuthenticated ? (
                 <>
                   <li className="nav-item">
-                    <span className="navbar-text me-2">{user?.fullName ?? user?.email}</span>
+                    <span className="navbar-text me-3 fw-medium text-dark">{user?.fullName ?? user?.email}</span>
                   </li>
                   <li className="nav-item">
-                    <button className="btn btn-outline-light btn-sm" onClick={handleLogout}>
+                    <button className="btn btn-outline-danger btn-sm" onClick={handleLogout}>
                       Logout
                     </button>
                   </li>
@@ -194,11 +194,11 @@ export default function MainLayout() {
         </div>
       </nav>
 
-      <main className="container py-4">
+      <main className="container py-5 flex-grow-1">
         <Outlet />
       </main>
 
-      <footer className="bg-light py-3 mt-auto border-top">
+      <footer className="bg-white py-4 mt-auto border-top">
         <div className="container text-center text-muted">
           <small>© {new Date().getFullYear()} AuctionApp — All rights reserved.</small>
         </div>
