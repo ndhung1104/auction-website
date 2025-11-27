@@ -164,6 +164,16 @@ h6 {
   align-items: center;
   gap: 0.5rem;
 }
+.navbar .nav-link,
+.navbar .dropdown-toggle,
+.navbar .btn-link {
+  font-weight: 400;              /* bỏ bold / semi-bold */
+  color: var(--text-secondary);  /* hoặc var(--dark-color) tùy bạn */
+}
+.navbar .btn-link {
+  text-decoration: none;
+  padding: 0;                    /* cho nó giống nav-link bình thường */
+}
 
 /* Utilities */
 .text-primary {
@@ -212,4 +222,19 @@ h6 {
 
 .footer-section a:hover {
   color: var(--primary-color);
+}
+
+/* Custom Badge for Auto-bid */
+.badge-auto-bid {
+  background-color: #516888; /* slate-600 */
+  color: white;
+  border-radius: 999px;      /* pill badge */
+  padding: 0.35rem 0.65rem;
+  font-size: 0.75rem;
+}
+
+/* Dropdown Menu Categories - Scrollable */
+.dropdown-menu-categories {
+  max-height: 280px;   /* Adjust based on design */
+  overflow-y: auto;
 }

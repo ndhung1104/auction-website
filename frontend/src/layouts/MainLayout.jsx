@@ -62,16 +62,29 @@ export default function MainLayout() {
         >
           Categories
         </button>
-        <ul className="dropdown-menu" aria-labelledby="categoryDropdown">
+
+        <ul
+          className="dropdown-menu dropdown-menu-categories"
+          aria-labelledby="categoryDropdown"
+        >
           {categories.map((category) => (
             <li key={category.id}>
               <div className="dropdown-item">
-                <strong>{category.name}</strong>
+                <Link
+                  to={`/products?categoryId=${category.id}`}
+                  className="text-decoration-none d-block fw-semibold mb-1"
+                >
+                  {category.name}
+                </Link>
+
                 {category.children?.length ? (
                   <ul className="list-unstyled ps-3 mb-0">
                     {category.children.map((child) => (
                       <li key={child.id}>
-                        <Link className="text-decoration-none" to={`/products?categoryId=${child.id}`}>
+                        <Link
+                          className="text-decoration-none"
+                          to={`/products?categoryId=${child.id}`}
+                        >
                           {child.name}
                         </Link>
                       </li>
@@ -83,14 +96,14 @@ export default function MainLayout() {
           ))}
         </ul>
       </li>
-    )
-  }, [categories, categoryError])
+    );
+  }, [categories, categoryError]);
 
   return (
     <>
       <nav className="navbar navbar-expand-lg navbar-light bg-surface sticky-top">
         <div className="container">
-          <Link className="navbar-brand" to="/">
+          <Link className="navbar-brand d-flex align-items-center" to="/">
             <span className="bg-primary text-white rounded p-1 me-2 d-flex align-items-center justify-content-center" style={{ width: '32px', height: '32px' }}>
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" className="bi bi-hammer" viewBox="0 0 16 16">
                 <path d="M9.972 2.508a.5.5 0 0 0-.16-.556l-.178-.129a5.009 5.009 0 0 0-2.076-.783C6.215.862 4.504 1.229 2.84 3.133H1.786a.5.5 0 0 0-.354.147L.146 4.567a.5.5 0 0 0 0 .706l2.571 2.579a.5.5 0 0 0 .708 0l1.286-1.29a.5.5 0 0 0 .146-.353V5.57l8.387 8.873a.5.5 0 0 0 .706 0l1.568-1.574a.5.5 0 0 0 0-.706l-8.873-8.39c.681-.66 1.65-1.248 2.661-1.265z" />
@@ -111,8 +124,8 @@ export default function MainLayout() {
             <span className="navbar-toggler-icon" />
           </button>
 
-          <div className="collapse navbar-collapse" id="mainNavbar">
-            <ul className="navbar-nav me-auto mb-2 mb-lg-0">
+          <div className="collapse navbar-collapse gap-0.5" id="mainNavbar">
+            <ul className="navbar-nav me-auto mb-2 mb-lg-0 d-flex align-items-center gap-0.5">
               <li className="nav-item">
                 <NavLink className="nav-link" to="/">
                   Home
@@ -154,7 +167,7 @@ export default function MainLayout() {
               {renderCategoryDropdown}
             </ul>
 
-            <ul className="navbar-nav ms-auto align-items-lg-center">
+            <ul className="navbar-nav ms-auto align-items-lg-center gap-0.5">
               <li className="nav-item me-lg-3 mb-2 mb-lg-0">
                 <form className="d-flex gap-2" onSubmit={handleSearch}>
                   <div className="input-group">

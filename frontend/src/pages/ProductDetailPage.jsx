@@ -309,7 +309,7 @@ export default function ProductDetailPage() {
         <div className="d-flex align-items-center gap-3">
           <h1 className="h2 fw-bold text-primary mb-0">{product.name}</h1>
           {product.isNew && <span className="badge bg-success shadow-sm">New</span>}
-          {product.enableAutoBid && <span className="badge bg-info text-white shadow-sm">Auto-bid supported</span>}
+          {product.enableAutoBid && <span className="badge badge-auto-bid">Auto-bid supported</span>}
           {!isActive && <span className="badge bg-secondary shadow-sm">Ended</span>}
         </div>
         {canUseWatchlist && (

@@ -19,7 +19,7 @@ export default function ProductCard({ product, compact = false, showEndsAt = tru
           <span className="badge bg-success position-absolute top-0 start-0 m-3 shadow-sm">New</span>
         )}
         {product.enableAutoBid && (
-          <span className="badge bg-info text-white position-absolute top-0 end-0 m-3 shadow-sm">
+          <span className="badge badge-auto-bid position-absolute top-0 end-0 m-3 shadow-sm">
             Auto-bid
           </span>
         )}
