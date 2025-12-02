@@ -11,6 +11,7 @@ export default function RegisterPage() {
     fullName: '',
     email: '',
     phoneNumber: '',
+    address: '',
     password: '',
     captchaToken: ''
   })
@@ -103,6 +104,21 @@ export default function RegisterPage() {
                   placeholder="+84..."
                   value={form.phoneNumber}
                   onChange={handleChange}
+                />
+              </div>
+              <div className="mb-3">
+                <label htmlFor="address" className="form-label text-secondary small fw-medium">
+                  Address
+                </label>
+                <input
+                  id="address"
+                  name="address"
+                  type="text"
+                  className="form-control"
+                  placeholder="123 Main St, City"
+                  value={form.address}
+                  onChange={handleChange}
+                  required
                 />
               </div>
               <div className="mb-3">

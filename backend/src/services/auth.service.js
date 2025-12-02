@@ -237,6 +237,7 @@ export const registerUser = async ({
   email,
   password,
   fullName,
+  address,
   phoneNumber,
   captchaToken,
   remoteIp
@@ -257,6 +258,7 @@ export const registerUser = async ({
     email,
     password_hash: passwordHash,
     full_name: fullName,
+    address: address || null,
     phone_number: phoneNumber || null,
     role: 'BIDDER',
     status: 'CREATED'

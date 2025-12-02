@@ -15,6 +15,7 @@ const registerSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().min(8).max(128).required(),
   fullName: Joi.string().min(2).max(120).required(),
+  address: Joi.string().min(5).max(255).required(),
   phoneNumber: Joi.string().max(30).allow('', null),
   captchaToken: Joi.string().required()
 });

@@ -70,9 +70,15 @@ apiClient.interceptors.response.use(
       }
     }
 
+    const apiError = error.response?.data?.error
     const message =
-      error.response?.data?.message || error.message || 'Unknown error'
-    return Promise.reject({ status, message })
+      apiError?.message ||
+      error.response?.data?.message ||
+      error.message ||
+      'Unknown error'
+    const code = apiError?.code || error.response?.data?.code
+    const details = apiError?.details
+    return Promise.reject({ status, message, code, details })
   }
 )
 
