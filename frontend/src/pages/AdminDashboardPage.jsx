@@ -8,7 +8,8 @@ import {
   rejectSellerRequest,
   softDeleteProduct,
   updateCategory,
-  updateUser
+  updateUser,
+  deleteUser
 } from '../services/admin'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -20,6 +21,10 @@ export default function AdminDashboardPage() {
   const [categoryForm, setCategoryForm] = useState({ name: '', parentId: '' })
   const [autoBids, setAutoBids] = useState([])
   const [autoBidProductId, setAutoBidProductId] = useState(null)
+  const [confirmDialog, setConfirmDialog] = useState(null)
+  const [confirmLoading, setConfirmLoading] = useState(false)
+  // const [confirmDialog, setConfirmDialog] = useState(null)
+  // const [confirmLoading, setConfirmLoading] = useState(false)
 
   const loadDashboard = () => {
     setLoading(true)
@@ -63,16 +68,31 @@ export default function AdminDashboardPage() {
   }
 
   const handleCategoryDelete = (categoryId) => {
-    if (!window.confirm('Delete this category?')) return
-    deleteCategory(categoryId)
-      .then(loadDashboard)
-      .catch((err) => setError(err.message || 'Unable to delete category'))
+    setConfirmDialog({
+      title: 'Delete category',
+      message: 'Are you sure you want to delete this category? This cannot be undone.',
+      action: async () => {
+        await deleteCategory(categoryId)
+        loadDashboard()
+      }
+    })
   }
 
   const handleUserRoleChange = (userId, nextRole) => {
     updateUser(userId, { role: nextRole })
       .then(loadDashboard)
       .catch((err) => setError(err.message || 'Unable to update user'))
+  }
+
+  const handleUserDelete = (id) => {
+    setConfirmDialog({
+      title: 'Suspend user',
+      message: 'This will suspend the user and clear active sessions/auto-bids. Continue?',
+      action: async () => {
+        await deleteUser(id)
+        loadDashboard()
+      }
+    })
   }
 
   const handleSellerRequest = (requestId, action) => {
@@ -83,10 +103,14 @@ export default function AdminDashboardPage() {
   }
 
   const handleSoftDeleteProduct = (productId) => {
-    if (!window.confirm('Remove this product?')) return
-    softDeleteProduct(productId)
-      .then(loadDashboard)
-      .catch((err) => setError(err.message || 'Unable to remove product'))
+    setConfirmDialog({
+      title: 'Remove product',
+      message: 'Remove this product from listings?',
+      action: async () => {
+        await softDeleteProduct(productId)
+        loadDashboard()
+      }
+    })
   }
 
   const handleViewAutoBids = (productId) => {
@@ -98,6 +122,23 @@ export default function AdminDashboardPage() {
       .catch((err) => setError(err.message || 'Unable to load auto-bids'))
   }
 
+  const closeConfirmDialog = () => {
+    setConfirmDialog(null)
+    setConfirmLoading(false)
+  }
+
+  const handleConfirm = async () => {
+    if (!confirmDialog?.action) return
+    setConfirmLoading(true)
+    try {
+      await confirmDialog.action()
+      closeConfirmDialog()
+    } catch (err) {
+      setError(err.message || 'Action failed')
+      closeConfirmDialog()
+    }
+  }
+
   return (
     <div className="admin-dashboard">
       <h1 className="mb-4">Admin Dashboard</h1>
@@ -105,6 +146,32 @@ export default function AdminDashboardPage() {
         <div className="alert alert-danger">
           {error}
         </div>
+      )}
+      {confirmDialog && (
+        <>
+          <div className="modal fade show d-block" tabIndex="-1">
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">{confirmDialog.title}</h5>
+                  <button type="button" className="btn-close" onClick={closeConfirmDialog} />
+                </div>
+                <div className="modal-body">
+                  <p className="mb-0">{confirmDialog.message}</p>
+                </div>
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-outline-secondary" onClick={closeConfirmDialog} disabled={confirmLoading}>
+                    Cancel
+                  </button>
+                  <button type="button" className="btn btn-danger" onClick={handleConfirm} disabled={confirmLoading}>
+                    {confirmLoading ? 'Processing...' : 'Confirm'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="modal-backdrop fade show"></div>
+        </>
       )}
 
       <section className="mb-5">
@@ -215,6 +282,7 @@ export default function AdminDashboardPage() {
                 <th>Email</th>
                 <th>Role</th>
                 <th>Status</th>
+                <th />
               </tr>
             </thead>
             <tbody>
@@ -233,6 +301,15 @@ export default function AdminDashboardPage() {
                     </select>
                   </td>
                   <td>{item.status}</td>
+                  <td className="text-end">
+                    <button
+                      className="btn btn-sm btn-outline-danger"
+                      onClick={() => handleUserDelete(item.id)}
+                      disabled={String(item.id) === String(user.id)}
+                    >
+                      Delete
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

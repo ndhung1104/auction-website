@@ -20,6 +20,10 @@ export function updateUser(id, payload) {
   return apiClient.patch(`/admin/users/${id}`, payload)
 }
 
+export function deleteUser(id) {
+  return apiClient.delete(`/admin/users/${id}`)
+}
+
 export function softDeleteProduct(id) {
   return apiClient.patch(`/admin/products/${id}/status`)
 }

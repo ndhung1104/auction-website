@@ -66,6 +66,10 @@ export const adminUpdateCategory = async (id, payload) => {
 };
 
 export const adminDeleteCategory = async (id) => {
+  const hasProducts = await db('products').where({ category_id: id }).first();
+  if (hasProducts) {
+    throw new ApiError(409, 'CATEGORIES.IN_USE', 'Cannot delete category with existing products');
+  }
   const deleted = await deleteCategory(id);
   if (!deleted) {
     throw new ApiError(404, 'CATEGORIES.NOT_FOUND', 'Category not found');
@@ -79,6 +83,26 @@ export const adminUpdateUser = async (id, payload) => {
   }
   return updated;
 };
+
+export const adminDeleteUser = async (id) => {
+  const trx = await db.transaction();
+  try {
+    const [user] = await trx('users')
+      .where({ id })
+      .update({ status: 'SUSPENDED' }, ['id', 'email', 'role', 'status']);
+    if (!user) {
+      throw new ApiError(404, 'USERS.NOT_FOUND', 'User not found');
+    }
+    await trx('refresh_tokens').where({ user_id: id }).del();
+    await trx('auto_bids').where({ user_id: id }).del();
+    await trx.commit();
+    return user;
+  } catch (err) {
+    await trx.rollback();
+    throw err;
+  }
+};
+
 
 export const adminSoftDeleteProduct = async (productId) => {
   const [updated] = await db('products')

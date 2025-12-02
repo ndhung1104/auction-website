@@ -4,6 +4,7 @@ import { createQuestion, findQuestionById } from '../repositories/question.repos
 import { createAnswer, findAnswerByQuestionId } from '../repositories/answer.repository.js';
 import { findUserById } from '../repositories/user.repository.js';
 import { sendAnswerNotification, sendQuestionNotification } from './mail.service.js';
+import db from '../db/knex.js';
 
 export const askQuestion = async ({ productId, userId, questionText }) => {
   const product = await findProductStatusById(productId);
@@ -76,15 +77,28 @@ export const answerQuestion = async ({ questionId, userId, answerText }) => {
   });
 
   try {
-    const asker = await findUserById(question.user_id);
     const product = await findProductByIdWithSeller(question.product_id);
-    if (asker?.email) {
-      await sendAnswerNotification({
-        email: asker.email,
-        productName: product?.name || 'product',
-        answerText: trimmed
-      });
-    }
+    const [asker, bidderEmails] = await Promise.all([
+      findUserById(question.user_id),
+      db('bids as b')
+        .leftJoin('users as u', 'u.id', 'b.user_id')
+        .where('b.product_id', question.product_id)
+        .distinct()
+        .pluck('u.email')
+    ]);
+    const recipients = new Set();
+    if (asker?.email) recipients.add(asker.email);
+    bidderEmails.filter(Boolean).forEach((email) => recipients.add(email));
+
+    await Promise.all(
+      Array.from(recipients).map((email) =>
+        sendAnswerNotification({
+          email,
+          productName: product?.name || 'product',
+          answerText: trimmed
+        })
+      )
+    );
   } catch (err) {
     console.warn('[mail] answer notification skipped', err.message);
   }

@@ -9,7 +9,8 @@ import {
   rejectSellerRequest,
   softDeleteProductAdmin,
   updateCategoryAdmin,
-  updateUserAdmin
+  updateUserAdmin,
+  deleteUserAdmin
 } from '../controllers/admin.controller.js';
 
 const router = Router();
@@ -22,6 +23,7 @@ router.put('/categories/:id', updateCategoryAdmin);
 router.delete('/categories/:id', deleteCategoryAdmin);
 
 router.patch('/users/:id', updateUserAdmin);
+router.delete('/users/:id', deleteUserAdmin);
 
 router.patch('/products/:id/status', softDeleteProductAdmin);
 router.get('/products/:id/auto-bids', listAutoBidsAdmin);

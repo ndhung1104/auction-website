@@ -8,7 +8,8 @@ import {
   adminRejectSellerRequest,
   adminSoftDeleteProduct,
   adminUpdateCategory,
-  adminUpdateUser
+  adminUpdateUser,
+  adminDeleteUser
 } from '../services/admin.service.js';
 import { ApiError, sendSuccess } from '../utils/response.js';
 
@@ -99,6 +100,19 @@ export const updateUserAdmin = async (req, res, next) => {
       ...(value.status ? { status: value.status } : {})
     });
     return sendSuccess(res, { user }, 'User updated');
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const deleteUserAdmin = async (req, res, next) => {
+  try {
+    const { value: params, error } = idParam.validate(req.params, { abortEarly: false, convert: true });
+    if (error) {
+      throw new ApiError(422, 'USERS.INVALID_ID', 'Invalid user id', error.details);
+    }
+    const user = await adminDeleteUser(params.id);
+    return sendSuccess(res, { user }, 'User deleted');
   } catch (err) {
     next(err);
   }
