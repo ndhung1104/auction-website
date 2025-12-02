@@ -33,7 +33,11 @@ const buildBaseQuery = (filters = {}) => {
     .where('p.status', 'ACTIVE');
 
   if (filters.categoryId) {
-    query.andWhere('p.category_id', filters.categoryId);
+    const subCategories = db('categories')
+      .select('id')
+      .where('id', filters.categoryId)
+      .orWhere('parent_id', filters.categoryId);
+    query.andWhereIn('p.category_id', subCategories);
   }
 
   return query;
@@ -44,7 +48,11 @@ export const countActiveProducts = async (filters = {}) => {
     .where({ status: 'ACTIVE' })
     .modify((qb) => {
       if (filters.categoryId) {
-        qb.andWhere('category_id', filters.categoryId);
+        const subCategories = db('categories')
+          .select('id')
+          .where('id', filters.categoryId)
+          .orWhere('parent_id', filters.categoryId);
+        qb.andWhereIn('category_id', subCategories);
       }
     })
     .count({ count: '*' });
