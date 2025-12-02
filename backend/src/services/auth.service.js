@@ -18,6 +18,12 @@ import {
   sendRegistrationEmail,
   sendRegistrationConfirmedEmail
 } from './mail.service.js';
+import {
+  findRefreshTokenByHash,
+  insertRefreshToken,
+  revokeRefreshToken,
+  revokeTokenChain
+} from '../repositories/refreshToken.repository.js';
 
 const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 10);
 const RECAPTCHA_ENDPOINT = {
@@ -27,6 +33,7 @@ const RECAPTCHA_ENDPOINT = {
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
 const RESET_TOKEN_TTL_MINUTES = Number(process.env.RESET_TOKEN_TTL_MINUTES || 15);
 const REGISTRATION_OTP_TTL_MINUTES = Number(process.env.REGISTRATION_OTP_TTL_MINUTES || 30);
+const REFRESH_TOKEN_TTL_DAYS = Number(process.env.REFRESH_TOKEN_TTL_DAYS || 7);
 
 const buildSafeUserPayload = (userRow) => ({
   id: userRow.id,
@@ -36,12 +43,61 @@ const buildSafeUserPayload = (userRow) => ({
   status: userRow.status
 });
 
-const buildAuthResponse = (userRow) => ({
-  token: generateJwt(userRow),
-  user: buildSafeUserPayload(userRow)
-});
+const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
-const generateJwt = (userRow) => {
+const generateRefreshToken = async ({ userId, userAgent, ip }) => {
+  const rawToken = crypto.randomBytes(40).toString('hex');
+  const tokenHash = hashToken(rawToken);
+  const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000);
+  const [created] = await insertRefreshToken({
+    user_id: userId,
+    token_hash: tokenHash,
+    expires_at: expiresAt,
+    user_agent: userAgent || null,
+    ip_address: ip || null,
+    rotated_from: null
+  });
+  return { rawToken, record: created };
+};
+
+const rotateRefreshToken = async ({ currentTokenHash, userAgent, ip }) => {
+  const existing = await findRefreshTokenByHash(currentTokenHash);
+  if (!existing || existing.revoked_at) {
+    throw new ApiError(401, 'AUTH.INVALID_REFRESH', 'Refresh token is invalid or revoked');
+  }
+  if (new Date(existing.expires_at) <= new Date()) {
+    throw new ApiError(401, 'AUTH.EXPIRED_REFRESH', 'Refresh token expired');
+  }
+  await revokeRefreshToken(existing.id);
+  const rawToken = crypto.randomBytes(40).toString('hex');
+  const tokenHash = hashToken(rawToken);
+  const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000);
+  const [created] = await insertRefreshToken({
+    user_id: existing.user_id,
+    token_hash: tokenHash,
+    expires_at: expiresAt,
+    user_agent: userAgent || existing.user_agent,
+    ip_address: ip || existing.ip_address,
+    rotated_from: existing.id
+  });
+  return { rawToken, record: created, userId: existing.user_id };
+};
+
+const buildTokens = async (userRow, meta = {}) => {
+  const accessToken = generateJwt(userRow, { jti: crypto.randomBytes(8).toString('hex') });
+  const refresh = await generateRefreshToken({
+    userId: userRow.id,
+    userAgent: meta.userAgent,
+    ip: meta.ip
+  });
+  return {
+    accessToken,
+    refreshToken: refresh.rawToken,
+    user: buildSafeUserPayload(userRow)
+  };
+};
+
+const generateJwt = (userRow, options = {}) => {
   if (!process.env.JWT_SECRET) {
     throw new ApiError(
       500,
@@ -53,7 +109,8 @@ const generateJwt = (userRow) => {
   return jwt.sign(
     {
       sub: userRow.id,
-      role: userRow.role
+      role: userRow.role,
+      ...(options.jti ? { jti: options.jti } : {})
     },
     process.env.JWT_SECRET,
     { expiresIn: JWT_EXPIRES_IN }
@@ -242,7 +299,7 @@ export const verifyRegistrationOtp = async ({ email, code }) => {
   return buildAuthResponse(updatedUser);
 };
 
-export const authenticateUser = async ({ email, password }) => {
+export const authenticateUser = async ({ email, password, userAgent, ip }) => {
   const user = await findUserByEmail(email);
   if (!user) {
     throw new ApiError(401, 'AUTH.INVALID_CREDENTIALS', 'Invalid email or password');
@@ -257,7 +314,12 @@ export const authenticateUser = async ({ email, password }) => {
     throw new ApiError(401, 'AUTH.INVALID_CREDENTIALS', 'Invalid email or password');
   }
 
-  return buildAuthResponse(user);
+  const tokens = await buildTokens(user, { userAgent, ip });
+  return {
+    token: tokens.accessToken,
+    refreshToken: tokens.refreshToken,
+    user: tokens.user
+  };
 };
 
 export const createPasswordResetRequest = async ({ email }) => {
@@ -317,6 +379,32 @@ export const resetPassword = async ({ token, newPassword }) => {
 
   await consumeTokenById(otp.id);
   return { reset: true };
+};
+
+export const refreshSession = async ({ refreshToken, userAgent, ip }) => {
+  if (!refreshToken) {
+    throw new ApiError(401, 'AUTH.MISSING_REFRESH', 'Refresh token is required');
+  }
+  const hashed = hashToken(refreshToken);
+  const rotated = await rotateRefreshToken({ currentTokenHash: hashed, userAgent, ip });
+  const user = await findUserById(rotated.userId);
+  if (!user) {
+    throw new ApiError(404, 'AUTH.USER_NOT_FOUND', 'User not found');
+  }
+  const accessToken = generateJwt(user, { jti: crypto.randomBytes(8).toString('hex') });
+  return {
+    token: accessToken,
+    refreshToken: rotated.rawToken,
+    user: buildSafeUserPayload(user)
+  };
+};
+
+export const revokeRefreshSession = async (refreshToken) => {
+  if (!refreshToken) return;
+  const hashed = hashToken(refreshToken);
+  const tokenRow = await findRefreshTokenByHash(hashed);
+  if (!tokenRow) return;
+  await revokeTokenChain(tokenRow.id);
 };
 
 export const changePassword = async ({ userId, currentPassword, newPassword }) => {
