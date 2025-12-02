@@ -117,10 +117,12 @@ export default function SearchResultsPage() {
               <div className="col" key={cat.id}>
                 <div className="card shadow-sm">
                   <div className="card-body">
-                    <div className="d-flex justify-content-between align-items-center">
-                      <span className="fw-semibold">{cat.name}</span>
-                      {cat.parentId && <span className="badge bg-light text-muted">Subcategory</span>}
-                    </div>
+                    <h6 className="fw-semibold mb-2">
+                      <Link to={`/products?categoryId=${cat.id}`} className="text-decoration-none">
+                        {cat.name}
+                      </Link>
+                    </h6>
+                    {cat.parentId && <span className="badge bg-light text-muted">Subcategory</span>}
                   </div>
                 </div>
               </div>
