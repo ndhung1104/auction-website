@@ -1,5 +1,5 @@
 import Joi from 'joi';
-import { searchActiveProducts } from '../services/search.service.js';
+import { searchActiveProducts, searchCategoriesByName } from '../services/search.service.js';
 import { sendSuccess } from '../utils/response.js';
 
 const searchSchema = Joi.object({
@@ -22,11 +22,16 @@ export const search = async (req, res, next) => {
     const limit = value.limit;
     const offset = (page - 1) * limit;
 
-    const { items, total } = await searchActiveProducts({
-      term: value.q,
-      limit,
-      offset
-    });
+    const [productResult, categoryResult] = await Promise.all([
+      searchActiveProducts({
+        term: value.q,
+        limit,
+        offset
+      }),
+      searchCategoriesByName({ term: value.q, limit: 10 })
+    ]);
+
+    const { items, total } = productResult;
 
     const meta = {
       total,
@@ -35,7 +40,7 @@ export const search = async (req, res, next) => {
       hasMore: offset + items.length < total
     };
 
-    return sendSuccess(res, { items, meta });
+    return sendSuccess(res, { items, categories: categoryResult, meta });
   } catch (err) {
     next(err);
   }

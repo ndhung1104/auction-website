@@ -8,6 +8,7 @@ const DEFAULT_META = { total: 0, page: 1, limit: 12, hasMore: false }
 export default function SearchResultsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [items, setItems] = useState([])
+  const [categories, setCategories] = useState([])
   const [meta, setMeta] = useState(DEFAULT_META)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -32,6 +33,7 @@ export default function SearchResultsPage() {
       .then((response) => {
         const payload = response?.data || {}
         setItems(payload.items || [])
+        setCategories(payload.categories || [])
         setMeta({
           ...DEFAULT_META,
           ...(payload.meta || {}),
@@ -41,6 +43,7 @@ export default function SearchResultsPage() {
       .catch((err) => {
         setItems([])
         setMeta({ ...DEFAULT_META, page })
+        setCategories([])
         setError(err.message || 'Unable to search products')
       })
       .finally(() => setLoading(false))
@@ -105,6 +108,26 @@ export default function SearchResultsPage() {
           </div>
         ))}
       </div>
+
+      {categories.length > 0 && (
+        <div className="mt-4">
+          <h4 className="mb-3">Matching categories</h4>
+          <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+            {categories.map((cat) => (
+              <div className="col" key={cat.id}>
+                <div className="card shadow-sm">
+                  <div className="card-body">
+                    <div className="d-flex justify-content-between align-items-center">
+                      <span className="fw-semibold">{cat.name}</span>
+                      {cat.parentId && <span className="badge bg-light text-muted">Subcategory</span>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {term && meta.total > meta.limit && (
         <div className="d-flex align-items-center justify-content-between mt-4">
           <button

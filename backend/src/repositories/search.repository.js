@@ -10,6 +10,19 @@ const sanitizeTerm = (value = '') =>
     .replace(/\s+/g, ' ')
     .trim();
 
+export const searchCategories = async ({ term, limit = 10 }) => {
+  const sanitized = sanitizeTerm(term);
+  if (!sanitized) {
+    return [];
+  }
+  const safeLimit = Math.min(Math.max(Number(limit) || 10, 1), 20);
+  return db('categories as c')
+    .select('c.id', 'c.name', 'c.parent_id')
+    .whereILike('c.name', `%${sanitized}%`)
+    .orderBy('c.name', 'asc')
+    .limit(safeLimit);
+};
+
 export const searchProducts = async ({ term, limit = DEFAULT_LIMIT, offset = 0 }) => {
   const sanitized = sanitizeTerm(term);
   if (!sanitized) {

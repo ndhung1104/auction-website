@@ -1,4 +1,4 @@
-import { searchProducts } from '../repositories/search.repository.js';
+import { searchProducts, searchCategories } from '../repositories/search.repository.js';
 import { findPrimaryImagesForProducts } from '../repositories/product.repository.js';
 import { getHighlightNewMinutes } from './setting.service.js';
 import { mapProduct } from './product.service.js';
@@ -20,4 +20,13 @@ export const searchActiveProducts = async ({ term, limit, offset }) => {
   );
 
   return { items, total };
+};
+
+export const searchCategoriesByName = async ({ term, limit }) => {
+  const rows = await searchCategories({ term, limit });
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    parentId: row.parent_id
+  }));
 };
