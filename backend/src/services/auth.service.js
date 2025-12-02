@@ -280,23 +280,37 @@ export const verifyRegistrationOtp = async ({ email, code }) => {
     throw new ApiError(404, 'AUTH.USER_NOT_FOUND', 'Account not found for verification');
   }
 
-  if (user.status === 'CONFIRMED') {
-    return buildAuthResponse(user);
+  let targetUser = user;
+  let alreadyConfirmed = false;
+
+  if (user.status !== 'CONFIRMED') {
+    const otp = await findActiveOtpByPurpose(code, 'REGISTER');
+    if (!otp || String(otp.user_id) !== String(user.id)) {
+      throw new ApiError(400, 'AUTH.INVALID_VERIFICATION', 'Verification code is invalid or expired');
+    }
+
+    await consumeTokenById(otp.id);
+    const [updatedUser] = await updateUser(user.id, { status: 'CONFIRMED' });
+
+    try {
+      await sendRegistrationConfirmedEmail({
+        email: updatedUser.email,
+        fullName: updatedUser.full_name
+      });
+    } catch (err) {
+      console.warn('[mail] registration confirmation email skipped', err.message);
+    }
+
+    targetUser = updatedUser;
+  } else {
+    alreadyConfirmed = true;
   }
 
-  const otp = await findActiveOtpByPurpose(code, 'REGISTER');
-  if (!otp || String(otp.user_id) !== String(user.id)) {
-    throw new ApiError(400, 'AUTH.INVALID_VERIFICATION', 'Verification code is invalid or expired');
-  }
-
-  await consumeTokenById(otp.id);
-  const [updatedUser] = await updateUser(user.id, { status: 'CONFIRMED' });
-  await sendRegistrationConfirmedEmail({
-    email: updatedUser.email,
-    fullName: updatedUser.full_name
-  });
-
-  return buildAuthResponse(updatedUser);
+  const auth = {
+    token: generateJwt(targetUser, { jti: crypto.randomBytes(8).toString('hex') }),
+    user: buildSafeUserPayload(targetUser)
+  };
+  return { ...auth, alreadyConfirmed };
 };
 
 export const authenticateUser = async ({ email, password, userAgent, ip }) => {

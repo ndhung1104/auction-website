@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
+import ReCAPTCHA from 'react-google-recaptcha'
 import { registerUser } from '../services/auth'
-import { Link } from 'react-router-dom'
 
-const DEFAULT_CAPTCHA = import.meta.env.VITE_RECAPTCHA_BYPASS || 'local-dev'
+const SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || ''
 
 export default function RegisterPage() {
   const navigate = useNavigate()
@@ -12,7 +12,7 @@ export default function RegisterPage() {
     email: '',
     phoneNumber: '',
     password: '',
-    captchaToken: DEFAULT_CAPTCHA
+    captchaToken: ''
   })
   const [submitting, setSubmitting] = useState(false)
   const [alert, setAlert] = useState(null)
@@ -24,6 +24,10 @@ export default function RegisterPage() {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
+    if (!form.captchaToken) {
+      setAlert({ type: 'danger', message: 'Please complete the captcha challenge.' })
+      return
+    }
     setSubmitting(true)
     setAlert(null)
     try {
@@ -118,19 +122,18 @@ export default function RegisterPage() {
                 />
               </div>
               <div className="mb-4">
-                <label htmlFor="captchaToken" className="form-label text-secondary small fw-medium">
-                  Captcha Token
-                </label>
-                <input
-                  id="captchaToken"
-                  name="captchaToken"
-                  type="text"
-                  className="form-control bg-light"
-                  value={form.captchaToken}
-                  onChange={handleChange}
-                  required
-                />
-                <div className="form-text small text-muted">Use your reCAPTCHA token or the configured bypass token.</div>
+                <label className="form-label text-secondary small fw-medium">Captcha</label>
+                <div>
+                  <ReCAPTCHA
+                    sitekey={SITE_KEY}
+                    onChange={(token) => setForm((prev) => ({ ...prev, captchaToken: token || '' }))}
+                  />
+                </div>
+                {!SITE_KEY && (
+                  <div className="form-text text-danger">
+                    Missing site key. Set VITE_RECAPTCHA_SITE_KEY in frontend/.env.
+                  </div>
+                )}
               </div>
 
               <button type="submit" className="btn btn-primary w-100 btn-lg fs-6 fw-bold mb-3" disabled={submitting}>
