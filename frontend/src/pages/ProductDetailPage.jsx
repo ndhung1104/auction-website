@@ -13,7 +13,7 @@ import {
   appendProductDescription,
   rejectBidder
 } from '../services/products'
-import { formatVND, formatVNTime } from '../utils/format'
+import { formatVND, formatVNTime, formatVNRelative } from '../utils/format'
 import ProductCard from '../components/ProductCard'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -134,6 +134,8 @@ export default function ProductDetailPage() {
     }
     return detail.images
   }, [detail])
+  const relativeEnd = formatVNRelative(product?.endAt)
+  const relativeStart = formatVNRelative(product?.startAt)
 
   useEffect(() => {
     setActiveImageIndex(0)
@@ -331,7 +333,11 @@ export default function ProductDetailPage() {
         <div className={`alert alert-${watchlistStatus.type} shadow-sm`}>{watchlistStatus.message}</div>
       )}
       <p className="text-secondary mb-4">
-        Auction ends at <span className="fw-medium text-dark">{formatVNTime(product.endAt)}</span> · Watchers: <span className="fw-medium text-dark">{watchlistInfo.count}</span>
+        Starts: <span className="fw-medium text-dark">{formatVNTime(product.startAt)}</span>
+        {relativeStart && <span className="text-muted ms-2">({relativeStart})</span>} ·
+        Ends: <span className="fw-medium text-dark">{formatVNTime(product.endAt)}</span>
+        {relativeEnd && <span className="text-muted ms-2">({relativeEnd})</span>} ·
+        Watchers: <span className="fw-medium text-dark">{watchlistInfo.count}</span>
       </p>
 
       <div className="row g-4">

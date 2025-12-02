@@ -57,3 +57,30 @@ export function formatCountdown(targetDate) {
   }
   return `${mins}m`
 }
+
+// Relative time with fallback to absolute for long ranges
+export function formatVNRelative(dateInput, { thresholdDays = 3 } = {}) {
+  if (!dateInput) return ''
+  const target = dateInput instanceof Date ? dateInput : new Date(dateInput)
+  if (isNaN(target)) return ''
+
+  const diffMs = target.getTime() - Date.now()
+  const absMs = Math.abs(diffMs)
+  const thresholdMs = thresholdDays * 24 * 60 * 60 * 1000
+
+  if (absMs > thresholdMs) {
+    return formatVNTime(target)
+  }
+
+  const minutes = Math.max(0, Math.floor(absMs / (1000 * 60)))
+  const days = Math.floor(minutes / (60 * 24))
+  const hours = Math.floor((minutes % (60 * 24)) / 60)
+  const mins = minutes % 60
+  const parts = []
+  if (days > 0) parts.push(`${days}d`)
+  if (hours > 0) parts.push(`${hours}h`)
+  if (mins > 0 && days === 0) parts.push(`${mins}m`)
+  const label = parts.join(' ') || '0m'
+
+  return diffMs >= 0 ? `in ${label}` : `${label} ago`
+}
