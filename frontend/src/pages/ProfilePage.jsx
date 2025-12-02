@@ -171,7 +171,13 @@ export default function ProfilePage() {
           <tbody>
             {items.map((item) => (
               <tr key={item.id}>
-                <td>{item.name}</td>
+                <td>
+                  {item.slug ? (
+                    <Link to={`/products/${item.id}`}>{item.name}</Link>
+                  ) : (
+                    item.name
+                  )}
+                </td>
                 <td>{item.status}</td>
                 <td>{item.currentPrice?.toLocaleString('vi-VN')}</td>
                 <td>{new Date(item.endAt).toLocaleString()}</td>
