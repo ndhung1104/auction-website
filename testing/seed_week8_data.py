@@ -76,6 +76,31 @@ def seed_categories(conn):
     return ids
 
 
+def cleanup_product(conn, slug):
+    with conn.cursor() as cur:
+        cur.execute("SELECT id FROM products WHERE slug=%s", (slug,))
+        row = cur.fetchone()
+        if not row:
+            return
+        product_id = row[0]
+        # remove dependents with FK
+        cur.execute("DELETE FROM product_images WHERE product_id=%s", (product_id,))
+        cur.execute("DELETE FROM bids WHERE product_id=%s", (product_id,))
+        cur.execute("DELETE FROM auto_bids WHERE product_id=%s", (product_id,))
+        cur.execute(
+            """
+            DELETE FROM order_messages WHERE order_id IN (
+              SELECT id FROM orders WHERE product_id=%s
+            )
+            """,
+            (product_id,),
+        )
+        cur.execute("DELETE FROM orders WHERE product_id=%s", (product_id,))
+        cur.execute("DELETE FROM watchlist WHERE product_id=%s", (product_id,))
+        cur.execute("DELETE FROM questions WHERE product_id=%s", (product_id,))
+        cur.execute("DELETE FROM products WHERE id=%s", (product_id,))
+
+
 def create_products(conn, seller_id, bidder_ids, category_ids):
     products = []
     now = datetime.now(timezone.utc)
@@ -84,7 +109,7 @@ def create_products(conn, seller_id, bidder_ids, category_ids):
             category_id = category_ids[idx % len(category_ids)]
             name = f"Week8 Product {idx + 1:02d}"
             slug = f"week8-product-{idx + 1:02d}"
-            cur.execute("DELETE FROM products WHERE slug=%s", (slug,))
+            cleanup_product(conn, slug)
             start_at = now - timedelta(hours=2)
             end_at = now + timedelta(days=3 - (idx % 3))
             start_price = 600000 + idx * 25000
