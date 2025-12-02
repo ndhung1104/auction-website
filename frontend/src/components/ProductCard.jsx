@@ -46,6 +46,10 @@ export default function ProductCard({ product, compact = false, showEndsAt = tru
           <span className="text-muted">Bids</span>
           <span className="badge bg-light text-dark border">{product.bidCount}</span>
         </div>
+        <div className="d-flex justify-content-between align-items-center mb-3 small">
+          <span className="text-muted">Posted</span>
+          <span className="fw-medium text-dark">{postedAt}</span>
+        </div>
 
         {product.buyNowPrice != null && (
           <div className="alert alert-light border py-2 px-3 mb-3 small">
