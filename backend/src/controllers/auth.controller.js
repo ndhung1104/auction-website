@@ -5,6 +5,8 @@ import {
   createPasswordResetRequest,
   registerUser,
   resetPassword,
+  refreshSession,
+  revokeRefreshSession,
   verifyRegistrationOtp
 } from '../services/auth.service.js';
 import { ApiError, sendCreated, sendSuccess } from '../utils/response.js';
@@ -49,6 +51,29 @@ const loginSchema = Joi.object({
   password: Joi.string().required()
 });
 
+const refreshSchema = Joi.object({
+  refreshToken: Joi.string().optional()
+});
+
+const cookieOptions = () => {
+  const isProd = process.env.NODE_ENV === 'production';
+  return {
+    httpOnly: true,
+    sameSite: isProd ? 'lax' : 'lax',
+    secure: isProd,
+    path: '/api/auth/refresh',
+    maxAge: Number(process.env.REFRESH_TOKEN_TTL_DAYS || 7) * 24 * 60 * 60 * 1000
+  };
+};
+
+const setRefreshCookie = (res, token) => {
+  res.cookie('refresh_token', token, cookieOptions());
+};
+
+const clearRefreshCookie = (res) => {
+  res.clearCookie('refresh_token', { path: '/api/auth/refresh' });
+};
+
 export const login = async (req, res, next) => {
   try {
     const { value, error } = loginSchema.validate(req.body, {
@@ -65,8 +90,15 @@ export const login = async (req, res, next) => {
       );
     }
 
-    const payload = await authenticateUser(value);
-    return sendSuccess(res, payload, 'Authentication successful');
+    const payload = await authenticateUser({
+      ...value,
+      userAgent: req.get('user-agent'),
+      ip: req.ip
+    });
+    if (payload.refreshToken) {
+      setRefreshCookie(res, payload.refreshToken);
+    }
+    return sendSuccess(res, { token: payload.token, user: payload.user }, 'Authentication successful');
   } catch (err) {
     next(err);
   }
@@ -157,6 +189,35 @@ export const verifyEmail = async (req, res, next) => {
     }
     const payload = await verifyRegistrationOtp(value);
     return sendSuccess(res, payload, 'Account verified successfully');
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const refreshTokenController = async (req, res, next) => {
+  try {
+    const { value } = refreshSchema.validate(req.body || {}, { abortEarly: false, stripUnknown: true });
+    const rawToken = value.refreshToken || req.cookies?.refresh_token;
+    const payload = await refreshSession({
+      refreshToken: rawToken,
+      userAgent: req.get('user-agent'),
+      ip: req.ip
+    });
+    if (payload.refreshToken) {
+      setRefreshCookie(res, payload.refreshToken);
+    }
+    return sendSuccess(res, { token: payload.token, user: payload.user }, 'Token refreshed');
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const logoutController = async (req, res, next) => {
+  try {
+    const token = req.cookies?.refresh_token || req.body?.refreshToken || null;
+    await revokeRefreshSession(token);
+    clearRefreshCookie(res);
+    return sendSuccess(res, { loggedOut: true }, 'Logged out');
   } catch (err) {
     next(err);
   }

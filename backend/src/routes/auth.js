@@ -5,7 +5,9 @@ import {
   login,
   register,
   resetPasswordController,
-  verifyEmail
+  verifyEmail,
+  refreshTokenController,
+  logoutController
 } from '../controllers/auth.controller.js';
 import { checkAuth } from '../middlewares/auth.js';
 
@@ -17,5 +19,7 @@ router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPasswordController);
 router.post('/verify-email', verifyEmail);
 router.post('/change-password', checkAuth, changePasswordController);
+router.post('/refresh', refreshTokenController);
+router.post('/logout', logoutController);
 
 export default router;

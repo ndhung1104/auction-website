@@ -16,6 +16,14 @@ export function resetPassword(payload) {
   return apiClient.post('/auth/reset-password', payload)
 }
 
+export function refreshSession() {
+  return apiClient.post('/auth/refresh')
+}
+
+export function logoutUser() {
+  return apiClient.post('/auth/logout')
+}
+
 export function verifyEmail(payload) {
   return apiClient.post('/auth/verify-email', payload)
 }
