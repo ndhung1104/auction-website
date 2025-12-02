@@ -1,6 +1,7 @@
 import db from '../db/knex.js';
 import { insertBid } from '../repositories/bid.repository.js';
 import { findAutoBidsByProduct } from '../repositories/autoBid.repository.js';
+import { getExtendSettings } from './setting.service.js';
 
 const pick = (row = {}) => ({
   id: row.id,
@@ -10,6 +11,16 @@ const pick = (row = {}) => ({
   end_at: row.end_at,
   status: row.status
 });
+
+const computeExtendedEndTime = (product, windowMinutes, extendMinutes) => {
+  if (!product.auto_extend) return null;
+  const endTime = new Date(product.end_at).getTime();
+  const now = Date.now();
+  if (endTime <= now) return null;
+  const windowMs = windowMinutes * 60 * 1000;
+  if (endTime - now > windowMs) return null;
+  return new Date(endTime + extendMinutes * 60 * 1000);
+};
 
 export const recalcAutoBid = async (productId, trx = null, options = {}) => {
   const knex = trx || db;
@@ -34,6 +45,7 @@ export const recalcAutoBid = async (productId, trx = null, options = {}) => {
   const currentPrice = Number(product.current_price);
   const startPrice = Number(product.start_price);
   const priceStep = Number(product.price_step);
+  const extendSettings = await getExtendSettings();
 
   const secondAutoAmount = autoBids[1] ? Number(autoBids[1].max_bid_amount) : null;
   const manualAmount =
@@ -68,6 +80,12 @@ export const recalcAutoBid = async (productId, trx = null, options = {}) => {
     return { triggered: false };
   }
 
+  const extendedEndAt = computeExtendedEndTime(
+    product,
+    extendSettings.windowMinutes,
+    extendSettings.extendMinutes
+  );
+
   const [updatedProduct] = await knex('products')
     .where({ id: productId })
     .update(
@@ -75,7 +93,8 @@ export const recalcAutoBid = async (productId, trx = null, options = {}) => {
         current_price: targetPrice,
         current_bidder_id: topBidder.user_id,
         bid_count: knex.raw('bid_count + 1'),
-        updated_at: knex.fn.now()
+        updated_at: knex.fn.now(),
+        ...(extendedEndAt ? { end_at: extendedEndAt } : {})
       },
       ['id', 'current_price', 'current_bidder_id', 'bid_count', 'end_at', 'status']
     );

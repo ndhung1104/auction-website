@@ -59,7 +59,7 @@ const parsePositiveNumber = (value, fallback) => {
 
 export const getExtendSettings = async () => {
   const DEFAULT_WINDOW = 5;
-  const DEFAULT_EXTEND = 5;
+  const DEFAULT_EXTEND = 10;
 
   const [windowRaw, extendRaw] = await Promise.all([
     getSettingValue(SettingKeys.EXTEND_WINDOW_MINUTES, String(DEFAULT_WINDOW)),
