@@ -37,7 +37,7 @@ const buildBaseQuery = (filters = {}) => {
       .select('id')
       .where('id', filters.categoryId)
       .orWhere('parent_id', filters.categoryId);
-    query.andWhereIn('p.category_id', subCategories);
+    query.whereIn('p.category_id', subCategories);
   }
 
   return query;
@@ -52,7 +52,7 @@ export const countActiveProducts = async (filters = {}) => {
           .select('id')
           .where('id', filters.categoryId)
           .orWhere('parent_id', filters.categoryId);
-        qb.andWhereIn('category_id', subCategories);
+        qb.whereIn('category_id', subCategories);
       }
     })
     .count({ count: '*' });
