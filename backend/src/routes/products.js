@@ -15,7 +15,7 @@ import { uploadProductImages } from '../middlewares/upload.js';
 
 const router = Router();
 
-router.get('/', getProducts);
+router.get('/', optionalAuth, getProducts);
 router.post(
   '/',
   checkAuth,

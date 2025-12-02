@@ -28,3 +28,14 @@ export const findWatchlistByUser = (userId) =>
     )
     .where('w.user_id', userId)
     .orderBy('w.created_at', 'desc');
+
+export const findWatchlistedProductIds = async (userId, productIds = []) => {
+  if (!userId || !Array.isArray(productIds) || !productIds.length) {
+    return [];
+  }
+  const rows = await db('watchlist')
+    .select('product_id')
+    .where({ user_id: userId })
+    .whereIn('product_id', productIds);
+  return rows.map((row) => row.product_id);
+};

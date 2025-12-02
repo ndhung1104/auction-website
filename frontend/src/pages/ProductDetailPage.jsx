@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import {
   fetchProductBids,
@@ -46,6 +46,8 @@ export default function ProductDetailPage() {
   const [autoSubmitting, setAutoSubmitting] = useState(false)
   const [buyNowSubmitting, setBuyNowSubmitting] = useState(false)
   const [activeImageIndex, setActiveImageIndex] = useState(0)
+  const [confirmDialog, setConfirmDialog] = useState(null)
+  const watchlistTimerRef = useRef(null)
 
   const reloadProduct = useCallback(async () => {
     const response = await fetchProductDetail(productId)
@@ -142,6 +144,19 @@ export default function ProductDetailPage() {
   }, [product?.id])
 
   useEffect(() => {
+    if (watchlistTimerRef.current) {
+      clearTimeout(watchlistTimerRef.current)
+    }
+    if (!watchlistStatus) return undefined
+    watchlistTimerRef.current = setTimeout(() => setWatchlistStatus(null), 5000)
+    return () => {
+      if (watchlistTimerRef.current) {
+        clearTimeout(watchlistTimerRef.current)
+      }
+    }
+  }, [watchlistStatus])
+
+  useEffect(() => {
     if (!product) return
     setManualBidAmount(String(product.currentPrice + product.priceStep))
     const baseAuto = product.currentBidderId ? product.currentPrice + product.priceStep : product.startPrice
@@ -156,13 +171,17 @@ export default function ProductDetailPage() {
     event.preventDefault()
     if (!product) return
     setManualStatus(null)
-    setManualSubmitting(true)
     const numericAmount = Number(manualBidAmount)
     if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
       setManualStatus({ type: 'danger', message: 'Please enter a valid bid amount' })
-      setManualSubmitting(false)
       return
     }
+    setConfirmDialog({ type: 'manual', amount: numericAmount })
+  }
+
+  const submitManualBid = async (numericAmount) => {
+    if (!product) return
+    setManualSubmitting(true)
     try {
       await placeManualBid(product.id, { amount: numericAmount })
       setManualStatus({ type: 'success', message: 'Bid placed successfully' })
@@ -178,13 +197,17 @@ export default function ProductDetailPage() {
     event.preventDefault()
     if (!product) return
     setAutoStatus(null)
-    setAutoSubmitting(true)
     const numericAmount = Number(autoBidAmount)
     if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
       setAutoStatus({ type: 'danger', message: 'Please enter a valid auto-bid amount' })
-      setAutoSubmitting(false)
       return
     }
+    setConfirmDialog({ type: 'auto', amount: numericAmount })
+  }
+
+  const submitAutoBid = async (numericAmount) => {
+    if (!product) return
+    setAutoSubmitting(true)
     try {
       await registerAutoBid(product.id, { maxBidAmount: numericAmount })
       setAutoStatus({ type: 'success', message: 'Auto-bid saved successfully' })
@@ -293,6 +316,18 @@ export default function ProductDetailPage() {
     }
   }
 
+  const closeConfirmDialog = () => setConfirmDialog(null)
+
+  const confirmAndSubmit = async () => {
+    if (!confirmDialog) return
+    if (confirmDialog.type === 'manual') {
+      await submitManualBid(confirmDialog.amount)
+    } else if (confirmDialog.type === 'auto') {
+      await submitAutoBid(confirmDialog.amount)
+    }
+    setConfirmDialog(null)
+  }
+
   if (loading) {
     return <div className="alert alert-info">Loading product…</div>
   }
@@ -307,6 +342,42 @@ export default function ProductDetailPage() {
 
   return (
     <div className="product-detail-page py-4">
+      {confirmDialog && (
+        <>
+          <div className="modal fade show d-block" tabIndex="-1">
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    {confirmDialog.type === 'manual' ? 'Confirm manual bid' : 'Confirm auto-bid'}
+                  </h5>
+                  <button type="button" className="btn-close" onClick={closeConfirmDialog}></button>
+                </div>
+                <div className="modal-body">
+                  <p className="mb-1">
+                    Amount: <strong>{formatVND(confirmDialog.amount)}</strong>
+                  </p>
+                  <small className="text-muted">Product: {product.name}</small>
+                </div>
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-outline-secondary" onClick={closeConfirmDialog}>
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={confirmAndSubmit}
+                    disabled={manualSubmitting || autoSubmitting}
+                  >
+                    Confirm
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="modal-backdrop fade show"></div>
+        </>
+      )}
       <div className="d-flex align-items-center gap-3 mb-3 flex-wrap">
         <div className="d-flex align-items-center gap-3">
           <h1 className="h2 fw-bold text-primary mb-0">{product.name}</h1>

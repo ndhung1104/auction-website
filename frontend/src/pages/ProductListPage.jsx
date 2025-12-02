@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { fetchProducts } from '../services/products'
+import { fetchProducts, addToWatchlist, removeFromWatchlist } from '../services/products'
 import ProductCard from '../components/ProductCard'
+import { useAuth } from '../contexts/AuthContext'
 
 const SORT_OPTIONS = [
   { value: 'end_at,asc', label: 'Ending soon' },
@@ -12,11 +13,15 @@ const SORT_OPTIONS = [
 ]
 
 export default function ProductListPage() {
+  const { isAuthenticated } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const [items, setItems] = useState([])
   const [meta, setMeta] = useState({ page: 1, totalPages: 0, total: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [watchlistLoading, setWatchlistLoading] = useState({})
+  const [watchlistStatus, setWatchlistStatus] = useState({})
+  const watchlistTimers = useRef({})
 
   const currentPage = Number(searchParams.get('page')) || 1
   const currentSort = searchParams.get('sort') || SORT_OPTIONS[0].value
@@ -68,6 +73,53 @@ export default function ProductListPage() {
 
   const sortLabel = useMemo(() => SORT_OPTIONS.find((option) => option.value === currentSort)?.label, [currentSort])
 
+  const setStatusWithTimeout = (productId, payload) => {
+    setWatchlistStatus((prev) => ({ ...prev, [productId]: payload }))
+    if (watchlistTimers.current[productId]) {
+      clearTimeout(watchlistTimers.current[productId])
+    }
+    watchlistTimers.current[productId] = setTimeout(() => {
+      setWatchlistStatus((prev) => {
+        const next = { ...prev }
+        delete next[productId]
+        return next
+      })
+      delete watchlistTimers.current[productId]
+    }, 5000)
+  }
+
+  useEffect(() => {
+    return () => {
+      Object.values(watchlistTimers.current || {}).forEach((timer) => clearTimeout(timer))
+      watchlistTimers.current = {}
+    }
+  }, [])
+
+  const handleWatchlistToggle = async (productId, isWatchlisted) => {
+    if (!isAuthenticated) {
+      setStatusWithTimeout(productId, { type: 'danger', message: 'Please log in to use watchlist.' })
+      return
+    }
+    setWatchlistLoading((prev) => ({ ...prev, [productId]: true }))
+    setStatusWithTimeout(productId, null)
+    try {
+      if (isWatchlisted) {
+        await removeFromWatchlist(productId)
+        setStatusWithTimeout(productId, { type: 'success', message: 'Removed from watchlist' })
+      } else {
+        await addToWatchlist(productId)
+        setStatusWithTimeout(productId, { type: 'success', message: 'Added to watchlist' })
+      }
+      setItems((prev) =>
+        prev.map((item) => (item.id === productId ? { ...item, isWatchlisted: !isWatchlisted } : item))
+      )
+    } catch (err) {
+      setStatusWithTimeout(productId, { type: 'danger', message: err.message || 'Unable to update watchlist' })
+    } finally {
+      setWatchlistLoading((prev) => ({ ...prev, [productId]: false }))
+    }
+  }
+
   return (
     <div className="py-4">
       <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-3 bg-surface p-4 rounded-3 shadow-sm border">
@@ -114,7 +166,28 @@ export default function ProductListPage() {
       <div className="row g-4">
         {items.map((product) => (
           <div key={product.id} className="col-12 col-sm-6 col-lg-4 col-xl-3">
-            <ProductCard product={product} />
+            <div className="d-flex flex-column h-100 gap-2">
+              <ProductCard product={product} />
+              <div className="d-flex align-items-center justify-content-between">
+                <button
+                  type="button"
+                  className={`btn btn-sm ${product.isWatchlisted ? 'btn-outline-danger' : 'btn-outline-primary'}`}
+                  onClick={() => handleWatchlistToggle(product.id, product.isWatchlisted)}
+                  disabled={Boolean(watchlistLoading[product.id])}
+                >
+                  {watchlistLoading[product.id]
+                    ? 'Updating...'
+                    : product.isWatchlisted
+                      ? 'Remove from watchlist'
+                      : 'Add to watchlist'}
+                </button>
+              </div>
+              {watchlistStatus[product.id] && (
+                <div className={`alert alert-${watchlistStatus[product.id].type} mb-0 py-2 small`}>
+                  {watchlistStatus[product.id].message}
+                </div>
+              )}
+            </div>
           </div>
         ))}
       </div>

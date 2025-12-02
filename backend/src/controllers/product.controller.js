@@ -86,7 +86,7 @@ export const getProducts = async (req, res, next) => {
       );
     }
 
-    const { items, meta } = await listProducts(value);
+    const { items, meta } = await listProducts(value, req.user?.id ?? null);
     return sendSuccess(res, { items }, null, meta);
   } catch (err) {
     next(err);

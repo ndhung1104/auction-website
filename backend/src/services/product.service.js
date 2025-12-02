@@ -37,6 +37,7 @@ import {
   sendOutbidNotification,
   sendBidRejectedNotification
 } from './mail.service.js';
+import { findWatchlistedProductIds } from '../repositories/watchlist.repository.js';
 
 const SORT_FIELDS = {
   'end_at': 'end_at',
@@ -225,7 +226,7 @@ const computeExtendedEndTime = (product, windowMinutes, extendMinutes) => {
   return new Date(endTime + extendMinutes * 60 * 1000);
 };
 
-export const listProducts = async ({ page, limit, sort, categoryId }) => {
+export const listProducts = async ({ page, limit, sort, categoryId }, viewerId = null) => {
   const { field, direction } = normalizeSort(sort);
   const pagination = normalizePagination({ page, limit });
   const filters = {};
@@ -255,6 +256,14 @@ export const listProducts = async ({ page, limit, sort, categoryId }) => {
       primaryImageUrl: imageMap.get(row.id) || null
     })
   );
+
+  if (viewerId) {
+    const watchlistedIds = await findWatchlistedProductIds(viewerId, rows.map((row) => row.id));
+    const watchlistSet = new Set(watchlistedIds);
+    items.forEach((item) => {
+      item.isWatchlisted = watchlistSet.has(item.id);
+    });
+  }
 
   return {
     items,
