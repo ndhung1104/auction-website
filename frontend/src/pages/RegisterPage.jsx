@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { registerUser } from '../services/auth'
+import { Link } from 'react-router-dom'
 
 const DEFAULT_CAPTCHA = import.meta.env.VITE_RECAPTCHA_BYPASS || 'local-dev'
 

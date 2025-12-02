@@ -7,7 +7,7 @@ import {
 import { getHighlightNewMinutes } from './setting.service.js';
 import { mapProduct } from './product.service.js';
 
-const SECTION_LIMIT = 6;
+const SECTION_LIMIT = 4;
 
 export const buildHomepagePayload = async () => {
   const highlightWindowMinutes = await getHighlightNewMinutes();
