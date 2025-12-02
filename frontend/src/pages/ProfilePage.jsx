@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { fetchProfile, requestSellerUpgrade, updateProfile } from '../services/profile'
 import { changePassword } from '../services/auth'
 import { useAuth } from '../contexts/AuthContext'
