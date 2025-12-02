@@ -28,12 +28,16 @@ const sendMail = async ({ to, subject, text }) => {
     console.info('[mail] skipped email', { to, subject, text });
     return;
   }
-  await mailer.sendMail({
-    from: process.env.MAIL_FROM || process.env.MAIL_USER,
-    to,
-    subject,
-    text
-  });
+  try {
+    await mailer.sendMail({
+      from: process.env.MAIL_FROM || process.env.MAIL_USER,
+      to,
+      subject,
+      text
+    });
+  } catch (err) {
+    console.warn('[mail] delivery failed, continuing without email', err.message);
+  }
 };
 
 export const sendRegistrationEmail = async ({ email, fullName, code, expiresAt }) =>
