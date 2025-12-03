@@ -11,22 +11,21 @@ import { useAuth } from '../contexts/AuthContext'
 import { formatVND, formatVNTime } from '../utils/format'
 
 const STATUS_LABELS = {
-  PENDING_PAYMENT: 'Pending payment',
-  PROCESSING: 'Processing',
+  WAITING_BUYER_DETAILS: 'Awaiting buyer details',
+  WAITING_SELLER_CONFIRM: 'Awaiting seller confirmation',
+  WAITING_BUYER_RECEIPT: 'Shipped / awaiting receipt',
   COMPLETED: 'Completed',
-  CANCELLED: 'Cancelled'
+  CANCELLED: 'Cancelled',
+  // Legacy fallbacks
+  PENDING_PAYMENT: 'Awaiting buyer details',
+  PROCESSING: 'Shipped / awaiting receipt'
 }
 
-const STATUS_ACTIONS = [
-  { key: 'PROCESSING', label: 'Mark processing' },
-  { key: 'COMPLETED', label: 'Mark completed' }
-]
-
 const STATUS_STEPS = [
-  { key: 'PENDING_PAYMENT', label: 'Payment submitted' },
-  { key: 'PROCESSING', label: 'Seller processing' },
-  { key: 'COMPLETED', label: 'Completed' },
-  { key: 'RATING', label: 'Rate each other' }
+  { key: 'WAITING_BUYER_DETAILS', label: 'Buyer submits invoice' },
+  { key: 'WAITING_SELLER_CONFIRM', label: 'Seller confirms payment & shipping' },
+  { key: 'WAITING_BUYER_RECEIPT', label: 'Buyer confirms receipt' },
+  { key: 'COMPLETED', label: 'Rate each other' }
 ]
 
 export default function OrderDetailPage() {
@@ -39,32 +38,43 @@ export default function OrderDetailPage() {
   const [messageStatus, setMessageStatus] = useState(null)
   const [ratingStatus, setRatingStatus] = useState(null)
   const [statusStatus, setStatusStatus] = useState(null)
+  const [invoiceForm, setInvoiceForm] = useState({ shippingAddress: '', invoiceNote: '' })
+  const [shippingCode, setShippingCode] = useState('')
+  const [workflowSubmitting, setWorkflowSubmitting] = useState(false)
   const order = detail?.order || null
   const messages = detail?.messages || []
   const product = detail?.product || null
   const isSeller = order && String(user?.id) === String(order.sellerId)
   const isWinner = order && String(user?.id) === String(order.winnerId)
-  const canUpdateStatus = isSeller && order?.status !== 'CANCELLED'
-  const canCancel = canUpdateStatus && order?.status !== 'COMPLETED'
+  const normalizedStatus = useMemo(() => {
+    if (!order?.status) return null
+    if (order.status === 'PENDING_PAYMENT') return 'WAITING_BUYER_DETAILS'
+    if (order.status === 'PROCESSING') return 'WAITING_BUYER_RECEIPT'
+    return order.status
+  }, [order?.status])
+  const canSubmitInvoice = isWinner && normalizedStatus === 'WAITING_BUYER_DETAILS' && order?.status !== 'CANCELLED'
+  const canSellerConfirm = isSeller && normalizedStatus === 'WAITING_SELLER_CONFIRM' && order?.status !== 'CANCELLED'
+  const canConfirmReceipt = isWinner && normalizedStatus === 'WAITING_BUYER_RECEIPT' && order?.status !== 'CANCELLED'
+  const canCancel = (isSeller || isWinner) && order?.status !== 'CANCELLED' && order?.status !== 'COMPLETED'
   const canSendMessage = order?.status !== 'CANCELLED'
-  const canRate = Boolean(order) && (isSeller || isWinner)
+  const canRate = Boolean(order) && (isSeller || isWinner) && normalizedStatus === 'COMPLETED'
 
   const statusColor = useMemo(() => {
     if (!order) return 'secondary'
-    if (order.status === 'COMPLETED') return 'success'
+    if (normalizedStatus === 'COMPLETED') return 'success'
     if (order.status === 'CANCELLED') return 'secondary'
     return 'warning'
-  }, [order])
+  }, [order, normalizedStatus])
 
   const timeline = useMemo(() => {
-    const currentIndex = order ? STATUS_STEPS.findIndex((step) => step.key === order.status) : -1
+    const currentIndex = order ? STATUS_STEPS.findIndex((step) => step.key === normalizedStatus) : -1
     return STATUS_STEPS.map((step, index) => ({
       status: step.key,
       label: step.label,
       reached:
-        (order && currentIndex >= index) || (step.key === 'RATING' && order?.status === 'COMPLETED')
+        (order && currentIndex >= index) || (step.key === 'COMPLETED' && order?.status === 'COMPLETED')
     }))
-  }, [order])
+  }, [order, normalizedStatus])
 
   const loadDetail = useCallback(() => {
     setLoading(true)
@@ -89,6 +99,15 @@ export default function OrderDetailPage() {
     loadDetail()
   }, [isAuthenticated, loadDetail])
 
+  useEffect(() => {
+    if (!order) return
+    setInvoiceForm({
+      shippingAddress: order.shippingAddress || '',
+      invoiceNote: order.buyerInvoiceNote || ''
+    })
+    setShippingCode(order.shippingCode || '')
+  }, [order])
+
   if (!isAuthenticated) {
     return <div className="alert alert-warning">Please log in to view order details.</div>
   }
@@ -97,17 +116,58 @@ export default function OrderDetailPage() {
   if (error) return <div className="alert alert-danger">{error}</div>
   if (!detail) return <div className="alert alert-warning">Order not found.</div>
 
-  const handleStatusChange = (nextStatus) => {
-    if (!canUpdateStatus) return
+  const handleSubmitInvoice = (event) => {
+    event.preventDefault()
+    if (!canSubmitInvoice) return
+    setWorkflowSubmitting(true)
     setStatusStatus(null)
-    updateOrderStatus(orderId, { status: nextStatus })
+    updateOrderStatus(orderId, {
+      status: 'WAITING_SELLER_CONFIRM',
+      shippingAddress: invoiceForm.shippingAddress,
+      invoiceNote: invoiceForm.invoiceNote
+    })
       .then(() => {
-        setStatusStatus({ type: 'success', message: 'Order status updated' })
+        setStatusStatus({ type: 'success', message: 'Invoice details submitted' })
         loadDetail()
       })
       .catch((err) => {
-        setStatusStatus({ type: 'danger', message: err.message || 'Unable to update status' })
+        setStatusStatus({ type: 'danger', message: err.message || 'Unable to submit details' })
       })
+      .finally(() => setWorkflowSubmitting(false))
+  }
+
+  const handleSellerConfirm = (event) => {
+    event.preventDefault()
+    if (!canSellerConfirm) return
+    setWorkflowSubmitting(true)
+    setStatusStatus(null)
+    updateOrderStatus(orderId, {
+      status: 'WAITING_BUYER_RECEIPT',
+      shippingCode
+    })
+      .then(() => {
+        setStatusStatus({ type: 'success', message: 'Shipping confirmed' })
+        loadDetail()
+      })
+      .catch((err) => {
+        setStatusStatus({ type: 'danger', message: err.message || 'Unable to confirm shipping' })
+      })
+      .finally(() => setWorkflowSubmitting(false))
+  }
+
+  const handleConfirmReceipt = () => {
+    if (!canConfirmReceipt) return
+    setWorkflowSubmitting(true)
+    setStatusStatus(null)
+    updateOrderStatus(orderId, { status: 'COMPLETED' })
+      .then(() => {
+        setStatusStatus({ type: 'success', message: 'Receipt confirmed' })
+        loadDetail()
+      })
+      .catch((err) => {
+        setStatusStatus({ type: 'danger', message: err.message || 'Unable to confirm receipt' })
+      })
+      .finally(() => setWorkflowSubmitting(false))
   }
 
   const handleCancel = () => {
@@ -154,7 +214,9 @@ export default function OrderDetailPage() {
     <div>
       <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
         <h1 className="mb-0">Order #{order.id}</h1>
-        <span className={`badge text-bg-${statusColor}`}>{STATUS_LABELS[order.status] || order.status}</span>
+        <span className={`badge text-bg-${statusColor}`}>
+          {STATUS_LABELS[normalizedStatus] || STATUS_LABELS[order.status] || order.status}
+        </span>
       </div>
       <p className="text-muted">
         Product: <strong>{product?.name}</strong> | Final price: {formatVND(order.finalPrice)}
@@ -176,25 +238,123 @@ export default function OrderDetailPage() {
 
       {statusStatus && <div className={`alert alert-${statusStatus.type}`}>{statusStatus.message}</div>}
 
-      {canUpdateStatus && (
-        <div className="btn-group mb-4">
-          {STATUS_ACTIONS.map((action) => (
-            <button
-              key={action.key}
-              className="btn btn-outline-secondary"
-              onClick={() => handleStatusChange(action.key)}
-              disabled={order.status === action.key}
-            >
-              {action.label}
+      <section className="mb-4">
+        <h3 className="mb-3">Fulfillment steps</h3>
+
+        <div className="row g-3">
+          <div className="col-lg-6">
+            <div className="card shadow-sm h-100">
+              <div className="card-body">
+                <h5 className="card-title">Step 1: Buyer invoice</h5>
+                <p className="text-muted small mb-3">
+                  Provide shipping address and any invoice note so the seller can confirm payment.
+                </p>
+                {canSubmitInvoice ? (
+                  <form onSubmit={handleSubmitInvoice} className="d-flex flex-column gap-3">
+                    <div>
+                      <label className="form-label">Shipping address</label>
+                      <textarea
+                        className="form-control"
+                        rows="3"
+                        value={invoiceForm.shippingAddress}
+                        onChange={(event) =>
+                          setInvoiceForm((prev) => ({ ...prev, shippingAddress: event.target.value }))
+                        }
+                        required
+                        disabled={workflowSubmitting}
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label">Invoice note (optional)</label>
+                      <textarea
+                        className="form-control"
+                        rows="2"
+                        value={invoiceForm.invoiceNote}
+                        onChange={(event) =>
+                          setInvoiceForm((prev) => ({ ...prev, invoiceNote: event.target.value }))
+                        }
+                        disabled={workflowSubmitting}
+                      />
+                    </div>
+                    <button type="submit" className="btn btn-primary" disabled={workflowSubmitting}>
+                      {workflowSubmitting ? 'Submitting...' : 'Submit details'}
+                    </button>
+                  </form>
+                ) : (
+                  <div className="alert alert-light border">
+                    <p className="mb-1">
+                      <strong>Address:</strong> {order.shippingAddress || 'Not provided yet'}
+                    </p>
+                    {order.buyerInvoiceNote && (
+                      <p className="mb-0">
+                        <strong>Note:</strong> {order.buyerInvoiceNote}
+                      </p>
+                    )}
+                    {order.invoiceSubmittedAt && (
+                      <small className="text-muted d-block mt-2">
+                        Submitted {formatVNTime(order.invoiceSubmittedAt)}
+                      </small>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="col-lg-6">
+            <div className="card shadow-sm h-100">
+              <div className="card-body">
+                <h5 className="card-title">Step 2: Seller confirmation</h5>
+                <p className="text-muted small mb-3">
+                  Confirm payment and provide a shipping / tracking code for the buyer.
+                </p>
+                {canSellerConfirm ? (
+                  <form onSubmit={handleSellerConfirm} className="d-flex flex-column gap-3">
+                    <div>
+                      <label className="form-label">Shipping / tracking code</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={shippingCode}
+                        onChange={(event) => setShippingCode(event.target.value)}
+                        required
+                        disabled={workflowSubmitting}
+                      />
+                    </div>
+                    <button type="submit" className="btn btn-outline-primary" disabled={workflowSubmitting}>
+                      {workflowSubmitting ? 'Saving...' : 'Confirm payment & ship'}
+                    </button>
+                  </form>
+                ) : (
+                  <div className="alert alert-light border">
+                    <p className="mb-1">
+                      <strong>Shipping code:</strong> {order.shippingCode || 'Not provided yet'}
+                    </p>
+                    {order.paymentConfirmedAt && (
+                      <small className="text-muted d-block mt-2">
+                        Payment confirmed {formatVNTime(order.paymentConfirmedAt)}
+                      </small>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="d-flex flex-wrap gap-3 align-items-center mt-3">
+          {canConfirmReceipt && (
+            <button className="btn btn-success" onClick={handleConfirmReceipt} disabled={workflowSubmitting}>
+              {workflowSubmitting ? 'Confirming...' : 'Step 3: Confirm received'}
             </button>
-          ))}
+          )}
           {canCancel && (
             <button className="btn btn-outline-danger" onClick={handleCancel}>
               Cancel order
             </button>
           )}
         </div>
-      )}
+      </section>
 
       <section className="mb-5">
         <div className="d-flex align-items-center justify-content-between mb-3">

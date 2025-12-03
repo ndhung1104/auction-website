@@ -5,10 +5,14 @@ import { useAuth } from '../contexts/AuthContext'
 import { formatVND, formatVNTime } from '../utils/format'
 
 const STATUS_LABELS = {
-  PENDING_PAYMENT: 'Pending payment',
-  PROCESSING: 'Processing',
+  WAITING_BUYER_DETAILS: 'Awaiting buyer details',
+  WAITING_SELLER_CONFIRM: 'Awaiting seller confirmation',
+  WAITING_BUYER_RECEIPT: 'Shipped / awaiting receipt',
   COMPLETED: 'Completed',
-  CANCELLED: 'Cancelled'
+  CANCELLED: 'Cancelled',
+  // Legacy fallbacks
+  PENDING_PAYMENT: 'Awaiting buyer details',
+  PROCESSING: 'Shipped / awaiting receipt'
 }
 
 const getStatusBadgeClass = (status) => {

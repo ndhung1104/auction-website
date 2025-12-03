@@ -69,7 +69,7 @@ export const ensureOrderForProduct = async (
       seller_id: sellerId,
       winner_id: winnerId,
       final_price: finalPrice,
-      status: 'PENDING_PAYMENT'
+      status: 'WAITING_BUYER_DETAILS'
     },
     trx
   );
@@ -127,7 +127,13 @@ export const getOrderDetail = async (orderId, userId) => {
       productId: order.product_id,
       sellerId: order.seller_id,
       winnerId: order.winner_id,
-      createdAt: order.created_at
+      createdAt: order.created_at,
+      shippingAddress: order.shipping_address,
+      buyerInvoiceNote: order.buyer_invoice_note,
+      invoiceSubmittedAt: order.invoice_submitted_at,
+      paymentConfirmedAt: order.payment_confirmed_at,
+      shippingCode: order.shipping_code,
+      buyerReceivedAt: order.buyer_received_at
     },
     product: {
       id: product.id,
@@ -151,15 +157,65 @@ export const sendOrderMessage = async ({ orderId, userId, message }) => {
   });
 };
 
-export const changeOrderStatus = async ({ orderId, userId, nextStatus }) => {
+export const changeOrderStatus = async ({
+  orderId,
+  userId,
+  nextStatus,
+  shippingAddress,
+  invoiceNote,
+  shippingCode
+}) => {
   const order = await findOrderById(orderId);
   ensureParticipant(order, userId);
-  const allowedStatuses = ['PENDING_PAYMENT', 'PROCESSING', 'COMPLETED', 'CANCELLED'];
-  if (!allowedStatuses.includes(nextStatus)) {
-    throw new ApiError(422, 'ORDERS.INVALID_STATUS', 'Unsupported order status');
+
+  const normalizedStatus =
+    order.status === 'PENDING_PAYMENT'
+      ? 'WAITING_BUYER_DETAILS'
+      : order.status === 'PROCESSING'
+        ? 'WAITING_BUYER_RECEIPT'
+        : order.status;
+
+  const isSeller = String(order.seller_id) === String(userId);
+  const isWinner = String(order.winner_id) === String(userId);
+
+  const updates = { status: nextStatus };
+
+  if (nextStatus === 'CANCELLED') {
+    if (order.status === 'COMPLETED') {
+      throw new ApiError(400, 'ORDERS.ALREADY_COMPLETED', 'Completed orders cannot be cancelled');
+    }
+  } else if (normalizedStatus === 'WAITING_BUYER_DETAILS' && nextStatus === 'WAITING_SELLER_CONFIRM') {
+    if (!isWinner) {
+      throw new ApiError(403, 'ORDERS.BUYER_REQUIRED', 'Only buyer can submit invoice details');
+    }
+    const trimmedAddress = (shippingAddress || '').trim();
+    if (trimmedAddress.length < 10) {
+      throw new ApiError(422, 'ORDERS.MISSING_SHIPPING', 'Shipping address is required');
+    }
+    updates.shipping_address = trimmedAddress;
+    updates.buyer_invoice_note = (invoiceNote || '').trim() || null;
+    updates.invoice_submitted_at = db.fn.now();
+  } else if (normalizedStatus === 'WAITING_SELLER_CONFIRM' && nextStatus === 'WAITING_BUYER_RECEIPT') {
+    if (!isSeller) {
+      throw new ApiError(403, 'ORDERS.SELLER_REQUIRED', 'Only seller can confirm payment and shipping');
+    }
+    const trimmedCode = (shippingCode || '').trim();
+    if (trimmedCode.length < 3) {
+      throw new ApiError(422, 'ORDERS.MISSING_SHIPPING_CODE', 'Shipping code is required');
+    }
+    updates.shipping_code = trimmedCode;
+    updates.payment_confirmed_at = db.fn.now();
+  } else if (normalizedStatus === 'WAITING_BUYER_RECEIPT' && nextStatus === 'COMPLETED') {
+    if (!isWinner) {
+      throw new ApiError(403, 'ORDERS.BUYER_REQUIRED', 'Only buyer can confirm receipt');
+    }
+    updates.buyer_received_at = db.fn.now();
+  } else {
+    throw new ApiError(400, 'ORDERS.INVALID_TRANSITION', 'Order status cannot be updated in this way');
   }
+
   const product = await findProductByIdWithSeller(order.product_id);
-  const [updated] = await updateOrderStatus(orderId, nextStatus, db);
+  const [updated] = await updateOrderStatus(orderId, updates, db);
   try {
     const [seller, buyer] = await Promise.all([
       findUserById(order.seller_id),

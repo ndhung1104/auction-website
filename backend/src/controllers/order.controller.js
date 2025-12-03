@@ -14,7 +14,24 @@ const idParamSchema = Joi.object({
 });
 
 const statusSchema = Joi.object({
-  status: Joi.string().valid('PENDING_PAYMENT', 'PROCESSING', 'COMPLETED').required()
+  status: Joi.string()
+    .valid('WAITING_SELLER_CONFIRM', 'WAITING_BUYER_RECEIPT', 'COMPLETED', 'CANCELLED')
+    .required(),
+  shippingAddress: Joi.when('status', {
+    is: 'WAITING_SELLER_CONFIRM',
+    then: Joi.string().min(10).max(500).required(),
+    otherwise: Joi.forbidden()
+  }),
+  invoiceNote: Joi.when('status', {
+    is: 'WAITING_SELLER_CONFIRM',
+    then: Joi.string().max(500).allow('', null),
+    otherwise: Joi.forbidden()
+  }),
+  shippingCode: Joi.when('status', {
+    is: 'WAITING_BUYER_RECEIPT',
+    then: Joi.string().min(3).max(120).required(),
+    otherwise: Joi.forbidden()
+  })
 });
 
 const messageSchema = Joi.object({
@@ -58,7 +75,14 @@ export const updateOrderStatusController = async (req, res, next) => {
     if (error) {
       throw new ApiError(422, 'ORDERS.INVALID_STATUS', 'Invalid status payload', error.details);
     }
-    const payload = await changeOrderStatus({ orderId: params.orderId, userId: req.user.id, nextStatus: value.status });
+    const payload = await changeOrderStatus({
+      orderId: params.orderId,
+      userId: req.user.id,
+      nextStatus: value.status,
+      shippingAddress: value.shippingAddress,
+      invoiceNote: value.invoiceNote,
+      shippingCode: value.shippingCode
+    });
     return sendSuccess(res, { order: payload }, 'Order status updated');
   } catch (err) {
     next(err);

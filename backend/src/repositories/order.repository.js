@@ -3,7 +3,22 @@ import db from '../db/knex.js';
 export const createOrder = (payload, trx = db) =>
   (trx || db)('orders')
     .insert(payload)
-    .returning(['id', 'product_id', 'seller_id', 'winner_id', 'final_price', 'status', 'created_at', 'updated_at']);
+    .returning([
+      'id',
+      'product_id',
+      'seller_id',
+      'winner_id',
+      'final_price',
+      'status',
+      'shipping_address',
+      'buyer_invoice_note',
+      'invoice_submitted_at',
+      'payment_confirmed_at',
+      'shipping_code',
+      'buyer_received_at',
+      'created_at',
+      'updated_at'
+    ]);
 
 export const findOrderById = (id) =>
   db('orders')
@@ -36,16 +51,30 @@ export const listOrdersForUser = (userId) =>
     })
     .orderBy('o.created_at', 'desc');
 
-export const updateOrderStatus = (id, status, trx = db) =>
-  (trx || db)('orders')
+export const updateOrderStatus = (id, updates, trx = db) => {
+  const payload = {
+    ...updates,
+    updated_at: (trx || db).fn.now()
+  };
+
+  return (trx || db)('orders')
     .where({ id })
-    .update(
-      {
-        status,
-        updated_at: (trx || db).fn.now()
-      },
-      ['id', 'status', 'updated_at']
-    );
+    .update(payload, [
+      'id',
+      'product_id',
+      'seller_id',
+      'winner_id',
+      'final_price',
+      'status',
+      'shipping_address',
+      'buyer_invoice_note',
+      'invoice_submitted_at',
+      'payment_confirmed_at',
+      'shipping_code',
+      'buyer_received_at',
+      'updated_at'
+    ]);
+};
 
 export const insertOrderMessage = (payload, trx = db) =>
   (trx || db)('order_messages')
