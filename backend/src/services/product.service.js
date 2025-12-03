@@ -38,6 +38,8 @@ import {
   sendBidRejectedNotification
 } from './mail.service.js';
 import { findWatchlistedProductIds } from '../repositories/watchlist.repository.js';
+import { findOrderByProduct } from '../repositories/order.repository.js';
+import { sendAuctionResultNotification } from './mail.service.js';
 
 const SORT_FIELDS = {
   'end_at': 'end_at',
@@ -301,11 +303,12 @@ export const getProductDetail = async (productId, viewerId = null) => {
 
   const relatedImageMap = await findPrimaryImagesForProducts(relatedRows.map((row) => row.id));
 
-  const [sellerRating, keeperRating, watchlisted, watchlistCount] = await Promise.all([
+  const [sellerRating, keeperRating, watchlisted, watchlistCount, orderRow] = await Promise.all([
     aggregateRating(productRow.seller_id),
     productRow.current_bidder_id ? aggregateRating(productRow.current_bidder_id) : Promise.resolve(null),
     isProductWatchlisted(viewerId, productRow.id),
-    db('watchlist').where({ product_id: productRow.id }).count({ count: '*' }).first()
+    db('watchlist').where({ product_id: productRow.id }).count({ count: '*' }).first(),
+    findOrderByProduct(productRow.id)
   ]);
 
   const firstImageUrl = imagesRows[0]?.image_url ?? null;
@@ -368,6 +371,11 @@ export const getProductDetail = async (productId, viewerId = null) => {
     : null;
 
   const viewerIsSeller = viewerId && String(viewerId) === String(productRow.seller_id);
+  const viewerIsWinner = viewerId && orderRow && String(orderRow.winner_id) === String(viewerId);
+  const orderForViewer =
+    orderRow && (viewerIsSeller || viewerIsWinner)
+      ? { id: orderRow.id, status: orderRow.status }
+      : null;
 
   return {
     product,
@@ -384,8 +392,75 @@ export const getProductDetail = async (productId, viewerId = null) => {
       canAppendDescription: Boolean(viewerIsSeller),
       canRejectBidder: Boolean(viewerIsSeller && productRow.current_bidder_id),
       canAnswerQuestions: Boolean(viewerIsSeller)
-    }
+    },
+    orderForViewer
   };
+};
+
+export const finalizeEndedAuctions = async () => {
+  const expired = await db('products as p')
+    .select(
+      'p.id',
+      'p.seller_id',
+      'p.current_bidder_id',
+      'p.current_price',
+      'p.enable_auto_bid',
+      'p.auto_extend',
+      'p.end_at',
+      'p.name'
+    )
+    .where('p.status', 'ACTIVE')
+    .andWhere('p.end_at', '<=', db.fn.now());
+
+  let processed = 0;
+  let withoutWinner = 0;
+
+  for (const product of expired) {
+    await db.transaction(async (trx) => {
+      const hasWinner = Boolean(product.current_bidder_id);
+      const [updated] = await trx('products')
+        .where({ id: product.id })
+        .update(
+          {
+            status: 'ENDED',
+            enable_auto_bid: false,
+            end_at: trx.fn.now(),
+            updated_at: trx.fn.now()
+          },
+          ['id', 'seller_id', 'current_bidder_id', 'current_price', 'name']
+        );
+
+      if (hasWinner) {
+        await ensureOrderForProduct(
+          {
+            productId: product.id,
+            sellerId: updated.seller_id,
+            winnerId: updated.current_bidder_id,
+            finalPrice: Number(product.current_price),
+            productName: updated.name
+          },
+          trx
+        );
+      } else {
+        try {
+          const seller = await findUserById(product.seller_id);
+          if (seller?.email) {
+            await sendAuctionResultNotification({
+              email: seller.email,
+              productName: product.name,
+              outcome: 'ended without a winner'
+            });
+          }
+        } catch (err) {
+          console.warn('[mail] no-winner notification skipped', err.message);
+        }
+        withoutWinner += 1;
+      }
+      processed += 1;
+    });
+  }
+
+  return { processed, withoutWinner };
 };
 
 export const getProductBidHistory = async (productId, limit = BID_HISTORY_DEFAULT_LIMIT) => {

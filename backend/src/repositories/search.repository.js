@@ -3,12 +3,28 @@ import db from '../db/knex.js';
 const DEFAULT_LIMIT = 20;
 const SEARCH_SANITIZE_REGEX = /[^\p{L}\p{N}\s]/gu;
 
+const SORT_FIELDS = {
+  'end_at': 'p.end_at',
+  'price': 'p.current_price',
+  'bid_count': 'p.bid_count',
+  'created_at': 'p.created_at'
+};
+
 const sanitizeTerm = (value = '') =>
   value
     .toString()
     .replace(SEARCH_SANITIZE_REGEX, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+
+const applyCategoryFilter = (query, categoryId) => {
+  if (!categoryId) return query;
+  const subCategories = db('categories')
+    .select('id')
+    .where('id', categoryId)
+    .orWhere('parent_id', categoryId);
+  return query.whereIn('p.category_id', subCategories);
+};
 
 export const searchCategories = async ({ term, limit = 10 }) => {
   const sanitized = sanitizeTerm(term);
@@ -23,7 +39,7 @@ export const searchCategories = async ({ term, limit = 10 }) => {
     .limit(safeLimit);
 };
 
-export const searchProducts = async ({ term, limit = DEFAULT_LIMIT, offset = 0 }) => {
+export const searchProducts = async ({ term, limit = DEFAULT_LIMIT, offset = 0, categoryId = null, sort = null }) => {
   const sanitized = sanitizeTerm(term);
   if (!sanitized) {
     return { rows: [], total: 0 };
@@ -36,13 +52,24 @@ export const searchProducts = async ({ term, limit = DEFAULT_LIMIT, offset = 0 }
     .where('p.status', 'ACTIVE')
     .andWhereRaw("p.search_vector @@ websearch_to_tsquery('simple', ?)", [sanitized]);
 
+  applyCategoryFilter(baseQuery, categoryId);
+
   const totalRow = await baseQuery.clone().count({ count: '*' }).first();
-  const rows = await baseQuery
+
+  const rowsQuery = baseQuery
     .clone()
-    .select('p.*')
-    .orderBy('p.end_at', 'asc')
-    .limit(safeLimit)
-    .offset(safeOffset);
+    .select('p.*');
+
+  if (sort) {
+    const [fieldRaw, dirRaw] = sort.split(',');
+    const field = SORT_FIELDS[fieldRaw] || 'p.end_at';
+    const direction = dirRaw?.toLowerCase() === 'desc' ? 'desc' : 'asc';
+    rowsQuery.orderBy(field, direction);
+  } else {
+    rowsQuery.orderBy('p.end_at', 'asc');
+  }
+
+  const rows = await rowsQuery.limit(safeLimit).offset(safeOffset);
 
   return {
     rows,

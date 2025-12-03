@@ -9,7 +9,8 @@ import {
   adminSoftDeleteProduct,
   adminUpdateCategory,
   adminUpdateUser,
-  adminDeleteUser
+  adminDeleteUser,
+  adminFinalizeAuctions
 } from '../services/admin.service.js';
 import { ApiError, sendSuccess } from '../utils/response.js';
 
@@ -113,6 +114,15 @@ export const deleteUserAdmin = async (req, res, next) => {
     }
     const user = await adminDeleteUser(params.id);
     return sendSuccess(res, { user }, 'User deleted');
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const finalizeAuctionsAdmin = async (_req, res, next) => {
+  try {
+    const result = await adminFinalizeAuctions();
+    return sendSuccess(res, result, 'Expired auctions finalized');
   } catch (err) {
     next(err);
   }

@@ -1,9 +1,17 @@
-ï»¿import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { searchProducts } from '../services/search'
+import { fetchCategories } from '../services/categories'
 import ProductCard from '../components/ProductCard'
 
 const DEFAULT_META = { total: 0, page: 1, limit: 12, hasMore: false }
+const SORT_OPTIONS = [
+  { value: 'end_at,asc', label: 'Ending soon' },
+  { value: 'end_at,desc', label: 'Newly listed' },
+  { value: 'price,asc', label: 'Price: low to high' },
+  { value: 'price,desc', label: 'Price: high to low' },
+  { value: 'bid_count,desc', label: 'Most bids' }
+]
 
 export default function SearchResultsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -14,11 +22,36 @@ export default function SearchResultsPage() {
   const [error, setError] = useState(null)
   const term = (searchParams.get('q') || '').trim()
   const page = Number(searchParams.get('page') || 1)
+  const sort = searchParams.get('sort') || SORT_OPTIONS[0].value
+  const categoryId = searchParams.get('categoryId') || ''
   const [formTerm, setFormTerm] = useState(term)
+  const [categoryTree, setCategoryTree] = useState([])
 
   useEffect(() => {
     setFormTerm(term)
   }, [term])
+
+  useEffect(() => {
+    fetchCategories()
+      .then((response) => {
+        setCategoryTree(response?.data?.categories || [])
+      })
+      .catch(() => setCategoryTree([]))
+  }, [])
+
+  const flattenedCategories = useMemo(() => {
+    const result = []
+    const walk = (nodes = [], prefix = '') => {
+      nodes.forEach((node) => {
+        result.push({ id: node.id, name: `${prefix}${node.name}` })
+        if (node.children?.length) {
+          walk(node.children, `${prefix}› `)
+        }
+      })
+    }
+    walk(categoryTree)
+    return result
+  }, [categoryTree])
 
   useEffect(() => {
     if (!term) {
@@ -29,7 +62,7 @@ export default function SearchResultsPage() {
     }
     setLoading(true)
     setError(null)
-    searchProducts(term, { page })
+    searchProducts(term, { page, sort, categoryId: categoryId || undefined })
       .then((response) => {
         const payload = response?.data || {}
         setItems(payload.items || [])
@@ -47,7 +80,7 @@ export default function SearchResultsPage() {
         setError(err.message || 'Unable to search products')
       })
       .finally(() => setLoading(false))
-  }, [term, page])
+  }, [term, page, sort, categoryId])
 
   const handleSubmit = (event) => {
     event.preventDefault()
@@ -56,12 +89,34 @@ export default function SearchResultsPage() {
       setSearchParams({})
       return
     }
-    setSearchParams({ q: trimmed, page: '1' })
+    const params = { q: trimmed, page: '1' }
+    if (sort) params.sort = sort
+    if (categoryId) params.categoryId = categoryId
+    setSearchParams(params)
   }
 
   const handlePageChange = (nextPage) => {
     if (!term) return
-    setSearchParams({ q: term, page: String(nextPage) })
+    const params = { q: term, page: String(nextPage) }
+    if (sort) params.sort = sort
+    if (categoryId) params.categoryId = categoryId
+    setSearchParams(params)
+  }
+
+  const handleSortChange = (event) => {
+    const nextSort = event.target.value
+    const params = { q: term, page: '1' }
+    if (nextSort) params.sort = nextSort
+    if (categoryId) params.categoryId = categoryId
+    setSearchParams(params)
+  }
+
+  const handleCategoryChange = (event) => {
+    const nextCat = event.target.value
+    const params = { q: term, page: '1' }
+    if (sort) params.sort = sort
+    if (nextCat) params.categoryId = nextCat
+    setSearchParams(params)
   }
 
   const renderSummary = useMemo(() => {
@@ -81,17 +136,40 @@ export default function SearchResultsPage() {
         <h1 className="mb-0">Search</h1>
         {renderSummary}
       </div>
-      <form className="input-group mb-4" onSubmit={handleSubmit}>
-        <input
-          name="q"
-          className="form-control"
-          placeholder="Search products..."
-          value={formTerm}
-          onChange={(event) => setFormTerm(event.target.value)}
-        />
-        <button className="btn btn-primary" type="submit">
-          Search
-        </button>
+      <form className="row g-3 mb-4" onSubmit={handleSubmit}>
+        <div className="col-12 col-md-6">
+          <div className="input-group">
+            <input
+              name="q"
+              className="form-control"
+              placeholder="Search products..."
+              value={formTerm}
+              onChange={(event) => setFormTerm(event.target.value)}
+            />
+            <button className="btn btn-primary" type="submit">
+              Search
+            </button>
+          </div>
+        </div>
+        <div className="col-12 col-md-3">
+          <select className="form-select" value={categoryId} onChange={handleCategoryChange}>
+            <option value="">All categories</option>
+            {flattenedCategories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="col-12 col-md-3">
+          <select className="form-select" value={sort} onChange={handleSortChange}>
+            {SORT_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </form>
       {!term && (
         <div className="alert alert-light">Type a keyword above to explore available auctions.</div>
@@ -154,4 +232,3 @@ export default function SearchResultsPage() {
     </div>
   )
 }
-

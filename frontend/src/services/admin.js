@@ -24,6 +24,10 @@ export function deleteUser(id) {
   return apiClient.delete(`/admin/users/${id}`)
 }
 
+export function finalizeAuctions() {
+  return apiClient.post('/admin/auctions/finalize')
+}
+
 export function softDeleteProduct(id) {
   return apiClient.patch(`/admin/products/${id}/status`)
 }

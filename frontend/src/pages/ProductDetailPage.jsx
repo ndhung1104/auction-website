@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import {
   fetchProductBids,
   fetchProductDetail,
@@ -21,6 +21,7 @@ const PLACEHOLDER_IMAGE = 'https://placehold.co/800x600?text=Auction'
 
 export default function ProductDetailPage() {
   const { productId } = useParams()
+  const navigate = useNavigate()
   const { isAuthenticated, user } = useAuth()
   const [detail, setDetail] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -48,6 +49,7 @@ export default function ProductDetailPage() {
   const [activeImageIndex, setActiveImageIndex] = useState(0)
   const [confirmDialog, setConfirmDialog] = useState(null)
   const watchlistTimerRef = useRef(null)
+  const [redirected, setRedirected] = useState(false)
 
   const reloadProduct = useCallback(async () => {
     const response = await fetchProductDetail(productId)
@@ -155,6 +157,14 @@ export default function ProductDetailPage() {
       }
     }
   }, [watchlistStatus])
+
+  useEffect(() => {
+    if (!product || redirected) return
+    if (product.status === 'ENDED' && detail?.orderForViewer?.id) {
+      setRedirected(true)
+      navigate(`/orders/${detail.orderForViewer.id}`)
+    }
+  }, [product, detail, redirected, navigate])
 
   useEffect(() => {
     if (!product) return

@@ -10,7 +10,8 @@ import {
   softDeleteProductAdmin,
   updateCategoryAdmin,
   updateUserAdmin,
-  deleteUserAdmin
+  deleteUserAdmin,
+  finalizeAuctionsAdmin
 } from '../controllers/admin.controller.js';
 
 const router = Router();
@@ -27,6 +28,7 @@ router.delete('/users/:id', deleteUserAdmin);
 
 router.patch('/products/:id/status', softDeleteProductAdmin);
 router.get('/products/:id/auto-bids', listAutoBidsAdmin);
+router.post('/auctions/finalize', finalizeAuctionsAdmin);
 
 router.post('/seller-requests/:id/approve', approveSellerRequest);
 router.post('/seller-requests/:id/reject', rejectSellerRequest);

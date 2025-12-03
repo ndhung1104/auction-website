@@ -12,6 +12,7 @@ import {
   updateSellerRequestStatus
 } from '../repositories/sellerRequest.repository.js';
 import { findAutoBidsWithUsers } from '../repositories/autoBid.repository.js';
+import { finalizeEndedAuctions } from './product.service.js';
 
 export const getAdminDashboard = async () => {
   const [categories, products, users, requests] = await Promise.all([
@@ -149,3 +150,5 @@ export const adminRejectSellerRequest = async (requestId) => {
   }
   return request;
 };
+
+export const adminFinalizeAuctions = () => finalizeEndedAuctions();

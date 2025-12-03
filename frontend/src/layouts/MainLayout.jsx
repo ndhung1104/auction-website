@@ -99,17 +99,22 @@ export default function MainLayout() {
     );
   }, [categories, categoryError]);
 
+  const footerCategories = useMemo(() => categories.slice(0, 4), [categories])
+
   return (
     <>
       <nav className="navbar navbar-expand-lg navbar-light bg-surface sticky-top">
         <div className="container">
           <Link className="navbar-brand d-flex align-items-center" to="/">
-            <span className="bg-primary text-white rounded p-1 me-2 d-flex align-items-center justify-content-center" style={{ width: '32px', height: '32px' }}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" className="bi bi-hammer" viewBox="0 0 16 16">
+            <span
+              className="d-flex align-items-center justify-content-center rounded me-2"
+              style={{ width: '32px', height: '32px', backgroundColor: '#dc3545' }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#fff" viewBox="0 0 16 16">
                 <path d="M9.972 2.508a.5.5 0 0 0-.16-.556l-.178-.129a5.009 5.009 0 0 0-2.076-.783C6.215.862 4.504 1.229 2.84 3.133H1.786a.5.5 0 0 0-.354.147L.146 4.567a.5.5 0 0 0 0 .706l2.571 2.579a.5.5 0 0 0 .708 0l1.286-1.29a.5.5 0 0 0 .146-.353V5.57l8.387 8.873a.5.5 0 0 0 .706 0l1.568-1.574a.5.5 0 0 0 0-.706l-8.873-8.39c.681-.66 1.65-1.248 2.661-1.265z" />
               </svg>
             </span>
-            BidMaster
+            <span className="fw-bold text-dark">BidMaster</span>
           </Link>
 
           <button
@@ -227,11 +232,7 @@ export default function MainLayout() {
           <div className="row g-4">
             <div className="col-lg-4">
               <div className="d-flex align-items-center gap-2 mb-3">
-                <span className="bg-primary text-white rounded p-1 d-flex align-items-center justify-content-center" style={{ width: '32px', height: '32px' }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" className="bi bi-hammer" viewBox="0 0 16 16">
-                    <path d="M9.972 2.508a.5.5 0 0 0-.16-.556l-.178-.129a5.009 5.009 0 0 0-2.076-.783C6.215.862 4.504 1.229 2.84 3.133H1.786a.5.5 0 0 0-.354.147L.146 4.567a.5.5 0 0 0 0 .706l2.571 2.579a.5.5 0 0 0 .708 0l1.286-1.29a.5.5 0 0 0 .146-.353V5.57l8.387 8.873a.5.5 0 0 0 .706 0l1.568-1.574a.5.5 0 0 0 0-.706l-8.873-8.39c.681-.66 1.65-1.248 2.661-1.265z" />
-                  </svg>
-                </span>
+                <img src="/bidmaster.svg" alt="BidMaster" width="32" height="32" className="me-2" />
                 <h5 className="mb-0 text-white fw-bold">BidMaster</h5>
               </div>
               <p className="small mb-4">The premier online auction platform for collectors and enthusiasts worldwide.</p>
@@ -245,10 +246,14 @@ export default function MainLayout() {
             <div className="col-6 col-lg-2">
               <h5 className="fw-bold mb-3">Categories</h5>
               <ul className="list-unstyled d-flex flex-column gap-2">
-                <li><a href="#" className="text-decoration-none">Watches</a></li>
-                <li><a href="#" className="text-decoration-none">Art</a></li>
-                <li><a href="#" className="text-decoration-none">Antiques</a></li>
-                <li><a href="#" className="text-decoration-none">Electronics</a></li>
+                {footerCategories.length === 0 && <li className="text-muted small">No categories</li>}
+                {footerCategories.map((cat) => (
+                  <li key={cat.id}>
+                    <Link to={`/products?categoryId=${cat.id}`} className="text-decoration-none">
+                      {cat.name}
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </div>
             <div className="col-6 col-lg-2">

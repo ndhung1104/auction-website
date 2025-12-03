@@ -5,7 +5,11 @@ import { sendSuccess } from '../utils/response.js';
 const searchSchema = Joi.object({
   q: Joi.string().trim().min(2).max(120).required(),
   page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(60).default(12)
+  limit: Joi.number().integer().min(1).max(60).default(12),
+  categoryId: Joi.number().integer().min(1).optional(),
+  sort: Joi.string()
+    .valid('end_at,asc', 'end_at,desc', 'price,asc', 'price,desc', 'bid_count,desc', 'created_at,desc')
+    .optional()
 });
 
 export const search = async (req, res, next) => {
@@ -26,7 +30,9 @@ export const search = async (req, res, next) => {
       searchActiveProducts({
         term: value.q,
         limit,
-        offset
+        offset,
+        categoryId: value.categoryId,
+        sort: value.sort
       }),
       searchCategoriesByName({ term: value.q, limit: 10 })
     ]);

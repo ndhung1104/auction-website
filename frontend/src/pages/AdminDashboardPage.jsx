@@ -9,7 +9,8 @@ import {
   softDeleteProduct,
   updateCategory,
   updateUser,
-  deleteUser
+  deleteUser,
+  finalizeAuctions
 } from '../services/admin'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -122,6 +123,17 @@ export default function AdminDashboardPage() {
       .catch((err) => setError(err.message || 'Unable to load auto-bids'))
   }
 
+  const handleFinalizeAuctions = () => {
+    setConfirmDialog({
+      title: 'Finalize expired auctions',
+      message: 'This will close all ended auctions, create orders for winners, and notify sellers. Proceed?',
+      action: async () => {
+        await finalizeAuctions()
+        loadDashboard()
+      }
+    })
+  }
+
   const closeConfirmDialog = () => {
     setConfirmDialog(null)
     setConfirmLoading(false)
@@ -141,7 +153,7 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="admin-dashboard">
-      <h1 className="mb-4">Admin Dashboard</h1>
+      <h1 className="mb-4">BidMaster Admin Dashboard</h1>
       {error && (
         <div className="alert alert-danger">
           {error}
@@ -319,6 +331,11 @@ export default function AdminDashboardPage() {
 
       <section className="mb-5">
         <h2>Products</h2>
+        <div className="d-flex justify-content-end mb-3">
+          <button className="btn btn-outline-primary btn-sm" onClick={handleFinalizeAuctions}>
+            Finalize expired auctions
+          </button>
+        </div>
         <div className="table-responsive">
           <table className="table table-sm">
             <thead>

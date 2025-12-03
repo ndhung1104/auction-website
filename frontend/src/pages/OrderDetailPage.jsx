@@ -22,7 +22,12 @@ const STATUS_ACTIONS = [
   { key: 'COMPLETED', label: 'Mark completed' }
 ]
 
-const STATUS_STEPS = ['PENDING_PAYMENT', 'PROCESSING', 'COMPLETED']
+const STATUS_STEPS = [
+  { key: 'PENDING_PAYMENT', label: 'Payment submitted' },
+  { key: 'PROCESSING', label: 'Seller processing' },
+  { key: 'COMPLETED', label: 'Completed' },
+  { key: 'RATING', label: 'Rate each other' }
+]
 
 export default function OrderDetailPage() {
   const { orderId } = useParams()
@@ -34,6 +39,32 @@ export default function OrderDetailPage() {
   const [messageStatus, setMessageStatus] = useState(null)
   const [ratingStatus, setRatingStatus] = useState(null)
   const [statusStatus, setStatusStatus] = useState(null)
+  const order = detail?.order || null
+  const messages = detail?.messages || []
+  const product = detail?.product || null
+  const isSeller = order && String(user?.id) === String(order.sellerId)
+  const isWinner = order && String(user?.id) === String(order.winnerId)
+  const canUpdateStatus = isSeller && order?.status !== 'CANCELLED'
+  const canCancel = canUpdateStatus && order?.status !== 'COMPLETED'
+  const canSendMessage = order?.status !== 'CANCELLED'
+  const canRate = Boolean(order) && (isSeller || isWinner)
+
+  const statusColor = useMemo(() => {
+    if (!order) return 'secondary'
+    if (order.status === 'COMPLETED') return 'success'
+    if (order.status === 'CANCELLED') return 'secondary'
+    return 'warning'
+  }, [order])
+
+  const timeline = useMemo(() => {
+    const currentIndex = order ? STATUS_STEPS.findIndex((step) => step.key === order.status) : -1
+    return STATUS_STEPS.map((step, index) => ({
+      status: step.key,
+      label: step.label,
+      reached:
+        (order && currentIndex >= index) || (step.key === 'RATING' && order?.status === 'COMPLETED')
+    }))
+  }, [order])
 
   const loadDetail = useCallback(() => {
     setLoading(true)
@@ -65,28 +96,6 @@ export default function OrderDetailPage() {
   if (loading) return <div className="alert alert-info">Loading order...</div>
   if (error) return <div className="alert alert-danger">{error}</div>
   if (!detail) return <div className="alert alert-warning">Order not found.</div>
-
-  const { order, messages, product } = detail
-  const isSeller = order && String(user?.id) === String(order.sellerId)
-  const isWinner = order && String(user?.id) === String(order.winnerId)
-  const canUpdateStatus = isSeller && order.status !== 'CANCELLED'
-  const canCancel = canUpdateStatus && order.status !== 'COMPLETED'
-  const canSendMessage = order.status !== 'CANCELLED'
-  const canRate = isSeller || isWinner
-
-  const statusColor = useMemo(() => {
-    if (order.status === 'COMPLETED') return 'success'
-    if (order.status === 'CANCELLED') return 'secondary'
-    return 'warning'
-  }, [order.status])
-
-  const timeline = useMemo(() => {
-    const currentIndex = STATUS_STEPS.indexOf(order.status)
-    return STATUS_STEPS.map((status, index) => ({
-      status,
-      reached: currentIndex >= index
-    }))
-  }, [order.status])
 
   const handleStatusChange = (nextStatus) => {
     if (!canUpdateStatus) return
@@ -155,10 +164,10 @@ export default function OrderDetailPage() {
       </p>
 
       <div className="d-flex flex-wrap align-items-center gap-3 mb-4">
-        {timeline.map(({ status, reached }, index) => (
+        {timeline.map(({ status, label, reached }, index) => (
           <div key={status} className="d-flex align-items-center gap-2">
             <span className={`badge ${reached ? 'text-bg-success' : 'text-bg-light border'}`}>
-              {STATUS_LABELS[status]}
+              {label}
             </span>
             {index < timeline.length - 1 && <span className="text-muted">&rarr;</span>}
           </div>
