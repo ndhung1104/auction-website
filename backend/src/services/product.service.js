@@ -88,6 +88,17 @@ const slugify = (input) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)+/g, '');
 
+const formatAppendLabel = (date) => {
+  const offsetMinutes = -date.getTimezoneOffset();
+  const sign = offsetMinutes >= 0 ? '+' : '-';
+  const absMinutes = Math.abs(offsetMinutes);
+  const hours = String(Math.floor(absMinutes / 60)).padStart(2, '0');
+  const minutes = String(absMinutes % 60).padStart(2, '0');
+  const timePart = date.toLocaleTimeString('vi-VN', { hour12: false });
+  const datePart = date.toLocaleDateString('vi-VN');
+  return `EDIT ${datePart} ${timePart} GMT${sign}${hours}:${minutes}`;
+};
+
 const mapProduct = (row, { highlightWindowMinutes = 60, primaryImageUrl = null } = {}) => {
   const createdAtIso = row.created_at ? new Date(row.created_at) : null;
   const isNew = highlightWindowMinutes > 0 && createdAtIso
@@ -385,12 +396,15 @@ export const getProductDetail = async (productId, viewerId = null) => {
     images,
     questions,
     relatedProducts,
-    descriptionHistory: descriptionHistoryRows.map((row) => ({
-      id: row.id,
-      content: row.content_added,
-      createdAt: row.created_at,
-      label: `EDIT ${new Date(row.created_at).toLocaleDateString('vi-VN')}`
-    })),
+    descriptionHistory: descriptionHistoryRows.map((row) => {
+      const createdAt = new Date(row.created_at);
+      return {
+        id: row.id,
+        content: row.content_added,
+        createdAt: row.created_at,
+        label: formatAppendLabel(createdAt)
+      };
+    }),
     watchlist: {
       isWatchlisted: Boolean(watchlisted),
       count: Number(watchlistCount?.count || 0)
@@ -835,29 +849,23 @@ export const appendProductDescription = async ({ productId, sellerId, content })
     }
 
     const now = new Date();
-    const dateLabel = now.toLocaleDateString('vi-VN');
-    const formattedBlock = `EDIT ${dateLabel}: ${trimmed}`;
-
+    const formattedLabel = formatAppendLabel(now);
     await trx('product_description_history').insert({
       product_id: productId,
       content_added: trimmed,
       created_at: now
     });
 
-    const baseDescription = product.description ? `${product.description}\n\n` : '';
-    const nextDescription = `${baseDescription}${formattedBlock}`.trim();
-
-    const [updated] = await trx('products')
+    await trx('products')
       .where({ id: productId })
-      .update(
-        {
-          description: nextDescription,
-          updated_at: trx.fn.now()
-        },
-        ['id', 'description']
-      );
+      .update({
+        updated_at: trx.fn.now()
+      });
 
-    return { description: updated.description };
+    return {
+      label: formattedLabel,
+      content: trimmed
+    };
   });
 };
 

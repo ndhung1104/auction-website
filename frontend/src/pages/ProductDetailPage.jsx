@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import ReactQuill from 'react-quill'
+import 'react-quill/dist/quill.snow.css'
 import {
   fetchProductBids,
   fetchProductDetail,
@@ -474,9 +476,15 @@ export default function ProductDetailPage() {
 
           <div className="mt-5">
             <h4 className="h5 fw-bold text-primary border-bottom pb-2 mb-3">Description</h4>
-            <div className="text-secondary" style={{ lineHeight: '1.8', whiteSpace: 'pre-line' }}>
-              {product.description || 'No description provided yet.'}
-            </div>
+            {product.description ? (
+              <div
+                className="text-secondary"
+                style={{ lineHeight: '1.8' }}
+                dangerouslySetInnerHTML={{ __html: product.description }}
+              />
+            ) : (
+              <div className="text-secondary">No description provided yet.</div>
+            )}
             {detail.descriptionHistory?.length ? (
               <div className="mt-3">
                 <h6 className="text-muted fw-semibold">Appended updates</h6>
@@ -484,7 +492,10 @@ export default function ProductDetailPage() {
                   {detail.descriptionHistory.map((entry) => (
                     <li key={entry.id} className="list-group-item px-0">
                       <div className="small text-muted mb-1">{entry.label}</div>
-                      <div className="text-secondary">{entry.content}</div>
+                      <div
+                        className="text-secondary"
+                        dangerouslySetInnerHTML={{ __html: entry.content }}
+                      />
                     </li>
                   ))}
                 </ul>
@@ -495,176 +506,181 @@ export default function ProductDetailPage() {
 
         <div className="col-lg-5">
           <div className="card shadow-sm border-0 mb-4">
-            <div className="card-body p-4">
-              <h4 className="h3 fw-bold text-primary mb-3">{formatVND(product.currentPrice)}</h4>
-              <div className="d-flex flex-column gap-2 text-secondary mb-4">
-                <div className="d-flex justify-content-between">
-                  <span>Start price:</span>
-                  <span className="fw-medium text-dark">{formatVND(product.startPrice)}</span>
-                </div>
-                <div className="d-flex justify-content-between">
-                  <span>Price step:</span>
-                  <span className="fw-medium text-dark">{formatVND(product.priceStep)}</span>
-                </div>
-                {product.buyNowPrice && (
-                  <div className="d-flex justify-content-between">
-                    <span>Buy now:</span>
-                    <span className="fw-medium text-success">{formatVND(product.buyNowPrice)}</span>
-                  </div>
-                )}
-                <div className="d-flex justify-content-between">
-                  <span>Total bids:</span>
-                  <span className="fw-medium text-dark">{product.bidCount}</span>
-                </div>
-                <div className="d-flex justify-content-between">
-                  <span>Status:</span>
-                  <span className={`badge ${isActive ? 'bg-success' : 'bg-secondary'}`}>{product.status}</span>
-                </div>
-              </div>
-
-              {product.buyNowPrice && (
-                <button
-                  type="button"
-                  className="btn btn-dark w-100 fw-bold py-3 shadow-sm"
-                  onClick={handleBuyNow}
-                  disabled={!canBuyNow || buyNowSubmitting}
-                >
-                  {buyNowSubmitting ? 'Processing…' : `Buy Now - ${formatVND(product.buyNowPrice)}`}
-                </button>
-              )}
-              {product.buyNowPrice && !canBuyNow && (
-                <small className="text-muted d-block mt-2 text-center">
-                  {isAuthenticated ? 'You cannot buy this product now.' : 'Please login as a bidder to buy now.'}
-                </small>
-              )}
-              {buyNowStatus && (
-                <div className={`alert alert-${buyNowStatus.type} mt-3`} role="alert">
-                  {buyNowStatus.message}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="card shadow-sm border-0 mb-4">
-            <div className="card-body p-4">
-              <h5 className="fw-bold text-dark mb-3">Manual Bid</h5>
-              {!canPlaceBid && (
-                <p className="text-muted mb-3 small">
-                  {isAuthenticated
-                    ? isSeller
-                      ? 'Sellers cannot bid on their own products.'
-                      : isActive
-                        ? 'You must be a bidder to place bids.'
-                        : 'Auction is no longer active.'
-                    : 'Please sign in as a bidder to place bids.'}
-                </p>
-              )}
-              {manualStatus && (
-                <div className={`alert alert-${manualStatus.type} small`} role="alert">
-                  {manualStatus.message}
-                </div>
-              )}
-              <form onSubmit={handleManualBid} className="mt-3">
-                <div className="mb-3">
-                  <label htmlFor="manualBidAmount" className="form-label text-secondary small fw-medium">
-                    Enter your bid amount
-                  </label>
-                  <div className="input-group">
-                    <input
-                      id="manualBidAmount"
-                      type="number"
-                      min={manualMinBid || undefined}
-                      step={product.priceStep}
-                      className="form-control"
-                      value={manualBidAmount}
-                      onChange={(event) => setManualBidAmount(event.target.value)}
-                      disabled={!canPlaceBid || manualSubmitting}
-                    />
-                    <button type="submit" className="btn btn-primary fw-bold px-4" disabled={!canPlaceBid || manualSubmitting}>
-                      {manualSubmitting ? 'Placing...' : 'Place Bid'}
-                    </button>
-                  </div>
-                  {manualMinBid && (
-                    <small className="text-muted mt-1 d-block">
-                      Minimum next bid: <span className="fw-medium text-dark">{formatVND(manualMinBid)}</span>
-                    </small>
-                  )}
-                </div>
-              </form>
-            </div>
-          </div>
-
-          {product.enableAutoBid && (
-            <div className="card shadow-sm mb-3">
-              <div className="card-body">
-                <h5>Auto-bid</h5>
-                {!canUseAutoBid && (
-                  <p className="text-muted mb-3">
-                    {isAuthenticated
-                      ? isActive
-                        ? 'You cannot register auto-bid for this product.'
-                        : 'Auction is no longer active.'
-                      : 'Login to register automatic bidding.'}
-                  </p>
-                )}
-                {autoStatus && (
-                  <div className={`alert alert-${autoStatus.type}`} role="alert">
-                    {autoStatus.message}
-                  </div>
-                )}
-                <form onSubmit={handleAutoBid}>
-                  <div className="mb-3">
-                    <label htmlFor="autoBidAmount" className="form-label">
-                      Maximum amount you are willing to pay
-                    </label>
-                    <input
-                      id="autoBidAmount"
-                      type="number"
-                      min={autoMinBid || undefined}
-                      step={product.priceStep}
-                      className="form-control"
-                      value={autoBidAmount}
-                      onChange={(event) => setAutoBidAmount(event.target.value)}
-                      disabled={!canUseAutoBid || autoSubmitting}
-                    />
-                    {autoMinBid && (
-                      <small className="text-muted">
-                        Minimum auto-bid: {formatVND(autoMinBid)}
-                      </small>
+                <div className="card-body p-4">
+                  <h4 className="h3 fw-bold text-primary mb-3">{formatVND(product.currentPrice)}</h4>
+                  <div className="d-flex flex-column gap-2 text-secondary mb-4">
+                    <div className="d-flex justify-content-between">
+                      <span>Start price:</span>
+                      <span className="fw-medium text-dark">{formatVND(product.startPrice)}</span>
+                    </div>
+                    <div className="d-flex justify-content-between">
+                      <span>Price step:</span>
+                      <span className="fw-medium text-dark">{formatVND(product.priceStep)}</span>
+                    </div>
+                    {product.buyNowPrice && (
+                      <div className="d-flex justify-content-between">
+                        <span>Buy now:</span>
+                        <span className="fw-medium text-success">{formatVND(product.buyNowPrice)}</span>
+                      </div>
                     )}
+                    <div className="d-flex justify-content-between">
+                      <span>Total bids:</span>
+                      <span className="fw-medium text-dark">{product.bidCount}</span>
+                    </div>
+                    <div className="d-flex justify-content-between">
+                      <span>Status:</span>
+                      <span className={`badge ${isActive ? 'bg-success' : 'bg-secondary'}`}>{product.status}</span>
+                    </div>
                   </div>
-                  <button type="submit" className="btn btn-outline-primary w-100" disabled={!canUseAutoBid || autoSubmitting}>
-                    {autoSubmitting ? 'Saving…' : 'Save auto-bid'}
-                  </button>
-                </form>
-              </div>
-            </div>
-          )}
 
-          <div className="card shadow-sm">
-            <div className="card-body">
-              <h5>Seller</h5>
-              <p className="mb-1">{detail.seller?.fullName || 'Unknown seller'}</p>
-              {detail.seller?.rating && (
-                <small className="text-muted d-block mb-2">
-                  Rating: +{detail.seller.rating.positive} / -{detail.seller.rating.negative} (score{' '}
-                  {detail.seller.rating.score})
-                </small>
-              )}
-              {detail.keeper && (
-                <>
-                  <hr />
-                  <h6>Current keeper</h6>
-                  <p className="mb-1">{detail.keeper.fullName || 'Hidden bidder'}</p>
-                  {detail.keeper.rating && (
-                    <small className="text-muted d-block">
-                      Rating: +{detail.keeper.rating.positive} / -{detail.keeper.rating.negative}
+                  {product.buyNowPrice && (
+                    <button
+                      type="button"
+                      className="btn btn-dark w-100 fw-bold py-3 shadow-sm"
+                      onClick={handleBuyNow}
+                      disabled={!canBuyNow || buyNowSubmitting}
+                    >
+                      {buyNowSubmitting ? 'Processing…' : `Buy Now - ${formatVND(product.buyNowPrice)}`}
+                    </button>
+                  )}
+                  {product.buyNowPrice && !canBuyNow && (
+                    <small className="text-muted d-block mt-2 text-center">
+                      {isAuthenticated ? 'You cannot buy this product now.' : 'Please login as a bidder to buy now.'}
                     </small>
                   )}
-                </>
+                  {buyNowStatus && (
+                    <div className={`alert alert-${buyNowStatus.type} mt-3`} role="alert">
+                      {buyNowStatus.message}
+                    </div>
+                  )}
+                </div>
+              </div>
+          {!isSeller && (
+            <>
+              <div className="card shadow-sm border-0 mb-4">
+                <div className="card-body p-4">
+                  <h5 className="fw-bold text-dark mb-3">Manual Bid</h5>
+                  {!canPlaceBid && (
+                    <p className="text-muted mb-3 small">
+                      {isAuthenticated
+                        ? isSeller
+                          ? 'Sellers cannot bid on their own products.'
+                          : isActive
+                            ? 'You must be a bidder to place bids.'
+                            : 'Auction is no longer active.'
+                        : 'Please sign in as a bidder to place bids.'}
+                    </p>
+                  )}
+                  {manualStatus && (
+                    <div className={`alert alert-${manualStatus.type} small`} role="alert">
+                      {manualStatus.message}
+                    </div>
+                  )}
+                  <form onSubmit={handleManualBid} className="mt-3">
+                    <div className="mb-3">
+                      <label htmlFor="manualBidAmount" className="form-label text-secondary small fw-medium">
+                        Enter your bid amount
+                      </label>
+                      <div className="input-group">
+                        <input
+                          id="manualBidAmount"
+                          type="number"
+                          min={manualMinBid || undefined}
+                          step={product.priceStep}
+                          className="form-control"
+                          value={manualBidAmount}
+                          onChange={(event) => setManualBidAmount(event.target.value)}
+                          disabled={!canPlaceBid || manualSubmitting}
+                        />
+                        <button type="submit" className="btn btn-primary fw-bold px-4" disabled={!canPlaceBid || manualSubmitting}>
+                          {manualSubmitting ? 'Placing...' : 'Place Bid'}
+                        </button>
+                      </div>
+                      {manualMinBid && (
+                        <small className="text-muted mt-1 d-block">
+                          Minimum next bid: <span className="fw-medium text-dark">{formatVND(manualMinBid)}</span>
+                        </small>
+                      )}
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              {product.enableAutoBid && (
+                <div className="card shadow-sm mb-3">
+                  <div className="card-body">
+                    <h5>Auto-bid</h5>
+                    {!canUseAutoBid && (
+                      <p className="text-muted mb-3">
+                        {isAuthenticated
+                          ? isActive
+                            ? 'You cannot register auto-bid for this product.'
+                            : 'Auction is no longer active.'
+                          : 'Login to register automatic bidding.'}
+                      </p>
+                    )}
+                    {autoStatus && (
+                      <div className={`alert alert-${autoStatus.type}`} role="alert">
+                        {autoStatus.message}
+                      </div>
+                    )}
+                    <form onSubmit={handleAutoBid}>
+                      <div className="mb-3">
+                        <label htmlFor="autoBidAmount" className="form-label">
+                          Maximum amount you are willing to pay
+                        </label>
+                        <input
+                          id="autoBidAmount"
+                          type="number"
+                          min={autoMinBid || undefined}
+                          step={product.priceStep}
+                          className="form-control"
+                          value={autoBidAmount}
+                          onChange={(event) => setAutoBidAmount(event.target.value)}
+                          disabled={!canUseAutoBid || autoSubmitting}
+                        />
+                        {autoMinBid && (
+                          <small className="text-muted">
+                            Minimum auto-bid: {formatVND(autoMinBid)}
+                          </small>
+                        )}
+                      </div>
+                      <button type="submit" className="btn btn-outline-primary w-100" disabled={!canUseAutoBid || autoSubmitting}>
+                        {autoSubmitting ? 'Saving…' : 'Save auto-bid'}
+                      </button>
+                    </form>
+                  </div>
+                </div>
               )}
-            </div>
-          </div>
+
+              <div className="card shadow-sm">
+                <div className="card-body">
+                  <h5>Seller</h5>
+                  <p className="mb-1">{detail.seller?.fullName || 'Unknown seller'}</p>
+                  {detail.seller?.rating && (
+                    <small className="text-muted d-block mb-2">
+                      Rating: +{detail.seller.rating.positive} / -{detail.seller.rating.negative} (score{' '}
+                      {detail.seller.rating.score})
+                    </small>
+                  )}
+                  {detail.keeper && (
+                    <>
+                      <hr />
+                      <h6>Current keeper</h6>
+                      <p className="mb-1">{detail.keeper.fullName || 'Hidden bidder'}</p>
+                      {detail.keeper.rating && (
+                        <small className="text-muted d-block">
+                          Rating: +{detail.keeper.rating.positive} / -{detail.keeper.rating.negative}
+                        </small>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+
+              
+            </>
+          )}
 
           {canAppendDescription && (
             <div className="card shadow-sm mt-3">
@@ -676,12 +692,15 @@ export default function ProductDetailPage() {
                   </div>
                 )}
                 <form onSubmit={handleAppendDescription}>
-                  <textarea
-                    className="form-control mb-2"
-                    rows="3"
-                    value={appendContent}
-                    onChange={(event) => setAppendContent(event.target.value)}
-                  />
+                  <div className="mb-3">
+                    <label className="form-label fw-medium">Additional details</label>
+                    <ReactQuill
+                      theme="snow"
+                      value={appendContent}
+                      onChange={setAppendContent}
+                      placeholder="Add formatted updates for bidders"
+                    />
+                  </div>
                   <button type="submit" className="btn btn-outline-secondary btn-sm">
                     Append text
                   </button>
