@@ -10,16 +10,24 @@ import {
   updateCategory,
   updateUser,
   deleteUser,
-  finalizeAuctions
+  finalizeAuctions,
+  updateExtendSettings
 } from '../services/admin'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function AdminDashboardPage() {
   const { user } = useAuth()
-  const [data, setData] = useState({ categories: [], products: [], users: [], sellerRequests: [] })
+  const [data, setData] = useState({
+    categories: [],
+    products: [],
+    users: [],
+    sellerRequests: [],
+    settings: { extendWindowMinutes: 5, extendAmountMinutes: 10 }
+  })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [categoryForm, setCategoryForm] = useState({ name: '', parentId: '' })
+  const [extendForm, setExtendForm] = useState({ windowMinutes: 5, extendMinutes: 10 })
   const [autoBids, setAutoBids] = useState([])
   const [autoBidProductId, setAutoBidProductId] = useState(null)
   const [confirmDialog, setConfirmDialog] = useState(null)
@@ -31,7 +39,14 @@ export default function AdminDashboardPage() {
     setLoading(true)
     fetchAdminDashboard()
       .then((response) => {
-        setData(response.data || {})
+        const payload = response.data || {}
+        setData(payload)
+        if (payload.settings) {
+          setExtendForm({
+            windowMinutes: payload.settings.extendWindowMinutes,
+            extendMinutes: payload.settings.extendAmountMinutes
+          })
+        }
         setError(null)
       })
       .catch((err) => setError(err.message || 'Unable to load admin dashboard'))
@@ -101,6 +116,19 @@ export default function AdminDashboardPage() {
     fn(requestId)
       .then(loadDashboard)
       .catch((err) => setError(err.message || 'Unable to update seller request'))
+  }
+
+  const handleExtendSubmit = (event) => {
+    event.preventDefault()
+    updateExtendSettings({
+      windowMinutes: Number(extendForm.windowMinutes),
+      extendMinutes: Number(extendForm.extendMinutes)
+    })
+      .then(() => {
+        setError(null)
+        loadDashboard()
+      })
+      .catch((err) => setError(err.message || 'Unable to update extend settings'))
   }
 
   const handleSoftDeleteProduct = (productId) => {
@@ -185,6 +213,42 @@ export default function AdminDashboardPage() {
           <div className="modal-backdrop fade show"></div>
         </>
       )}
+
+      <section className="mb-5">
+        <h2>Auto-extend settings</h2>
+        <form className="row g-3 align-items-end" onSubmit={handleExtendSubmit}>
+          <div className="col-sm-4 col-md-3">
+            <label className="form-label">Extend window (minutes)</label>
+            <input
+              type="number"
+              min="1"
+              className="form-control"
+              value={extendForm.windowMinutes}
+              onChange={(e) => setExtendForm((prev) => ({ ...prev, windowMinutes: e.target.value }))}
+              required
+            />
+          </div>
+          <div className="col-sm-4 col-md-3">
+            <label className="form-label">Extend amount (minutes)</label>
+            <input
+              type="number"
+              min="1"
+              className="form-control"
+              value={extendForm.extendMinutes}
+              onChange={(e) => setExtendForm((prev) => ({ ...prev, extendMinutes: e.target.value }))}
+              required
+            />
+          </div>
+          <div className="col-sm-4 col-md-3 d-grid">
+            <button type="submit" className="btn btn-primary">
+              Save settings
+            </button>
+          </div>
+          <div className="col-12 col-md-3 text-muted small">
+            Current: {data.settings?.extendWindowMinutes}m window / {data.settings?.extendAmountMinutes}m extend
+          </div>
+        </form>
+      </section>
 
       <section className="mb-5">
         <h2>Categories</h2>

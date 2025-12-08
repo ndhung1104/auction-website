@@ -43,3 +43,7 @@ export function approveSellerRequest(id) {
 export function rejectSellerRequest(id) {
   return apiClient.post(`/admin/seller-requests/${id}/reject`)
 }
+
+export function updateExtendSettings(payload) {
+  return apiClient.patch('/admin/settings/extend', payload)
+}

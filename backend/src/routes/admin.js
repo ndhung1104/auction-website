@@ -11,7 +11,8 @@ import {
   updateCategoryAdmin,
   updateUserAdmin,
   deleteUserAdmin,
-  finalizeAuctionsAdmin
+  finalizeAuctionsAdmin,
+  updateExtendSettingsAdmin
 } from '../controllers/admin.controller.js';
 
 const router = Router();
@@ -32,5 +33,6 @@ router.post('/auctions/finalize', finalizeAuctionsAdmin);
 
 router.post('/seller-requests/:id/approve', approveSellerRequest);
 router.post('/seller-requests/:id/reject', rejectSellerRequest);
+router.patch('/settings/extend', updateExtendSettingsAdmin);
 
 export default router;

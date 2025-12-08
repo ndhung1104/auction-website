@@ -448,9 +448,22 @@ export default function ProductDetailPage() {
 
           <div className="mt-5">
             <h4 className="h5 fw-bold text-primary border-bottom pb-2 mb-3">Description</h4>
-            <div className="text-secondary" style={{ lineHeight: '1.8' }}>
+            <div className="text-secondary" style={{ lineHeight: '1.8', whiteSpace: 'pre-line' }}>
               {product.description || 'No description provided yet.'}
             </div>
+            {detail.descriptionHistory?.length ? (
+              <div className="mt-3">
+                <h6 className="text-muted fw-semibold">Appended updates</h6>
+                <ul className="list-group list-group-flush">
+                  {detail.descriptionHistory.map((entry) => (
+                    <li key={entry.id} className="list-group-item px-0">
+                      <div className="small text-muted mb-1">{entry.label}</div>
+                      <div className="text-secondary">{entry.content}</div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
           </div>
         </div>
 

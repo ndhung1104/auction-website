@@ -13,16 +13,18 @@ import {
 } from '../repositories/sellerRequest.repository.js';
 import { findAutoBidsWithUsers } from '../repositories/autoBid.repository.js';
 import { finalizeEndedAuctions } from './product.service.js';
+import { getExtendSettings, updateExtendSettings } from './setting.service.js';
 
 export const getAdminDashboard = async () => {
-  const [categories, products, users, requests] = await Promise.all([
+  const [categories, products, users, requests, extendSettings] = await Promise.all([
     getAllCategories(),
     db('products')
       .select('id', 'name', 'status', 'current_price', 'end_at', 'seller_id')
       .orderBy('created_at', 'desc')
       .limit(20),
     listUsers({ limit: 50, offset: 0 }),
-    listSellerRequests(20, 0)
+    listSellerRequests(20, 0),
+    getExtendSettings()
   ]);
 
   return {
@@ -52,7 +54,11 @@ export const getAdminDashboard = async () => {
       processedAt: request.processed_at,
       email: request.email,
       fullName: request.full_name
-    }))
+    })),
+    settings: {
+      extendWindowMinutes: extendSettings.windowMinutes,
+      extendAmountMinutes: extendSettings.extendMinutes
+    }
   };
 };
 
@@ -152,3 +158,12 @@ export const adminRejectSellerRequest = async (requestId) => {
 };
 
 export const adminFinalizeAuctions = () => finalizeEndedAuctions();
+
+export const adminUpdateExtendSettings = async ({ windowMinutes, extendMinutes }) => {
+  const parsedWindow = Number(windowMinutes);
+  const parsedExtend = Number(extendMinutes);
+  if (!Number.isFinite(parsedWindow) || parsedWindow <= 0 || !Number.isFinite(parsedExtend) || parsedExtend <= 0) {
+    throw new ApiError(422, 'SETTINGS.INVALID_EXTEND', 'Extend settings must be positive numbers');
+  }
+  return updateExtendSettings({ windowMinutes: parsedWindow, extendMinutes: parsedExtend });
+};

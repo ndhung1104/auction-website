@@ -287,10 +287,11 @@ export const getProductDetail = async (productId, viewerId = null) => {
 
   const highlightWindowMinutes = await getHighlightNewMinutes();
 
-  const [imagesRows, questionsRows, relatedRows] = await Promise.all([
+  const [imagesRows, questionsRows, relatedRows, descriptionHistoryRows] = await Promise.all([
     findProductImages(productRow.id),
     findRecentQuestions(productRow.id, QUESTIONS_LIMIT),
-    findRelatedProducts(productRow.category_id, productRow.id, RELATED_LIMIT)
+    findRelatedProducts(productRow.category_id, productRow.id, RELATED_LIMIT),
+    db('product_description_history').where({ product_id: productRow.id }).orderBy('created_at', 'asc')
   ]);
 
   const answersRows = await findAnswersByQuestionIds(questionsRows.map((question) => question.id));
@@ -384,6 +385,12 @@ export const getProductDetail = async (productId, viewerId = null) => {
     images,
     questions,
     relatedProducts,
+    descriptionHistory: descriptionHistoryRows.map((row) => ({
+      id: row.id,
+      content: row.content_added,
+      createdAt: row.created_at,
+      label: `EDIT ${new Date(row.created_at).toLocaleDateString('vi-VN')}`
+    })),
     watchlist: {
       isWatchlisted: Boolean(watchlisted),
       count: Number(watchlistCount?.count || 0)
@@ -827,13 +834,18 @@ export const appendProductDescription = async ({ productId, sellerId, content })
       throw new ApiError(403, 'PRODUCTS.SELLER_REQUIRED', 'Only the seller can update this product');
     }
 
+    const now = new Date();
+    const dateLabel = now.toLocaleDateString('vi-VN');
+    const formattedBlock = `EDIT ${dateLabel}: ${trimmed}`;
+
     await trx('product_description_history').insert({
       product_id: productId,
-      content_added: trimmed
+      content_added: trimmed,
+      created_at: now
     });
 
     const baseDescription = product.description ? `${product.description}\n\n` : '';
-    const nextDescription = `${baseDescription}${trimmed}`.trim();
+    const nextDescription = `${baseDescription}${formattedBlock}`.trim();
 
     const [updated] = await trx('products')
       .where({ id: productId })

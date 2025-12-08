@@ -10,7 +10,8 @@ import {
   adminUpdateCategory,
   adminUpdateUser,
   adminDeleteUser,
-  adminFinalizeAuctions
+  adminFinalizeAuctions,
+  adminUpdateExtendSettings
 } from '../services/admin.service.js';
 import { ApiError, sendSuccess } from '../utils/response.js';
 
@@ -26,6 +27,11 @@ const userUpdateSchema = Joi.object({
 
 const idParam = Joi.object({
   id: Joi.number().integer().min(1).required()
+});
+
+const extendSettingSchema = Joi.object({
+  windowMinutes: Joi.number().integer().min(1).required(),
+  extendMinutes: Joi.number().integer().min(1).required()
 });
 
 export const getDashboard = async (_req, res, next) => {
@@ -175,6 +181,22 @@ export const rejectSellerRequest = async (req, res, next) => {
     }
     const request = await adminRejectSellerRequest(params.id);
     return sendSuccess(res, { request }, 'Seller request rejected');
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const updateExtendSettingsAdmin = async (req, res, next) => {
+  try {
+    const { value, error } = extendSettingSchema.validate(req.body, {
+      abortEarly: false,
+      stripUnknown: true
+    });
+    if (error) {
+      throw new ApiError(422, 'SETTINGS.INVALID_EXTEND', 'Invalid extend settings', error.details);
+    }
+    const payload = await adminUpdateExtendSettings(value);
+    return sendSuccess(res, { settings: payload }, 'Extend settings updated');
   } catch (err) {
     next(err);
   }
