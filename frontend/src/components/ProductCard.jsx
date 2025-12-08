@@ -2,11 +2,32 @@ import { Link } from 'react-router-dom'
 import { formatCountdown, formatVND, formatVNTime } from '../utils/format'
 
 const PLACEHOLDER_IMAGE = 'https://placehold.co/600x400?text=Auction'
+const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/api\/?$/, '').replace(/\/$/, '')
+
+const resolveImageUrl = (url) => {
+  if (!url) return PLACEHOLDER_IMAGE
+  const apiBase = API_BASE || ''
+  if (url.startsWith('http')) {
+    try {
+      const parsed = new URL(url)
+      if (apiBase) {
+        const apiParsed = new URL(apiBase)
+        if (parsed.hostname === apiParsed.hostname && parsed.port && parsed.port !== apiParsed.port) {
+          return `${apiParsed.origin}${parsed.pathname}${parsed.search}${parsed.hash}`
+        }
+      }
+      return url
+    } catch (_err) {
+      return url
+    }
+  }
+  return `${apiBase}${url.startsWith('/') ? '' : '/'}${url}`
+}
 
 export default function ProductCard({ product, compact = false, showEndsAt = true }) {
   if (!product) return null
 
-  const imageSrc = product.primaryImageUrl || PLACEHOLDER_IMAGE
+  const imageSrc = resolveImageUrl(product.primaryImageUrl)
   const highestBidder = product.currentBidderAlias || 'No bids yet'
   const timeLeft = formatCountdown(product.endAt)
   const postedAt = formatVNTime(product.createdAt, { year: 'numeric', month: '2-digit', day: '2-digit' })

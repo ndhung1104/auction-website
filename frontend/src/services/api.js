@@ -71,13 +71,19 @@ apiClient.interceptors.response.use(
     }
 
     const apiError = error.response?.data?.error
+    const detailMessages = Array.isArray(apiError?.details)
+      ? apiError.details.map((d) => d?.message).filter(Boolean)
+      : []
     const message =
+      (detailMessages.length ? detailMessages.join('; ') : null) ||
       apiError?.message ||
       error.response?.data?.message ||
       error.message ||
       'Unknown error'
     const code = apiError?.code || error.response?.data?.code
     const details = apiError?.details
+    // Debug: surface API error details to console during development
+    // console.warn('[api] error', { status, code, message, details })
     return Promise.reject({ status, message, code, details })
   }
 )

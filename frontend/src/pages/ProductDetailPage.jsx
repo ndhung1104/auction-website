@@ -18,6 +18,28 @@ import ProductCard from '../components/ProductCard'
 import { useAuth } from '../contexts/AuthContext'
 
 const PLACEHOLDER_IMAGE = 'https://placehold.co/800x600?text=Auction'
+const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/api\/?$/, '').replace(/\/$/, '')
+
+const resolveImageUrl = (url) => {
+  if (!url) return PLACEHOLDER_IMAGE
+  const apiBase = API_BASE || ''
+  if (url.startsWith('http')) {
+    try {
+      const parsed = new URL(url)
+      if (apiBase) {
+        const apiParsed = new URL(apiBase)
+        // Normalize localhost port differences
+        if (parsed.hostname === apiParsed.hostname && parsed.port && parsed.port !== apiParsed.port) {
+          return `${apiParsed.origin}${parsed.pathname}${parsed.search}${parsed.hash}`
+        }
+      }
+      return url
+    } catch (_err) {
+      return url
+    }
+  }
+  return `${apiBase}${url.startsWith('/') ? '' : '/'}${url}`
+}
 
 export default function ProductDetailPage() {
   const { productId } = useParams()
@@ -133,11 +155,15 @@ export default function ProductDetailPage() {
   const canAnswerQuestions = Boolean(permissions.canAnswerQuestions)
   const isWatchlisted = Boolean(watchlistInfo.isWatchlisted)
   const images = useMemo(() => {
+    const resolvedPrimary = resolveImageUrl(product?.primaryImageUrl)
     if (!detail?.images?.length) {
-      return [{ id: 'placeholder', url: product?.primaryImageUrl || PLACEHOLDER_IMAGE }]
+      return [{ id: 'placeholder', url: resolvedPrimary }]
     }
-    return detail.images
-  }, [detail])
+    return detail.images.map((image) => ({
+      ...image,
+      url: resolveImageUrl(image.url || resolvedPrimary)
+    }))
+  }, [detail, product])
   const relativeEnd = formatVNRelative(product?.endAt)
   const relativeStart = formatVNRelative(product?.startAt)
 

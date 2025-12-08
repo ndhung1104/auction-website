@@ -5,6 +5,7 @@ import { ApiError } from '../utils/response.js';
 
 const UPLOAD_ROOT = path.resolve(process.cwd(), 'uploads');
 const PRODUCT_UPLOAD_DIR = path.join(UPLOAD_ROOT, 'products');
+const FILE_BASE_URL = (process.env.FILE_BASE_URL || '').replace(/\/$/, '');
 
 const ensureDir = (dirPath) => {
   if (!fs.existsSync(dirPath)) {
@@ -19,9 +20,13 @@ const storage = multer.diskStorage({
     cb(null, PRODUCT_UPLOAD_DIR);
   },
   filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname || '').toLowerCase();
+    const ext = path.extname(file.originalname || '').toLowerCase().replace(/[^.\w]/g, '');
+    const safeName = (file.originalname || 'file')
+      .toLowerCase()
+      .replace(/[^\w.-]+/g, '')
+      .slice(0, 50);
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    cb(null, `${uniqueSuffix}${ext}`);
+    cb(null, `${safeName || 'image'}-${uniqueSuffix}${ext}`);
   }
 });
 

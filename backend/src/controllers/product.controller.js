@@ -169,10 +169,11 @@ export const createProduct = async (req, res, next) => {
 
     if (error) {
       cleanupUploadedFiles(uploadedFiles);
+      const detailMessages = error.details?.map(({ message }) => message).join('; ');
       throw new ApiError(
         422,
         'PRODUCTS.INVALID_PAYLOAD',
-        'Invalid product payload',
+        detailMessages || 'Invalid product payload',
         error.details.map(({ message, path }) => ({ message, path }))
       );
     }
