@@ -11,6 +11,7 @@ import adminRouter from './admin.js';
 import questionRouter from './questions.js';
 import searchRouter from './search.js';
 import ordersRouter from './orders.js';
+import testingRouter from './testing.js';
 
 const router = Router();
 router.use('/health', healthRouter);
@@ -25,5 +26,6 @@ router.use('/admin', adminRouter);
 router.use('/questions', questionRouter);
 router.use('/search', searchRouter);
 router.use('/orders', ordersRouter);
+router.use('/testing', testingRouter);
 
 export default router;
