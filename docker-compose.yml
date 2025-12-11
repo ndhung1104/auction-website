@@ -1,49 +1,40 @@
 services:
-  # 1. Backend (Node.js)
+  # 1. Dịch vụ Backend (Node.js)
   backend:
-    build: ./backend
+    build: ./backend             # Build từ Dockerfile trong thư mục ./backend
     ports:
-      - "3001:3000"
+      - "3001:3000"              # Map cổng 3001 (máy bạn) vào 3000 (container)
     volumes:
-      - ./backend:/usr/src/app
-      # - /usr/src/app/node_modules
+      - ./backend:/usr/src/app   # Mount code của bạn vào container (để hot-reload)
+      # - /usr/src/app/node_modules # Loại trừ node_modules để dùng của container
     env_file:
-      - ./backend/.env
+      - ./backend/.env           # Đọc biến môi trường từ file .env
     depends_on:
-      - db
-      - mailhog
+      - db                       # Khởi động SAU khi service 'db' chạy
 
-  # 2. Frontend (React)
+  # 2. Dịch vụ Frontend (React)
   frontend:
-    build: ./frontend
+    build: ./frontend            # Build từ Dockerfile trong thư mục ./frontend
     ports:
-      - "5173:5173"
+      - "5173:5173"              # Map cổng 5173 (máy bạn) vào 5173 (container)
     volumes:
-      - ./frontend:/usr/src/app
-      - /usr/src/app/node_modules
+      - ./frontend:/usr/src/app  # Mount code của bạn vào container (để hot-reload)
+      - /usr/src/app/node_modules # Loại trừ node_modules
     env_file:
-      - ./frontend/.env
+      - ./frontend/.env          # Đọc biến môi trường
     depends_on:
-      - backend
+      - backend                  # Khởi động SAU khi service 'backend' chạy
 
-  # 3. Database (PostgreSQL)
+  # 3. Dịch vụ Database (PostgreSQL)
   db:
-    image: postgres:14-alpine
+    image: postgres:14-alpine    # Sử dụng image PostgreSQL 14
     restart: always
     env_file:
-      - ./backend/.env
+      - ./backend/.env       # Lấy thông tin từ file .env của backend
     ports:
-      - "5433:5432"
+      - "5433:5432"              # Map cổng 5433 (máy bạn) vào 5432 (container)
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-  # 4. MailHog (SMTP + Web UI)
-  mailhog:
-    image: mailhog/mailhog:latest
-    restart: unless-stopped
-    ports:
-      - "1025:1025" # SMTP
-      - "8025:8025" # Web UI
+      - postgres_data:/var/lib/postgresql/data # Lưu trữ dữ liệu DB bên ngoài container
 
 volumes:
-  postgres_data:
+  postgres_data:                 # Định nghĩa volume để giữ dữ liệu khi container bị xóa
