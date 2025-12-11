@@ -14,4 +14,3 @@ frontend/.vite/
 .venv
 backend/uploads/*
 !backend/uploads/.gitkeep
-test-results/
