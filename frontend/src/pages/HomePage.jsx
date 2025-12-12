@@ -2,6 +2,12 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { fetchHomepageSections } from '../services/homepage'
 import ProductCard from '../components/ProductCard'
+import { Swiper, SwiperSlide } from 'swiper/react'
+import { Navigation, Pagination, Scrollbar } from 'swiper/modules'
+import 'swiper/css'
+import 'swiper/css/navigation'
+import 'swiper/css/pagination'
+import 'swiper/css/scrollbar'
 
 export default function HomePage() {
   const [sections, setSections] = useState({
@@ -38,7 +44,9 @@ export default function HomePage() {
     }
   }, [])
 
-  const renderSection = (title, items, fallbackLink = '/products') => (
+  const renderSection = (title, items, fallbackLink = '/products') => {
+    const slides = (items || []).slice(0, 5)
+    return (
     <section className="mb-5" key={title}>
       <div className="d-flex align-items-center justify-content-between mb-4">
         <h2 className="h3 fw-bold text-dark mb-0">{title}</h2>
@@ -58,17 +66,33 @@ export default function HomePage() {
           <p className="mb-0 text-muted">No products available for this section.</p>
         </div>
       )}
-      {!loading && items.length > 0 && (
-        <div className="row g-4">
-          {items.map((product) => (
-            <div className="col-12 col-sm-6 col-lg-4 col-xl-3" key={product.id}>
-              <ProductCard product={product} compact />
-            </div>
+      {!loading && slides.length > 0 && (
+        <Swiper
+          modules={[Navigation, Pagination, Scrollbar]}
+          spaceBetween={16}
+          navigation
+          pagination={{ clickable: true }}
+          scrollbar={{ draggable: true }}
+          breakpoints={{
+            0: { slidesPerView: 1.1 },
+            576: { slidesPerView: 2 },
+            768: { slidesPerView: 2.5 },
+            992: { slidesPerView: 3 },
+            1200: { slidesPerView: 3 }
+          }}
+        >
+          {slides.map((product) => (
+            <SwiperSlide key={product.id} style={{ height: 'auto' }}>
+              <div className="h-100">
+                <ProductCard product={product} compact />
+              </div>
+            </SwiperSlide>
           ))}
-        </div>
+        </Swiper>
       )}
     </section>
   )
+  }
 
   return (
     <div>

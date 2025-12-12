@@ -4,12 +4,7 @@ import { checkAuth, checkRole } from '../middlewares/auth.js';
 
 const router = Router();
 
-router.post(
-  '/products/:productId',
-  checkAuth,
-  checkRole('BIDDER'),
-  createQuestion
-);
+router.post('/products/:productId', checkAuth, checkRole('BIDDER', 'SELLER'), createQuestion);
 
 router.post(
   '/:questionId/answer',

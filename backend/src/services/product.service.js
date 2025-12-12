@@ -178,8 +178,8 @@ const ensureBidderEligibility = async (userId, sellerId, options = {}) => {
   if (!user) {
     throw new ApiError(404, 'BIDDER.NOT_FOUND', 'Bidder not found');
   }
-  if (user.role !== 'BIDDER') {
-    throw new ApiError(403, 'BIDDER.INVALID_ROLE', 'Only bidder accounts can participate');
+  if (!['BIDDER', 'SELLER'].includes(user.role)) {
+    throw new ApiError(403, 'BIDDER.INVALID_ROLE', 'Only bidder and seller accounts can participate');
   }
   if (user.status !== 'CONFIRMED') {
     throw new ApiError(403, 'BIDDER.UNCONFIRMED', 'Account must be confirmed before bidding');

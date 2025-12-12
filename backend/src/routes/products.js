@@ -24,9 +24,9 @@ router.post(
   createProduct
 );
 router.get('/:id/bids', getProductBids);
-router.post('/:id/bid', checkAuth, checkRole('BIDDER'), submitProductBid);
-router.post('/:id/auto-bid', checkAuth, checkRole('BIDDER'), submitAutoBid);
-router.post('/:id/buy-now', checkAuth, checkRole('BIDDER'), buyNow);
+router.post('/:id/bid', checkAuth, checkRole('BIDDER', 'SELLER'), submitProductBid);
+router.post('/:id/auto-bid', checkAuth, checkRole('BIDDER', 'SELLER'), submitAutoBid);
+router.post('/:id/buy-now', checkAuth, checkRole('BIDDER', 'SELLER'), buyNow);
 router.post(
   '/:id/append-description',
   checkAuth,

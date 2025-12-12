@@ -146,7 +146,8 @@ export default function ProductDetailPage() {
     : null
   const isSeller = user && detail?.seller?.id && String(user.id) === String(detail.seller.id)
   const isActive = product?.status === 'ACTIVE'
-  const canInteract = isAuthenticated && user?.role === 'BIDDER' && !isSeller
+  const canInteract =
+    isAuthenticated && (user?.role === 'BIDDER' || user?.role === 'SELLER') && !isSeller
   const canPlaceBid = canInteract && isActive
   const canBuyNow = canInteract && Boolean(product?.buyNowPrice) && isActive
   const canUseAutoBid = canPlaceBid

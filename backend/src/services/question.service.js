@@ -1,5 +1,5 @@
 import { ApiError } from '../utils/response.js';
-import { findProductStatusById, findProductByIdWithSeller } from '../repositories/product.repository.js';
+import { findProductByIdWithSeller } from '../repositories/product.repository.js';
 import { createQuestion, findQuestionById } from '../repositories/question.repository.js';
 import { createAnswer, findAnswerByQuestionId } from '../repositories/answer.repository.js';
 import { findUserById } from '../repositories/user.repository.js';
@@ -7,7 +7,11 @@ import { sendAnswerNotification, sendQuestionNotification } from './mail.service
 import db from '../db/knex.js';
 
 export const askQuestion = async ({ productId, userId, questionText }) => {
-  const product = await findProductStatusById(productId);
+  if (!userId) {
+    throw new ApiError(401, 'QUESTIONS.UNAUTHORIZED', 'Authentication required to ask questions');
+  }
+
+  const product = await findProductByIdWithSeller(productId);
   if (!product || product.status !== 'ACTIVE') {
     throw new ApiError(400, 'QUESTIONS.INVALID_PRODUCT', 'Cannot submit questions for this product');
   }
@@ -27,18 +31,20 @@ export const askQuestion = async ({ productId, userId, questionText }) => {
     question_text: trimmed
   });
 
-  try {
-    const seller = await findUserById(product.seller_id);
-    if (seller?.email) {
-      await sendQuestionNotification({
-        email: seller.email,
-        productName: product.name,
-        questionText: trimmed
-      });
+  // Fire-and-forget email to avoid blocking the response
+  Promise.resolve().then(async () => {
+    try {
+      if (product.seller_email) {
+        await sendQuestionNotification({
+          email: product.seller_email,
+          productName: product.name,
+          questionText: trimmed
+        });
+      }
+    } catch (err) {
+      console.warn('[mail] question notification skipped', err.message);
     }
-  } catch (err) {
-    console.warn('[mail] question notification skipped', err.message);
-  }
+  });
 
   return {
     id: question.id,
