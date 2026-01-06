@@ -37,20 +37,34 @@ const mapProductSummary = (row) => ({
   status: row.status
 });
 
+const mapActiveBid = (row, userId) => ({
+  ...mapProductSummary(row),
+  isLeading: String(row.current_bidder_id) === String(userId)
+});
+
 export const getProfile = async (userId) => {
   const user = await findUserById(userId);
   if (!user) {
     throw new ApiError(404, 'PROFILE.NOT_FOUND', 'User profile not found');
   }
 
+  const activeBidProductIds = await db('bids')
+    .distinct('product_id')
+    .where({ user_id: userId })
+    .then((rows) => rows.map((row) => row.product_id));
+
   const [rating, sellerRequest, watchlistRows, activeRows, wonRows, sellerActiveRows, sellerEndedRows, ratingRows] = await Promise.all([
     aggregateRating(userId),
     getLatestSellerRequest(userId),
     findWatchlistByUser(userId),
-    db('products')
-      .where({ current_bidder_id: userId, status: 'ACTIVE' })
-      .orderBy('end_at', 'asc')
-      .limit(10),
+    activeBidProductIds.length
+      ? db('products')
+          .select('id', 'name', 'slug', 'current_price', 'end_at', 'status', 'current_bidder_id')
+          .whereIn('id', activeBidProductIds)
+          .andWhere('status', 'ACTIVE')
+          .orderBy('end_at', 'asc')
+          .limit(10)
+      : Promise.resolve([]),
     db('products')
       .where({ current_bidder_id: userId, status: 'ENDED' })
       .orderBy('end_at', 'desc')
@@ -84,7 +98,7 @@ export const getProfile = async (userId) => {
       status: row.status,
       addedAt: row.added_at
     })),
-    activeBids: activeRows.map(mapProductSummary),
+    activeBids: activeRows.map((row) => mapActiveBid(row, userId)),
     wonAuctions: wonRows.map(mapProductSummary),
     sellerListings: {
       active: sellerActiveRows.map(mapProductSummary),

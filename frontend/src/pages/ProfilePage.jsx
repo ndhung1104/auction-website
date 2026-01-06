@@ -188,10 +188,11 @@ export default function ProfilePage() {
   const totalRatings = positiveRatings + negativeRatings
   const ratingPercent = totalRatings > 0 ? Math.round((positiveRatings / totalRatings) * 100) : null
 
-  const renderProductList = (items, emptyLabel) => {
+  const renderProductList = (items, emptyLabel, options = {}) => {
     if (!items.length) {
       return <div className="alert alert-light mb-0">{emptyLabel}</div>
     }
+    const { showPosition = false, showStatusBadge = false } = options
     return (
       <div className="table-responsive">
         <table className="table table-sm">
@@ -199,6 +200,7 @@ export default function ProfilePage() {
             <tr>
               <th>Name</th>
               <th>Status</th>
+              {showPosition && <th>Position</th>}
               <th>Price</th>
               <th>Ends</th>
             </tr>
@@ -213,7 +215,32 @@ export default function ProfilePage() {
                     item.name
                   )}
                 </td>
-                <td>{item.status}</td>
+                <td>
+                  {showStatusBadge ? (
+                    <span
+                      className={`badge ${
+                        item.status === 'ACTIVE'
+                          ? 'bg-success'
+                          : item.status === 'ENDED'
+                            ? 'bg-secondary'
+                            : item.status === 'REMOVED'
+                              ? 'bg-danger'
+                              : 'bg-light text-dark'
+                      }`}
+                    >
+                      {item.status}
+                    </span>
+                  ) : (
+                    item.status
+                  )}
+                </td>
+                {showPosition && (
+                  <td>
+                    <span className={`badge ${item.isLeading ? 'bg-success' : 'bg-warning text-dark'}`}>
+                      {item.isLeading ? 'Leading' : 'Outbid'}
+                    </span>
+                  </td>
+                )}
                 <td>{item.currentPrice?.toLocaleString('vi-VN')}</td>
                 <td>{new Date(item.endAt).toLocaleString()}</td>
               </tr>
@@ -422,7 +449,7 @@ export default function ProfilePage() {
       </section>
       <section className="mt-4">
         <h3>Active bids</h3>
-        {renderProductList(activeBids, 'You have no active bids.')}
+        {renderProductList(activeBids, 'You have no active bids.', { showPosition: true, showStatusBadge: true })}
       </section>
       <section className="mt-4 mb-5">
         <h3>Won auctions</h3>

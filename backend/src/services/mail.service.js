@@ -75,12 +75,22 @@ export const sendBidderReceipt = async ({ email, productName, amount }) =>
     text: `Your bid of ${amount} on ${productName} is now the leading offer.`
   });
 
-export const sendOutbidNotification = async ({ email, productName, amount }) =>
-  sendMail({
+const buildProductUrl = (productId) => {
+  const base = process.env.FRONTEND_URL?.split(',')[0]?.trim();
+  if (!base || !productId) return null;
+  const normalized = base.endsWith('/') ? base.slice(0, -1) : base;
+  return `${normalized}/products/${productId}`;
+};
+
+export const sendOutbidNotification = async ({ email, productName, amount, productId }) => {
+  const productUrl = buildProductUrl(productId);
+  const linkLine = productUrl ? `\n\nView auction: ${productUrl}` : '';
+  return sendMail({
     to: email,
     subject: 'You have been outbid',
-    text: `Another bidder has surpassed your offer on ${productName}. Latest price: ${amount}.`
+    text: `Another bidder has surpassed your offer on ${productName}. Latest price: ${amount}.${linkLine}`
   });
+};
 
 export const sendBidRejectedNotification = async ({ email, productName, reason }) =>
   sendMail({

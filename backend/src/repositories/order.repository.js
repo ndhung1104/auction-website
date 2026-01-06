@@ -122,3 +122,9 @@ export const upsertRating = async ({ orderId, raterId, ratedUserId, score, comme
   );
   return created;
 };
+
+export const findRatingByOrderAndRater = (orderId, raterId) =>
+  db('ratings')
+    .select('id', 'score', 'comment', 'created_at')
+    .where({ order_id: orderId, rater_id: raterId })
+    .first();

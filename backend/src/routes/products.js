@@ -23,7 +23,7 @@ router.post(
   uploadProductImages,
   createProduct
 );
-router.get('/:id/bids', getProductBids);
+router.get('/:id/bids', optionalAuth, getProductBids);
 router.post('/:id/bid', checkAuth, checkRole('BIDDER', 'SELLER'), submitProductBid);
 router.post('/:id/auto-bid', checkAuth, checkRole('BIDDER', 'SELLER'), submitAutoBid);
 router.post('/:id/buy-now', checkAuth, checkRole('BIDDER', 'SELLER'), buyNow);

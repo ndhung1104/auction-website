@@ -12,6 +12,13 @@ const formatDateInput = (date) => {
   return adjusted.toISOString().slice(0, 16)
 }
 
+const toISOFromLocalInput = (value) => {
+  if (!value) return value
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return value
+  return parsed.toISOString()
+}
+
 const flattenCategories = (nodes = []) => {
   const items = []
 
@@ -127,7 +134,12 @@ export default function CreateProductPage() {
     setAlert(null)
     try {
       const formData = new FormData()
-      Object.entries(form).forEach(([key, value]) => {
+      const payload = {
+        ...form,
+        startAt: toISOFromLocalInput(form.startAt),
+        endAt: toISOFromLocalInput(form.endAt)
+      }
+      Object.entries(payload).forEach(([key, value]) => {
         if (value !== null && value !== undefined && value !== '') {
           formData.append(key, value)
         }

@@ -109,7 +109,7 @@ export const getProductById = async (req, res, next) => {
       );
     }
 
-    const detail = await getProductDetail(value.id, req.user?.id ?? null);
+    const detail = await getProductDetail(value.id, req.user || null);
     return sendSuccess(res, detail);
   } catch (err) {
     next(err);
@@ -146,7 +146,7 @@ export const getProductBids = async (req, res, next) => {
       );
     }
 
-    const bids = await getProductBidHistory(params.id, query.limit);
+    const bids = await getProductBidHistory(params.id, query.limit, req.user || null);
     return sendSuccess(res, { bids });
   } catch (err) {
     next(err);

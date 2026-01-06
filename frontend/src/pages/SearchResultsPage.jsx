@@ -281,7 +281,7 @@ export default function SearchResultsPage() {
         {items.map((product) => (
           <div className="col" key={product.id}>
             <div className="d-flex flex-column h-100 gap-2">
-              <ProductCard product={product} compact />
+              <ProductCard product={product} compact showBidder={false} />
               {isAuthenticated && (
                 <div className="d-flex align-items-center justify-content-between">
                   <button

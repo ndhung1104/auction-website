@@ -24,7 +24,7 @@ const resolveImageUrl = (url) => {
   return `${apiBase}${url.startsWith('/') ? '' : '/'}${url}`
 }
 
-export default function ProductCard({ product, compact = false, showEndsAt = true }) {
+export default function ProductCard({ product, compact = false, showEndsAt = true, showBidder = false }) {
   if (!product) return null
 
   const imageSrc = resolveImageUrl(product.primaryImageUrl)
@@ -58,10 +58,12 @@ export default function ProductCard({ product, compact = false, showEndsAt = tru
           <p className="h5 fw-bold text-dark mb-0">{formatVND(product.currentPrice)}</p>
         </div>
 
-        <div className="d-flex justify-content-between align-items-center mb-2 small">
-          <span className="text-muted">Bidder</span>
-          <span className="fw-medium text-dark">{highestBidder}</span>
-        </div>
+        {showBidder && (
+          <div className="d-flex justify-content-between align-items-center mb-2 small">
+            <span className="text-muted">Bidder</span>
+            <span className="fw-medium text-dark">{highestBidder}</span>
+          </div>
+        )}
 
         <div className="d-flex justify-content-between align-items-center mb-3 small">
           <span className="text-muted">Bids</span>

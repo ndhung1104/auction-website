@@ -728,34 +728,35 @@ export default function ProductDetailPage() {
                 </div>
               )}
 
-              <div className="card shadow-sm">
-                <div className="card-body">
-                  <h5>Seller</h5>
-                  <p className="mb-1">{detail.seller?.fullName || 'Unknown seller'}</p>
-                  {detail.seller?.rating && (
-                    <small className="text-muted d-block mb-2">
-                      Rating: +{detail.seller.rating.positive} / -{detail.seller.rating.negative} (score{' '}
-                      {detail.seller.rating.score})
-                    </small>
-                  )}
-                  {detail.keeper && (
-                    <>
-                      <hr />
-                      <h6>Current keeper</h6>
-                      <p className="mb-1">{detail.keeper.fullName || 'Hidden bidder'}</p>
-                      {detail.keeper.rating && (
-                        <small className="text-muted d-block">
-                          Rating: +{detail.keeper.rating.positive} / -{detail.keeper.rating.negative}
-                        </small>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-
-              
             </>
           )}
+
+          <div className="card shadow-sm">
+            <div className="card-body">
+              <h5>Seller</h5>
+              <p className="mb-1">
+                {detail.seller?.displayName || detail.seller?.fullName || detail.seller?.email || 'Unknown seller'}
+              </p>
+              {detail.seller?.rating && (
+                <small className="text-muted d-block mb-2">
+                  Rating: +{detail.seller.rating.positive} / -{detail.seller.rating.negative} (score{' '}
+                  {detail.seller.rating.score})
+                </small>
+              )}
+              {detail.keeper && (
+                <>
+                  <hr />
+                  <h6>Current keeper</h6>
+                  <p className="mb-1">{detail.keeper.displayName || detail.keeper.fullName || 'Hidden bidder'}</p>
+                  {detail.keeper.rating && (
+                    <small className="text-muted d-block">
+                      Rating: +{detail.keeper.rating.positive} / -{detail.keeper.rating.negative}
+                    </small>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
 
           {canAppendDescription && (
             <div className="card shadow-sm mt-3">
@@ -894,12 +895,22 @@ export default function ProductDetailPage() {
               <p className="mb-1">
                 <strong>Q:</strong> {question.questionText}
               </p>
+              <small className="text-muted d-block">
+                Asked by:{' '}
+                <span className="text-dark">{question.asker?.displayName || 'Hidden bidder'}</span>
+              </small>
               <small className="text-muted d-block">Asked at {formatVNTime(question.createdAt)}</small>
               {question.answer ? (
                 <div className="mt-2">
                   <p className="mb-1">
                     <strong>A:</strong> {question.answer.answerText}
                   </p>
+                  <small className="text-muted d-block">
+                    Answered by:{' '}
+                    <span className="text-dark">
+                      {question.answer.responder?.displayName || 'Seller'}
+                    </span>
+                  </small>
                   <small className="text-muted d-block">Answered at {formatVNTime(question.answer.createdAt)}</small>
                 </div>
               ) : (

@@ -7,6 +7,7 @@ import {
   insertOrderMessage,
   listOrderMessages,
   listOrdersForUser,
+  findRatingByOrderAndRater,
   updateOrderStatus,
   upsertRating
 } from '../repositories/order.repository.js';
@@ -118,7 +119,10 @@ export const getOrderDetail = async (orderId, userId) => {
   const order = await findOrderById(orderId);
   ensureParticipant(order, userId);
   const product = await findProductByIdWithSeller(order.product_id);
-  const messages = await listOrderMessages(orderId);
+  const [messages, rating] = await Promise.all([
+    listOrderMessages(orderId),
+    findRatingByOrderAndRater(orderId, userId)
+  ]);
   return {
     order: {
       id: order.id,
@@ -140,7 +144,15 @@ export const getOrderDetail = async (orderId, userId) => {
       name: product.name,
       slug: product.slug
     },
-    messages
+    messages,
+    rating: rating
+      ? {
+          id: rating.id,
+          score: rating.score,
+          comment: rating.comment,
+          createdAt: rating.created_at
+        }
+      : null
   };
 };
 

@@ -70,7 +70,7 @@ export const findActiveProducts = (filters = {}, options = {}) => {
 };
 
 export const findProductStatusById = (id) =>
-  db('products').select('id', 'status').where({ id }).first();
+  db('products').select('id', 'status', 'seller_id').where({ id }).first();
 
 export const findProductBySlug = (slug) =>
   db('products').select('id').where({ slug }).first();
@@ -97,7 +97,8 @@ export const findProductByIdWithSeller = (id) =>
       'seller.positive_score as seller_positive_score',
       'seller.negative_score as seller_negative_score',
       'p.current_bidder_id',
-      'bidder.full_name as current_bidder_full_name'
+      'bidder.full_name as current_bidder_full_name',
+      'bidder.email as current_bidder_email'
     ])
     .leftJoin('users as seller', 'seller.id', 'p.seller_id')
     .leftJoin('users as bidder', 'bidder.id', 'p.current_bidder_id')
@@ -119,7 +120,8 @@ export const findRecentQuestions = (productId, limit = 10) =>
       'q.question_text',
       'q.created_at',
       'asker.id as asker_id',
-      'asker.full_name as asker_name'
+      'asker.full_name as asker_name',
+      'asker.email as asker_email'
     )
     .where('q.product_id', productId)
     .orderBy('q.created_at', 'desc')
@@ -138,7 +140,8 @@ export const findAnswersByQuestionIds = (questionIds = []) => {
       'a.answer_text',
       'a.created_at',
       'responder.id as responder_id',
-      'responder.full_name as responder_name'
+      'responder.full_name as responder_name',
+      'responder.email as responder_email'
     )
     .whereIn('a.question_id', questionIds)
     .orderBy('a.created_at', 'desc');
@@ -183,10 +186,15 @@ export const findProductBidsWithUsers = (productId, limit = 20) =>
       'b.bid_amount',
       'b.is_auto_bid',
       'b.created_at',
-      'u.full_name as bidder_full_name'
+      'u.full_name as bidder_full_name',
+      'u.email as bidder_email'
     )
     .where('b.product_id', productId)
-    .orderBy('b.created_at', 'desc')
+    .orderBy([
+      { column: 'b.created_at', order: 'desc' },
+      { column: 'b.bid_amount', order: 'desc' },
+      { column: 'b.id', order: 'desc' }
+    ])
     .limit(limit);
 
 export const findTopPriceProducts = (limit = 6) =>

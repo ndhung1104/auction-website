@@ -99,6 +99,29 @@ const formatAppendLabel = (date) => {
   return `EDIT ${datePart} ${timePart} GMT${sign}${hours}:${minutes}`;
 };
 
+const resolveDisplayName = (user, viewer, sellerId) => {
+  if (!user?.id) return null;
+  const identity = user.email || user.fullName || '';
+  if (!identity) return null;
+
+  const sellerIdValue = sellerId ? String(sellerId) : null;
+  const userId = String(user.id);
+  if (sellerIdValue && userId === sellerIdValue) {
+    return identity;
+  }
+
+  const viewerId = viewer?.id ? String(viewer.id) : null;
+  const viewerIsAdmin = viewer?.role === 'ADMIN';
+  const viewerIsSeller = viewerId && sellerIdValue && viewerId === sellerIdValue;
+  const viewerIsSelf = viewerId && viewerId === userId;
+
+  if (viewerIsAdmin || viewerIsSeller || viewerIsSelf) {
+    return identity;
+  }
+
+  return maskBidderName(identity);
+};
+
 const mapProduct = (row, { highlightWindowMinutes = 60, primaryImageUrl = null } = {}) => {
   const createdAtIso = row.created_at ? new Date(row.created_at) : null;
   const isNew = highlightWindowMinutes > 0 && createdAtIso
@@ -239,6 +262,20 @@ const computeExtendedEndTime = (product, windowMinutes, extendMinutes) => {
   return new Date(endTime + extendMinutes * 60 * 1000);
 };
 
+const collectOutbidIds = (candidateIds = [], finalBidderId = null) => {
+  const finalId = finalBidderId ? String(finalBidderId) : null;
+  const unique = new Map();
+  candidateIds.forEach((id) => {
+    if (!id) return;
+    const key = String(id);
+    if (finalId && key === finalId) return;
+    if (!unique.has(key)) {
+      unique.set(key, id);
+    }
+  });
+  return Array.from(unique.values());
+};
+
 export const listProducts = async ({ page, limit, sort, categoryId }, viewerId = null) => {
   const { field, direction } = normalizeSort(sort);
   const pagination = normalizePagination({ page, limit });
@@ -290,11 +327,13 @@ export const listProducts = async ({ page, limit, sort, categoryId }, viewerId =
   };
 };
 
-export const getProductDetail = async (productId, viewerId = null) => {
+export const getProductDetail = async (productId, viewer = null) => {
   const productRow = await findProductByIdWithSeller(productId);
   if (!productRow || productRow.status === 'REMOVED') {
     throw new ApiError(404, 'PRODUCTS.NOT_FOUND', 'Product not found');
   }
+  const viewerId = viewer?.id ?? null;
+  const sellerId = productRow.seller_id;
 
   const highlightWindowMinutes = await getHighlightNewMinutes();
 
@@ -333,14 +372,28 @@ export const getProductDetail = async (productId, viewerId = null) => {
 
   const questions = questionsRows.map((question) => {
     const answer = answersByQuestion.get(question.id);
+    const askerIdentity = question.asker_id
+      ? {
+          id: question.asker_id,
+          email: question.asker_email,
+          fullName: question.asker_name
+        }
+      : null;
+    const responderIdentity = answer?.responder_id
+      ? {
+          id: answer.responder_id,
+          email: answer.responder_email,
+          fullName: answer.responder_name
+        }
+      : null;
     return {
       id: question.id,
       questionText: question.question_text,
       createdAt: question.created_at,
-      asker: question.asker_id
+      asker: askerIdentity
         ? {
-            id: question.asker_id,
-            fullName: question.asker_name
+            id: askerIdentity.id,
+            displayName: resolveDisplayName(askerIdentity, viewer, sellerId)
           }
         : null,
       answer: answer
@@ -348,10 +401,10 @@ export const getProductDetail = async (productId, viewerId = null) => {
             id: answer.id,
             answerText: answer.answer_text,
             createdAt: answer.created_at,
-            responder: answer.responder_id
+            responder: responderIdentity
               ? {
-                  id: answer.responder_id,
-                  fullName: answer.responder_name
+                  id: responderIdentity.id,
+                  displayName: resolveDisplayName(responderIdentity, viewer, sellerId)
                 }
               : null
           }
@@ -367,17 +420,31 @@ export const getProductDetail = async (productId, viewerId = null) => {
     })
   );
 
+  const sellerIdentity = {
+    id: productRow.seller_id,
+    email: productRow.seller_email,
+    fullName: productRow.seller_full_name
+  };
   const seller = {
     id: productRow.seller_id,
     fullName: productRow.seller_full_name,
     email: productRow.seller_email,
+    displayName: resolveDisplayName(sellerIdentity, viewer, sellerId),
     rating: sellerRating
   };
 
-  const keeper = productRow.current_bidder_id
+  const keeperIdentity = productRow.current_bidder_id
     ? {
         id: productRow.current_bidder_id,
-        fullName: productRow.current_bidder_full_name,
+        email: productRow.current_bidder_email,
+        fullName: productRow.current_bidder_full_name
+      }
+    : null;
+  const keeper = keeperIdentity
+    ? {
+        id: keeperIdentity.id,
+        fullName: keeperIdentity.fullName,
+        displayName: resolveDisplayName(keeperIdentity, viewer, sellerId),
         rating: keeperRating
       }
     : null;
@@ -484,7 +551,11 @@ export const finalizeEndedAuctions = async () => {
   return { processed, withoutWinner };
 };
 
-export const getProductBidHistory = async (productId, limit = BID_HISTORY_DEFAULT_LIMIT) => {
+export const getProductBidHistory = async (
+  productId,
+  limit = BID_HISTORY_DEFAULT_LIMIT,
+  viewer = null
+) => {
   const product = await findProductStatusById(productId);
   if (!product) {
     throw new ApiError(404, 'PRODUCTS.NOT_FOUND', 'Product not found');
@@ -497,7 +568,15 @@ export const getProductBidHistory = async (productId, limit = BID_HISTORY_DEFAUL
     id: bid.id,
     productId: bid.product_id,
     bidderId: bid.user_id,
-    bidderAlias: maskBidderName(bid.bidder_full_name),
+    bidderAlias: resolveDisplayName(
+      {
+        id: bid.user_id,
+        email: bid.bidder_email,
+        fullName: bid.bidder_full_name
+      },
+      viewer,
+      product.seller_id
+    ),
     amount: Number(bid.bid_amount),
     isAutoBid: bid.is_auto_bid,
     createdAt: bid.created_at
@@ -677,35 +756,41 @@ export const placeManualBid = async ({ productId, userId, amount }) => {
     }
 
     try {
-      const [seller, bidder, previousBidder] = await Promise.all([
+      const finalBidderId = summary.currentBidderId;
+      const finalPrice = summary.currentPrice;
+      const [seller, bidder] = await Promise.all([
         findUserById(product.seller_id),
-        findUserById(userId),
-        previousBidderId ? findUserById(previousBidderId) : Promise.resolve(null)
+        findUserById(userId)
       ]);
       if (seller?.email) {
         await sendBidNotification({
           email: seller.email,
           productName: product.name,
-          amount: summary.product.currentPrice
+          amount: finalPrice
         });
       }
-      if (bidder?.email) {
+      if (bidder?.email && String(userId) === String(finalBidderId)) {
         await sendBidderReceipt({
           email: bidder.email,
           productName: product.name,
           amount: bidAmount
         });
       }
-      if (
-        previousBidder &&
-        previousBidder.email &&
-        String(previousBidder.id) !== String(userId)
-      ) {
-        await sendOutbidNotification({
-          email: previousBidder.email,
-          productName: product.name,
-          amount: summary.product.currentPrice
-        });
+      const outbidIds = collectOutbidIds([previousBidderId, userId], finalBidderId);
+      if (outbidIds.length) {
+        const outbidUsers = await Promise.all(outbidIds.map((id) => findUserById(id)));
+        await Promise.all(
+          outbidUsers
+            .filter((user) => user?.email)
+            .map((user) =>
+              sendOutbidNotification({
+                email: user.email,
+                productName: product.name,
+                amount: finalPrice,
+                productId: product.id
+              })
+            )
+        );
       }
     } catch (err) {
       console.warn('[mail] bid notification skipped', err.message);
@@ -764,6 +849,30 @@ export const registerAutoBid = async ({ productId, userId, maxBidAmount }) => {
     const autoBidResult = await recalcAutoBid(productId, trx, { product });
     if (autoBidResult?.product) {
       summary = summarizeProduct(autoBidResult.product, product);
+    }
+
+    if (autoBidResult?.triggered) {
+      const finalBidderId = summary.currentBidderId;
+      const outbidIds = collectOutbidIds([product.current_bidder_id], finalBidderId);
+      if (outbidIds.length) {
+        try {
+          const outbidUsers = await Promise.all(outbidIds.map((id) => findUserById(id)));
+          await Promise.all(
+            outbidUsers
+              .filter((user) => user?.email)
+              .map((user) =>
+                sendOutbidNotification({
+                  email: user.email,
+                  productName: product.name,
+                  amount: summary.currentPrice,
+                  productId: product.id
+                })
+              )
+          );
+        } catch (err) {
+          console.warn('[mail] outbid notification skipped', err.message);
+        }
+      }
     }
 
     return {

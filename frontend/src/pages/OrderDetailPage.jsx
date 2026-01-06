@@ -38,6 +38,7 @@ export default function OrderDetailPage() {
   const [messageStatus, setMessageStatus] = useState(null)
   const [messageErrors, setMessageErrors] = useState({})
   const [ratingStatus, setRatingStatus] = useState(null)
+  const [currentRating, setCurrentRating] = useState(null)
   const [statusStatus, setStatusStatus] = useState(null)
   const [invoiceForm, setInvoiceForm] = useState({ shippingAddress: '', invoiceNote: '' })
   const [invoiceErrors, setInvoiceErrors] = useState({})
@@ -110,6 +111,11 @@ export default function OrderDetailPage() {
     })
     setShippingCode(order.shippingCode || '')
   }, [order])
+
+  useEffect(() => {
+    if (!detail) return
+    setCurrentRating(detail.rating?.score ?? null)
+  }, [detail])
 
   if (!isAuthenticated) {
     return <div className="alert alert-warning">Please log in to view order details.</div>
@@ -236,6 +242,7 @@ export default function OrderDetailPage() {
     rateOrder(orderId, { score, comment: '' })
       .then(() => {
         setRatingStatus({ type: 'success', message: 'Rating submitted' })
+        setCurrentRating(score)
       })
       .catch((err) => {
         setRatingStatus({ type: 'danger', message: err.message || 'Unable to submit rating' })
@@ -444,13 +451,24 @@ export default function OrderDetailPage() {
           <div className={`alert alert-${ratingStatus.type}`}>{ratingStatus.message}</div>
         )}
         <div className="btn-group">
-          <button className="btn btn-outline-success" onClick={() => handleRating(1)} disabled={!canRate}>
+          <button
+            className={`btn ${currentRating === 1 ? 'btn-success' : 'btn-outline-success'}`}
+            onClick={() => handleRating(1)}
+            disabled={!canRate}
+          >
             Positive
           </button>
-          <button className="btn btn-outline-danger" onClick={() => handleRating(-1)} disabled={!canRate}>
+          <button
+            className={`btn ${currentRating === -1 ? 'btn-danger' : 'btn-outline-danger'}`}
+            onClick={() => handleRating(-1)}
+            disabled={!canRate}
+          >
             Negative
           </button>
         </div>
+        {!currentRating && (
+          <div className="text-muted small mt-2">Choose a rating to complete this order.</div>
+        )}
       </section>
     </div>
   )
