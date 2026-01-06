@@ -1,11 +1,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import multer from 'multer';
+import sharp from 'sharp';
 import { ApiError } from '../utils/response.js';
 
 const UPLOAD_ROOT = path.resolve(process.cwd(), 'uploads');
 const PRODUCT_UPLOAD_DIR = path.join(UPLOAD_ROOT, 'products');
 const FILE_BASE_URL = (process.env.FILE_BASE_URL || '').replace(/\/$/, '');
+const RESIZE_WIDTH = 1200;
+const RESIZE_HEIGHT = 800;
 
 const ensureDir = (dirPath) => {
   if (!fs.existsSync(dirPath)) {
@@ -49,7 +52,30 @@ const productImagesUpload = multer({
   fileFilter: imageFileFilter
 });
 
-export const uploadProductImages = productImagesUpload.array('images', 8);
+const resizeUploadedImages = async (req, _res, next) => {
+  const files = req.files || [];
+  if (!files.length) return next();
+  try {
+    await Promise.all(
+      files.map(async (file) => {
+        const buffer = await sharp(file.path)
+          .rotate()
+          .resize(RESIZE_WIDTH, RESIZE_HEIGHT, { fit: 'cover' })
+          .toBuffer();
+        await fs.promises.writeFile(file.path, buffer);
+      })
+    );
+    next();
+  } catch (error) {
+    cleanupUploadedFiles(files);
+    next(error);
+  }
+};
+
+export const uploadProductImages = [
+  productImagesUpload.array('images', 8),
+  resizeUploadedImages
+];
 
 export const buildPublicUrl = (filePath) => {
   const relative = path.relative(UPLOAD_ROOT, filePath);

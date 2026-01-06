@@ -6,6 +6,7 @@ services:
       - "3001:3000"              # Map cổng 3001 (máy bạn) vào 3000 (container)
     volumes:
       - ./backend:/usr/src/app   # Mount code của bạn vào container (để hot-reload)
+      - /usr/src/app/node_modules
       # - /usr/src/app/node_modules # Loại trừ node_modules để dùng của container
     command: sh -c "npm run seed:ensure && npm run dev"
     env_file:
