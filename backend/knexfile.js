@@ -21,6 +21,9 @@ const config = {
     migrations: {
       directory: './migrations',
       tableName: 'migrations'
+    },
+    seeds: {
+      directory: './seeds'
     }
   },
 
@@ -41,6 +44,9 @@ const config = {
     migrations: {
       directory: './migrations',
       tableName: 'migrations'
+    },
+    seeds: {
+      directory: './seeds'
     }
   },
 
@@ -52,6 +58,9 @@ const config = {
     migrations: {
       directory: './migrations',
       tableName: 'migrations'
+    },
+    seeds: {
+      directory: './seeds'
     }
   }
 };

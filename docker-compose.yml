@@ -7,6 +7,7 @@ services:
     volumes:
       - ./backend:/usr/src/app   # Mount code của bạn vào container (để hot-reload)
       # - /usr/src/app/node_modules # Loại trừ node_modules để dùng của container
+    command: sh -c "npm run seed:ensure && npm run dev"
     env_file:
       - ./backend/.env           # Đọc biến môi trường từ file .env
     depends_on:

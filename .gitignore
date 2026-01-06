@@ -14,3 +14,5 @@ frontend/.vite/
 .venv
 backend/uploads/*
 !backend/uploads/.gitkeep
+!backend/uploads/seed/
+!backend/uploads/seed/**

@@ -55,17 +55,22 @@ export default function ProductDetailPage() {
   const [manualBidAmount, setManualBidAmount] = useState('')
   const [autoBidAmount, setAutoBidAmount] = useState('')
   const [manualStatus, setManualStatus] = useState(null)
+  const [manualErrors, setManualErrors] = useState({})
   const [autoStatus, setAutoStatus] = useState(null)
+  const [autoErrors, setAutoErrors] = useState({})
   const [buyNowStatus, setBuyNowStatus] = useState(null)
   const [watchlistStatus, setWatchlistStatus] = useState(null)
   const [questionText, setQuestionText] = useState('')
   const [questionStatus, setQuestionStatus] = useState(null)
+  const [questionErrors, setQuestionErrors] = useState({})
   const [answerDrafts, setAnswerDrafts] = useState({})
   const [answerStatus, setAnswerStatus] = useState(null)
   const [appendContent, setAppendContent] = useState('')
   const [appendStatus, setAppendStatus] = useState(null)
+  const [appendErrors, setAppendErrors] = useState({})
   const [rejectReason, setRejectReason] = useState('')
   const [rejectStatus, setRejectStatus] = useState(null)
+  const [rejectErrors, setRejectErrors] = useState({})
   const [watchlistLoading, setWatchlistLoading] = useState(false)
   const [manualSubmitting, setManualSubmitting] = useState(false)
   const [autoSubmitting, setAutoSubmitting] = useState(false)
@@ -175,6 +180,14 @@ export default function ProductDetailPage() {
   }, [product?.id])
 
   useEffect(() => {
+    if (images.length <= 1) return undefined
+    const timer = setInterval(() => {
+      setActiveImageIndex((prev) => (prev + 1) % images.length)
+    }, 4500)
+    return () => clearInterval(timer)
+  }, [images.length])
+
+  useEffect(() => {
     if (watchlistTimerRef.current) {
       clearTimeout(watchlistTimerRef.current)
     }
@@ -210,9 +223,14 @@ export default function ProductDetailPage() {
     event.preventDefault()
     if (!product) return
     setManualStatus(null)
+    setManualErrors({})
     const numericAmount = Number(manualBidAmount)
     if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
-      setManualStatus({ type: 'danger', message: 'Please enter a valid bid amount' })
+      setManualErrors({ amount: 'Enter a valid bid amount.' })
+      return
+    }
+    if (manualMinBid && numericAmount < manualMinBid) {
+      setManualErrors({ amount: `Minimum bid is ${formatVND(manualMinBid)}.` })
       return
     }
     setConfirmDialog({ type: 'manual', amount: numericAmount })
@@ -236,9 +254,14 @@ export default function ProductDetailPage() {
     event.preventDefault()
     if (!product) return
     setAutoStatus(null)
+    setAutoErrors({})
     const numericAmount = Number(autoBidAmount)
     if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
-      setAutoStatus({ type: 'danger', message: 'Please enter a valid auto-bid amount' })
+      setAutoErrors({ amount: 'Enter a valid auto-bid amount.' })
+      return
+    }
+    if (autoMinBid && numericAmount < autoMinBid) {
+      setAutoErrors({ amount: `Minimum auto-bid is ${formatVND(autoMinBid)}.` })
       return
     }
     setConfirmDialog({ type: 'auto', amount: numericAmount })
@@ -297,6 +320,11 @@ export default function ProductDetailPage() {
     event.preventDefault()
     if (!product) return
     setQuestionStatus(null)
+    setQuestionErrors({})
+    if (!questionText.trim()) {
+      setQuestionErrors({ text: 'Question is required.' })
+      return
+    }
     try {
       await submitQuestion(product.id, { questionText })
       setQuestionText('')
@@ -328,6 +356,11 @@ export default function ProductDetailPage() {
     event.preventDefault()
     if (!product) return
     setAppendStatus(null)
+    setAppendErrors({})
+    if (!appendContent.trim()) {
+      setAppendErrors({ content: 'Description is required.' })
+      return
+    }
     try {
       await appendProductDescription(product.id, { content: appendContent })
       setAppendContent('')
@@ -340,6 +373,7 @@ export default function ProductDetailPage() {
 
   const handleRejectBidder = async (event) => {
     event.preventDefault()
+    setRejectErrors({})
     if (!product?.currentBidderId) {
       setRejectStatus({ type: 'danger', message: 'No bidder to reject' })
       return
@@ -356,6 +390,16 @@ export default function ProductDetailPage() {
   }
 
   const closeConfirmDialog = () => setConfirmDialog(null)
+
+  const handlePrevImage = () => {
+    if (images.length <= 1) return
+    setActiveImageIndex((prev) => (prev - 1 + images.length) % images.length)
+  }
+
+  const handleNextImage = () => {
+    if (images.length <= 1) return
+    setActiveImageIndex((prev) => (prev + 1) % images.length)
+  }
 
   const confirmAndSubmit = async () => {
     if (!confirmDialog) return
@@ -453,11 +497,39 @@ export default function ProductDetailPage() {
       <div className="row g-4">
         <div className="col-lg-7">
           <div className="card shadow-sm mb-3">
-            <img
-              src={images[activeImageIndex]?.url || PLACEHOLDER_IMAGE}
-              alt={product.name}
-              className="card-img-top"
-            />
+            <div className="product-slideshow-frame">
+              {images.map((image, index) => (
+                <img
+                  key={image.id || index}
+                  src={image.url || PLACEHOLDER_IMAGE}
+                  alt={`${product.name} ${index + 1}`}
+                  className={`product-slideshow-image ${index === activeImageIndex ? 'is-active' : ''}`}
+                />
+              ))}
+              {images.length > 1 && (
+                <div className="product-slideshow-controls">
+                  <button
+                    type="button"
+                    className="product-slideshow-button"
+                    onClick={handlePrevImage}
+                    aria-label="Previous image"
+                  >
+                    ‹
+                  </button>
+                  <span className="product-slideshow-indicator">
+                    {activeImageIndex + 1} / {images.length}
+                  </span>
+                  <button
+                    type="button"
+                    className="product-slideshow-button"
+                    onClick={handleNextImage}
+                    aria-label="Next image"
+                  >
+                    ›
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           {images.length > 1 && (
@@ -577,7 +649,7 @@ export default function ProductDetailPage() {
                       {manualStatus.message}
                     </div>
                   )}
-                  <form onSubmit={handleManualBid} className="mt-3">
+                  <form onSubmit={handleManualBid} className="mt-3" noValidate>
                     <div className="mb-3">
                       <label htmlFor="manualBidAmount" className="form-label text-secondary small fw-medium">
                         Enter your bid amount
@@ -586,8 +658,8 @@ export default function ProductDetailPage() {
                         <input
                           id="manualBidAmount"
                           type="number"
-                          min={manualMinBid || undefined}
-                          step={product.priceStep}
+                         
+                         
                           className="form-control"
                           value={manualBidAmount}
                           onChange={(event) => setManualBidAmount(event.target.value)}
@@ -597,6 +669,7 @@ export default function ProductDetailPage() {
                           {manualSubmitting ? 'Placing...' : 'Place Bid'}
                         </button>
                       </div>
+                      {manualErrors.amount && <div className="text-danger small mt-2">{manualErrors.amount}</div>}
                       {manualMinBid && (
                         <small className="text-muted mt-1 d-block">
                           Minimum next bid: <span className="fw-medium text-dark">{formatVND(manualMinBid)}</span>
@@ -625,7 +698,7 @@ export default function ProductDetailPage() {
                         {autoStatus.message}
                       </div>
                     )}
-                    <form onSubmit={handleAutoBid}>
+                    <form onSubmit={handleAutoBid} noValidate>
                       <div className="mb-3">
                         <label htmlFor="autoBidAmount" className="form-label">
                           Maximum amount you are willing to pay
@@ -633,13 +706,14 @@ export default function ProductDetailPage() {
                         <input
                           id="autoBidAmount"
                           type="number"
-                          min={autoMinBid || undefined}
-                          step={product.priceStep}
+                         
+                         
                           className="form-control"
                           value={autoBidAmount}
                           onChange={(event) => setAutoBidAmount(event.target.value)}
                           disabled={!canUseAutoBid || autoSubmitting}
                         />
+                        {autoErrors.amount && <div className="text-danger small mt-2">{autoErrors.amount}</div>}
                         {autoMinBid && (
                           <small className="text-muted">
                             Minimum auto-bid: {formatVND(autoMinBid)}
@@ -692,7 +766,7 @@ export default function ProductDetailPage() {
                     {appendStatus.message}
                   </div>
                 )}
-                <form onSubmit={handleAppendDescription}>
+                <form onSubmit={handleAppendDescription} noValidate>
                   <div className="mb-3">
                     <label className="form-label fw-medium">Additional details</label>
                     <ReactQuill
@@ -701,6 +775,7 @@ export default function ProductDetailPage() {
                       onChange={setAppendContent}
                       placeholder="Add formatted updates for bidders"
                     />
+                    {appendErrors.content && <div className="text-danger small mt-2">{appendErrors.content}</div>}
                   </div>
                   <button type="submit" className="btn btn-outline-secondary btn-sm">
                     Append text
@@ -719,7 +794,7 @@ export default function ProductDetailPage() {
                     {rejectStatus.message}
                   </div>
                 )}
-                <form onSubmit={handleRejectBidder}>
+                <form onSubmit={handleRejectBidder} noValidate>
                   <div className="mb-2">
                     <label className="form-label" htmlFor="rejectReason">
                       Reason (optional)
@@ -731,6 +806,7 @@ export default function ProductDetailPage() {
                       value={rejectReason}
                       onChange={(event) => setRejectReason(event.target.value)}
                     />
+                    {rejectErrors.reason && <div className="text-danger small mt-2">{rejectErrors.reason}</div>}
                   </div>
                   <button type="submit" className="btn btn-outline-danger btn-sm">
                     Reject bidder
@@ -782,7 +858,7 @@ export default function ProductDetailPage() {
       <section className="mt-5">
         <h3>Questions & Answers</h3>
         {canSubmitQuestion && (
-          <form className="card shadow-sm mb-3" onSubmit={handleSubmitQuestion}>
+          <form className="card shadow-sm mb-3" onSubmit={handleSubmitQuestion} noValidate>
             <div className="card-body">
               <label htmlFor="questionText" className="form-label">
                 Ask a question
@@ -794,7 +870,8 @@ export default function ProductDetailPage() {
                 value={questionText}
                 onChange={(event) => setQuestionText(event.target.value)}
               />
-              <button type="submit" className="btn btn-outline-primary btn-sm" disabled={!questionText.trim()}>
+              {questionErrors.text && <div className="text-danger small mt-2">{questionErrors.text}</div>}
+              <button type="submit" className="btn btn-outline-primary btn-sm">
                 Submit question
               </button>
               {questionStatus && (

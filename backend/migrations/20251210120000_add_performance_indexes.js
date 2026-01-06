@@ -35,8 +35,8 @@ export async function up(knex) {
 
   // Ratings: per-user aggregation
   await knex.schema.raw(`
-    CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_ratings_user_id
-    ON ratings (user_id);
+    CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_ratings_rated_user_id
+    ON ratings (rated_user_id);
   `);
 
   // Orders: enforce single order per product
@@ -63,7 +63,7 @@ export async function up(knex) {
 export async function down(knex) {
   await knex.schema.raw('DROP INDEX CONCURRENTLY IF EXISTS idx_order_messages_order_created_at;');
   await knex.schema.raw('ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_product_id_unique;');
-  await knex.schema.raw('DROP INDEX CONCURRENTLY IF EXISTS idx_ratings_user_id;');
+  await knex.schema.raw('DROP INDEX CONCURRENTLY IF EXISTS idx_ratings_rated_user_id;');
   await knex.schema.raw('DROP INDEX CONCURRENTLY IF EXISTS idx_answers_question_id;');
   await knex.schema.raw('DROP INDEX CONCURRENTLY IF EXISTS idx_product_images_product_display_order;');
   await knex.schema.raw(`
@@ -74,3 +74,7 @@ export async function down(knex) {
   await knex.schema.raw('DROP INDEX CONCURRENTLY IF EXISTS idx_products_active_cat_end_at;');
   await knex.schema.raw('DROP INDEX CONCURRENTLY IF EXISTS idx_products_active_created_at;');
 }
+
+export const config = {
+  transaction: false
+};

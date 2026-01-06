@@ -6,9 +6,24 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [alert, setAlert] = useState(null)
+  const [errors, setErrors] = useState({})
 
   const handleSubmit = async (event) => {
     event.preventDefault()
+    const nextErrors = {
+    }
+    const trimmedEmail = email.trim()
+    if (!trimmedEmail) {
+      nextErrors.email = 'Email is required.'
+    } else if (!/^\S+@\S+\.\S+$/.test(trimmedEmail)) {
+      nextErrors.email = 'Enter a valid email address.'
+    }
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors)
+      setAlert(null)
+      return
+    }
+    setErrors({})
     setSubmitting(true)
     setAlert(null)
     try {
@@ -46,7 +61,7 @@ export default function ForgotPasswordPage() {
             )}
           </div>
         )}
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <div className="mb-4">
             <label htmlFor="email" className="form-label">
               Email
@@ -57,8 +72,8 @@ export default function ForgotPasswordPage() {
               className="form-control"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              required
             />
+            {errors.email && <div className="text-danger small mt-1">{errors.email}</div>}
           </div>
           <button type="submit" className="btn btn-primary w-100" disabled={submitting}>
             {submitting ? 'Sending...' : 'Send reset instructions'}

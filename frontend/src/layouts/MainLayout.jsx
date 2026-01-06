@@ -9,6 +9,7 @@ export default function MainLayout() {
   const [categories, setCategories] = useState([])
   const [categoryError, setCategoryError] = useState(null)
   const [searchValue, setSearchValue] = useState('')
+  const [searchError, setSearchError] = useState('')
 
   useEffect(() => {
     let isMounted = true
@@ -35,7 +36,15 @@ export default function MainLayout() {
   const handleSearch = (event) => {
     event.preventDefault()
     const term = searchValue.trim()
-    if (!term) return
+    if (!term) {
+      setSearchError('Search term is required.')
+      return
+    }
+    if (term.length < 2) {
+      setSearchError('Search term must be at least 2 characters.')
+      return
+    }
+    setSearchError('')
     navigate(`/search?q=${encodeURIComponent(term)}`)
   }
 
@@ -174,20 +183,23 @@ export default function MainLayout() {
 
             <ul className="navbar-nav ms-auto align-items-lg-center gap-0.5">
               <li className="nav-item me-lg-3 mb-2 mb-lg-0">
-                <form className="d-flex gap-2" onSubmit={handleSearch}>
-                  <div className="input-group">
-                    <span className="input-group-text bg-light border-end-0">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-search text-muted" viewBox="0 0 16 16">
-                        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
-                      </svg>
-                    </span>
-                    <input
-                      type="search"
-                      className="form-control border-start-0 bg-light"
-                      placeholder="Search items..."
-                      value={searchValue}
-                      onChange={(event) => setSearchValue(event.target.value)}
-                    />
+                <form className="d-flex gap-2" onSubmit={handleSearch} noValidate>
+                  <div>
+                    <div className="input-group">
+                      <span className="input-group-text bg-light border-end-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-search text-muted" viewBox="0 0 16 16">
+                          <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
+                        </svg>
+                      </span>
+                      <input
+                        type="search"
+                        className="form-control border-start-0 bg-light"
+                        placeholder="Search items..."
+                        value={searchValue}
+                        onChange={(event) => setSearchValue(event.target.value)}
+                      />
+                    </div>
+                    {searchError && <div className="text-danger small mt-1">{searchError}</div>}
                   </div>
                 </form>
               </li>

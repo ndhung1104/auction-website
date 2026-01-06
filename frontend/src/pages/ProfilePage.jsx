@@ -12,12 +12,14 @@ export default function ProfilePage() {
   const [updating, setUpdating] = useState(false)
   const [requesting, setRequesting] = useState(false)
   const [alert, setAlert] = useState(null)
+  const [profileErrors, setProfileErrors] = useState({})
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   })
   const [passwordAlert, setPasswordAlert] = useState(null)
+  const [passwordErrors, setPasswordErrors] = useState({})
   const [passwordSubmitting, setPasswordSubmitting] = useState(false)
 
   useEffect(() => {
@@ -64,6 +66,23 @@ export default function ProfilePage() {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
+    const nextErrors = {
+    }
+    const trimmedEmail = form.email.trim()
+    if (!trimmedEmail) {
+      nextErrors.email = 'Email is required.'
+    } else if (!/^\S+@\S+\.\S+$/.test(trimmedEmail)) {
+      nextErrors.email = 'Enter a valid email address.'
+    }
+    if (!form.fullName.trim()) {
+      nextErrors.fullName = 'Full name is required.'
+    }
+    if (Object.keys(nextErrors).length > 0) {
+      setProfileErrors(nextErrors)
+      setAlert(null)
+      return
+    }
+    setProfileErrors({})
     setUpdating(true)
     setAlert(null)
     try {
@@ -75,10 +94,7 @@ export default function ProfilePage() {
       }
       setAlert({ type: 'success', message: 'Profile updated successfully' })
     } catch (error) {
-      setAlert({
-        type: 'danger',
-        message: error.message || 'Unable to update profile'
-      })
+      setAlert({ type: 'danger', message: error.message || 'Unable to update profile' })
     } finally {
       setUpdating(false)
     }
@@ -86,10 +102,27 @@ export default function ProfilePage() {
 
   const handlePasswordSubmit = async (event) => {
     event.preventDefault()
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setPasswordAlert({ type: 'danger', message: 'New passwords do not match.' })
+    const nextErrors = {
+    }
+    if (!passwordForm.currentPassword) {
+      nextErrors.currentPassword = 'Current password is required.'
+    }
+    if (!passwordForm.newPassword) {
+      nextErrors.newPassword = 'New password is required.'
+    } else if (passwordForm.newPassword.length < 8) {
+      nextErrors.newPassword = 'New password must be at least 8 characters.'
+    }
+    if (!passwordForm.confirmPassword) {
+      nextErrors.confirmPassword = 'Please confirm your new password.'
+    } else if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      nextErrors.confirmPassword = 'New passwords do not match.'
+    }
+    if (Object.keys(nextErrors).length > 0) {
+      setPasswordErrors(nextErrors)
+      setPasswordAlert(null)
       return
     }
+    setPasswordErrors({})
     setPasswordSubmitting(true)
     setPasswordAlert(null)
     try {
@@ -100,10 +133,7 @@ export default function ProfilePage() {
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
       setPasswordAlert({ type: 'success', message: 'Password updated successfully.' })
     } catch (error) {
-      setPasswordAlert({
-        type: 'danger',
-        message: error.message || 'Unable to change password.'
-      })
+      setPasswordAlert({ type: 'danger', message: error.message || 'Unable to change password.' })
     } finally {
       setPasswordSubmitting(false)
     }
@@ -153,6 +183,10 @@ export default function ProfilePage() {
   const wonAuctions = profile.wonAuctions || []
   const sellerListings = profile.sellerListings || { active: [], ended: [] }
   const ratingHistory = profile.ratingHistory || []
+  const positiveRatings = Number(rating?.positive || 0)
+  const negativeRatings = Number(rating?.negative || 0)
+  const totalRatings = positiveRatings + negativeRatings
+  const ratingPercent = totalRatings > 0 ? Math.round((positiveRatings / totalRatings) * 100) : null
 
   const renderProductList = (items, emptyLabel) => {
     if (!items.length) {
@@ -213,8 +247,11 @@ export default function ProfilePage() {
               )}
               <div className="mb-3">
                 <strong>Rating:</strong>{' '}
-                <span className="badge bg-success me-2">+{rating?.positive || 0}</span>
-                <span className="badge bg-danger">-{rating?.negative || 0}</span>
+                <span className="badge bg-success me-2">+{positiveRatings}</span>
+                <span className="badge bg-danger">-{negativeRatings}</span>
+                <span className="ms-2 text-muted small">
+                  Positive: {ratingPercent === null ? 'N/A' : `${ratingPercent}%`}
+                </span>
               </div>
               {sellerRequest && (
                 <div className="alert alert-secondary">
@@ -248,7 +285,7 @@ export default function ProfilePage() {
                   {alert.message}
                 </div>
               )}
-              <form onSubmit={handleSubmit}>
+              <form onSubmit={handleSubmit} noValidate>
                 <div className="mb-3">
                   <label htmlFor="email" className="form-label">
                     Email
@@ -260,8 +297,8 @@ export default function ProfilePage() {
                     className="form-control"
                     value={form.email}
                     onChange={handleChange}
-                    required
                   />
+                  {profileErrors.email && <div className="text-danger small mt-1">{profileErrors.email}</div>}
                 </div>
                 <div className="mb-3">
                   <label htmlFor="fullName" className="form-label">
@@ -273,8 +310,8 @@ export default function ProfilePage() {
                     className="form-control"
                     value={form.fullName}
                     onChange={handleChange}
-                    required
                   />
+                  {profileErrors.fullName && <div className="text-danger small mt-1">{profileErrors.fullName}</div>}
                 </div>
                 <div className="mb-3">
                   <label htmlFor="phoneNumber" className="form-label">
@@ -332,7 +369,7 @@ export default function ProfilePage() {
                   {passwordAlert.message}
                 </div>
               )}
-              <form onSubmit={handlePasswordSubmit}>
+              <form onSubmit={handlePasswordSubmit} noValidate>
                 <div className="mb-3">
                   <label htmlFor="currentPassword" className="form-label">
                     Current password
@@ -344,8 +381,8 @@ export default function ProfilePage() {
                     className="form-control"
                     value={passwordForm.currentPassword}
                     onChange={handlePasswordFieldChange}
-                    required
                   />
+                  {passwordErrors.currentPassword && <div className="text-danger small mt-1">{passwordErrors.currentPassword}</div>}
                 </div>
                 <div className="mb-3">
                   <label htmlFor="newPassword" className="form-label">
@@ -358,8 +395,8 @@ export default function ProfilePage() {
                     className="form-control"
                     value={passwordForm.newPassword}
                     onChange={handlePasswordFieldChange}
-                    required
                   />
+                  {passwordErrors.newPassword && <div className="text-danger small mt-1">{passwordErrors.newPassword}</div>}
                 </div>
                 <div className="mb-3">
                   <label htmlFor="confirmPassword" className="form-label">
@@ -372,8 +409,8 @@ export default function ProfilePage() {
                     className="form-control"
                     value={passwordForm.confirmPassword}
                     onChange={handlePasswordFieldChange}
-                    required
                   />
+                  {passwordErrors.confirmPassword && <div className="text-danger small mt-1">{passwordErrors.confirmPassword}</div>}
                 </div>
                 <button type="submit" className="btn btn-outline-primary" disabled={passwordSubmitting}>
                   {passwordSubmitting ? 'Updating…' : 'Update password'}

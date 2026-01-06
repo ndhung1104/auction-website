@@ -36,10 +36,13 @@ export default function OrderDetailPage() {
   const [error, setError] = useState(null)
   const [message, setMessage] = useState('')
   const [messageStatus, setMessageStatus] = useState(null)
+  const [messageErrors, setMessageErrors] = useState({})
   const [ratingStatus, setRatingStatus] = useState(null)
   const [statusStatus, setStatusStatus] = useState(null)
   const [invoiceForm, setInvoiceForm] = useState({ shippingAddress: '', invoiceNote: '' })
+  const [invoiceErrors, setInvoiceErrors] = useState({})
   const [shippingCode, setShippingCode] = useState('')
+  const [shippingErrors, setShippingErrors] = useState({})
   const [workflowSubmitting, setWorkflowSubmitting] = useState(false)
   const order = detail?.order || null
   const messages = detail?.messages || []
@@ -119,6 +122,15 @@ export default function OrderDetailPage() {
   const handleSubmitInvoice = (event) => {
     event.preventDefault()
     if (!canSubmitInvoice) return
+    const nextErrors = {}
+    if (!invoiceForm.shippingAddress.trim()) {
+      nextErrors.shippingAddress = 'Shipping address is required.'
+    }
+    if (Object.keys(nextErrors).length > 0) {
+      setInvoiceErrors(nextErrors)
+      return
+    }
+    setInvoiceErrors({})
     setWorkflowSubmitting(true)
     setStatusStatus(null)
     updateOrderStatus(orderId, {
@@ -139,6 +151,15 @@ export default function OrderDetailPage() {
   const handleSellerConfirm = (event) => {
     event.preventDefault()
     if (!canSellerConfirm) return
+    const nextErrors = {}
+    if (!shippingCode.trim()) {
+      nextErrors.shippingCode = 'Shipping code is required.'
+    }
+    if (Object.keys(nextErrors).length > 0) {
+      setShippingErrors(nextErrors)
+      return
+    }
+    setShippingErrors({})
     setWorkflowSubmitting(true)
     setStatusStatus(null)
     updateOrderStatus(orderId, {
@@ -183,9 +204,18 @@ export default function OrderDetailPage() {
       })
   }
 
-  const handleSendMessage = (event) => {
+    const handleSendMessage = (event) => {
     event.preventDefault()
-    if (!message.trim()) return
+    const nextErrors = {
+    }
+    if (!message.trim()) {
+      nextErrors.message = 'Message is required.'
+    }
+    if (Object.keys(nextErrors).length > 0) {
+      setMessageErrors(nextErrors)
+      return
+    }
+    setMessageErrors({})
     setMessageStatus(null)
     sendOrderMessage(orderId, { message })
       .then(() => {
@@ -197,6 +227,8 @@ export default function OrderDetailPage() {
         setMessageStatus({ type: 'danger', message: err.message || 'Unable to send message' })
       })
   }
+
+
 
   const handleRating = (score) => {
     if (!canRate) return
@@ -250,7 +282,7 @@ export default function OrderDetailPage() {
                   Provide shipping address and any invoice note so the seller can confirm payment.
                 </p>
                 {canSubmitInvoice ? (
-                  <form onSubmit={handleSubmitInvoice} className="d-flex flex-column gap-3">
+                  <form onSubmit={handleSubmitInvoice} className="d-flex flex-column gap-3" noValidate>
                     <div>
                       <label className="form-label">Shipping address</label>
                       <textarea
@@ -260,9 +292,12 @@ export default function OrderDetailPage() {
                         onChange={(event) =>
                           setInvoiceForm((prev) => ({ ...prev, shippingAddress: event.target.value }))
                         }
-                        required
+                       
                         disabled={workflowSubmitting}
                       />
+                      {invoiceErrors.shippingAddress && (
+                        <div className="text-danger small mt-1">{invoiceErrors.shippingAddress}</div>
+                      )}
                     </div>
                     <div>
                       <label className="form-label">Invoice note (optional)</label>
@@ -309,7 +344,7 @@ export default function OrderDetailPage() {
                   Confirm payment and provide a shipping / tracking code for the buyer.
                 </p>
                 {canSellerConfirm ? (
-                  <form onSubmit={handleSellerConfirm} className="d-flex flex-column gap-3">
+                  <form onSubmit={handleSellerConfirm} className="d-flex flex-column gap-3" noValidate>
                     <div>
                       <label className="form-label">Shipping / tracking code</label>
                       <input
@@ -317,9 +352,12 @@ export default function OrderDetailPage() {
                         className="form-control"
                         value={shippingCode}
                         onChange={(event) => setShippingCode(event.target.value)}
-                        required
+                       
                         disabled={workflowSubmitting}
                       />
+                      {shippingErrors.shippingCode && (
+                        <div className="text-danger small mt-1">{shippingErrors.shippingCode}</div>
+                      )}
                     </div>
                     <button type="submit" className="btn btn-outline-primary" disabled={workflowSubmitting}>
                       {workflowSubmitting ? 'Saving...' : 'Confirm payment & ship'}
@@ -382,18 +420,21 @@ export default function OrderDetailPage() {
         {messageStatus && (
           <div className={`alert alert-${messageStatus.type}`}>{messageStatus.message}</div>
         )}
-        <form className="input-group" onSubmit={handleSendMessage}>
-          <textarea
-            className="form-control"
-            rows="2"
-            value={message}
-            placeholder="Write a message..."
-            onChange={(event) => setMessage(event.target.value)}
-            disabled={!canSendMessage}
-          />
-          <button className="btn btn-primary" type="submit" disabled={!message.trim() || !canSendMessage}>
-            Send
-          </button>
+        <form onSubmit={handleSendMessage} noValidate>
+          <div className="input-group">
+            <textarea
+              className="form-control"
+              rows="2"
+              value={message}
+              placeholder="Write a message..."
+              onChange={(event) => setMessage(event.target.value)}
+              disabled={!canSendMessage}
+            />
+            <button className="btn btn-primary" type="submit" disabled={!canSendMessage}>
+              Send
+            </button>
+          </div>
+          {messageErrors.message && <div className="text-danger small mt-1">{messageErrors.message}</div>}
         </form>
       </section>
 

@@ -9,6 +9,7 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' })
   const [submitting, setSubmitting] = useState(false)
   const [alert, setAlert] = useState(null)
+  const [errors, setErrors] = useState({})
 
   const handleChange = (event) => {
     const { name, value } = event.target
@@ -17,6 +18,22 @@ export default function LoginPage() {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
+    const nextErrors = {
+    }
+    const trimmedEmail = form.email.trim()
+    if (!trimmedEmail) {
+      nextErrors.email = 'Email is required.'
+    } else if (!/^\S+@\S+\.\S+$/.test(trimmedEmail)) {
+      nextErrors.email = 'Enter a valid email address.'
+    }
+    if (!form.password) {
+      nextErrors.password = 'Password is required.'
+    }
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors)
+      return
+    }
+    setErrors({})
     setSubmitting(true)
     setAlert(null)
     try {
@@ -50,7 +67,7 @@ export default function LoginPage() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} noValidate>
               <div className="mb-3">
                 <label htmlFor="email" className="form-label text-secondary small fw-medium">
                   Email Address
@@ -63,8 +80,8 @@ export default function LoginPage() {
                   placeholder="name@example.com"
                   value={form.email}
                   onChange={handleChange}
-                  required
                 />
+                {errors.email && <div className="text-danger small mt-1">{errors.email}</div>}
               </div>
               <div className="mb-4">
                 <div className="d-flex justify-content-between align-items-center mb-1">
@@ -83,8 +100,8 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   value={form.password}
                   onChange={handleChange}
-                  required
                 />
+                {errors.password && <div className="text-danger small mt-1">{errors.password}</div>}
               </div>
               <button type="submit" className="btn btn-primary w-100 btn-lg fs-6 fw-bold mb-3" disabled={submitting}>
                 {submitting ? 'Signing in…' : 'Sign In'}

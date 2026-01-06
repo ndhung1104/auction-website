@@ -17,6 +17,7 @@ export default function RegisterPage() {
   })
   const [submitting, setSubmitting] = useState(false)
   const [alert, setAlert] = useState(null)
+  const [errors, setErrors] = useState({})
 
   const handleChange = (event) => {
     const { name, value } = event.target
@@ -25,10 +26,34 @@ export default function RegisterPage() {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
+    const nextErrors = {
+    }
+    if (!form.fullName.trim()) {
+      nextErrors.fullName = 'Full name is required.'
+    }
+    const trimmedEmail = form.email.trim()
+    if (!trimmedEmail) {
+      nextErrors.email = 'Email is required.'
+    } else if (!/^\S+@\S+\.\S+$/.test(trimmedEmail)) {
+      nextErrors.email = 'Enter a valid email address.'
+    }
+    if (!form.address.trim()) {
+      nextErrors.address = 'Address is required.'
+    }
+    if (!form.password) {
+      nextErrors.password = 'Password is required.'
+    } else if (form.password.length < 8) {
+      nextErrors.password = 'Password must be at least 8 characters.'
+    }
     if (!form.captchaToken) {
-      setAlert({ type: 'danger', message: 'Please complete the captcha challenge.' })
+      nextErrors.captchaToken = 'Captcha is required.'
+    }
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors)
+      setAlert(null)
       return
     }
+    setErrors({})
     setSubmitting(true)
     setAlert(null)
     try {
@@ -61,7 +86,7 @@ export default function RegisterPage() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} noValidate>
               <div className="mb-3">
                 <label htmlFor="fullName" className="form-label text-secondary small fw-medium">
                   Full Name
@@ -74,8 +99,8 @@ export default function RegisterPage() {
                   placeholder="John Doe"
                   value={form.fullName}
                   onChange={handleChange}
-                  required
                 />
+                {errors.fullName && <div className="text-danger small mt-1">{errors.fullName}</div>}
               </div>
               <div className="mb-3">
                 <label htmlFor="email" className="form-label text-secondary small fw-medium">
@@ -89,8 +114,8 @@ export default function RegisterPage() {
                   placeholder="name@example.com"
                   value={form.email}
                   onChange={handleChange}
-                  required
                 />
+                {errors.email && <div className="text-danger small mt-1">{errors.email}</div>}
               </div>
               <div className="mb-3">
                 <label htmlFor="phoneNumber" className="form-label text-secondary small fw-medium">
@@ -118,8 +143,8 @@ export default function RegisterPage() {
                   placeholder="123 Main St, City"
                   value={form.address}
                   onChange={handleChange}
-                  required
                 />
+                {errors.address && <div className="text-danger small mt-1">{errors.address}</div>}
               </div>
               <div className="mb-3">
                 <label htmlFor="password" className="form-label text-secondary small fw-medium">
@@ -133,9 +158,8 @@ export default function RegisterPage() {
                   placeholder="Min. 8 characters"
                   value={form.password}
                   onChange={handleChange}
-                  minLength={8}
-                  required
                 />
+                {errors.password && <div className="text-danger small mt-1">{errors.password}</div>}
               </div>
               <div className="mb-4">
                 <label className="form-label text-secondary small fw-medium">Captcha</label>
@@ -145,6 +169,7 @@ export default function RegisterPage() {
                     onChange={(token) => setForm((prev) => ({ ...prev, captchaToken: token || '' }))}
                   />
                 </div>
+                {errors.captchaToken && <div className="text-danger small mt-2">{errors.captchaToken}</div>}
                 {!SITE_KEY && (
                   <div className="form-text text-danger">
                     Missing site key. Set VITE_RECAPTCHA_SITE_KEY in frontend/.env.

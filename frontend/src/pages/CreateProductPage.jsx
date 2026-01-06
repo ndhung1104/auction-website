@@ -33,6 +33,7 @@ export default function CreateProductPage() {
   const [categories, setCategories] = useState([])
   const [images, setImages] = useState([])
   const [alert, setAlert] = useState(null)
+  const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
 
   const defaultStart = formatDateInput(new Date())
@@ -86,14 +87,42 @@ export default function CreateProductPage() {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
+    const nextErrors = {}
+    if (!form.name.trim()) {
+      nextErrors.name = 'Name is required.'
+    }
+    if (!form.categoryId) {
+      nextErrors.categoryId = 'Category is required.'
+    }
+    const startPriceValue = Number(form.startPrice)
+    if (form.startPrice === '' || Number.isNaN(startPriceValue) || startPriceValue < 0) {
+      nextErrors.startPrice = 'Start price must be 0 or higher.'
+    }
+    const stepValue = Number(form.priceStep)
+    if (form.priceStep === '' || Number.isNaN(stepValue) || stepValue <= 0) {
+      nextErrors.priceStep = 'Price step must be greater than 0.'
+    }
+    if (!form.startAt) {
+      nextErrors.startAt = 'Start time is required.'
+    }
+    if (!form.endAt) {
+      nextErrors.endAt = 'End time is required.'
+    }
+    if (form.buyNowPrice !== '' && form.buyNowPrice !== null) {
+      const buyNowValue = Number(form.buyNowPrice)
+      if (Number.isNaN(buyNowValue) || buyNowValue < startPriceValue) {
+        nextErrors.buyNowPrice = 'Buy now price must be at least the start price.'
+      }
+    }
     if (images.length < 3) {
-      setAlert({
-        type: 'danger',
-        message: 'Please select at least three images.'
-      })
+      nextErrors.images = 'Please select at least three images.'
+    }
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors)
+      setAlert(null)
       return
     }
-
+    setErrors({})
     setSubmitting(true)
     setAlert(null)
     try {
@@ -110,7 +139,7 @@ export default function CreateProductPage() {
       await createProduct(formData)
       setAlert({
         type: 'success',
-        message: 'Product created successfully. Redirecting to listings…'
+        message: 'Product created successfully. Redirecting to listings...'
       })
       setTimeout(() => navigate('/products'), 1200)
     } catch (error) {
@@ -122,6 +151,7 @@ export default function CreateProductPage() {
       setSubmitting(false)
     }
   }
+
 
   if (!user || (user.role !== 'SELLER' && user.role !== 'ADMIN')) {
     return (
@@ -142,7 +172,7 @@ export default function CreateProductPage() {
                 {alert.message}
               </div>
             )}
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} noValidate>
               <div className="mb-3">
                 <label htmlFor="name" className="form-label">
                   Name
@@ -153,8 +183,8 @@ export default function CreateProductPage() {
                   className="form-control"
                   value={form.name}
                   onChange={handleChange}
-                  required
                 />
+                {errors.name && <div className="text-danger small mt-1">{errors.name}</div>}
               </div>
               <div className="mb-3">
                 <label htmlFor="description" className="form-label">
@@ -178,7 +208,6 @@ export default function CreateProductPage() {
                     className="form-select"
                     value={form.categoryId}
                     onChange={handleChange}
-                    required
                   >
                     <option value="">Select category</option>
                     {flatCategories.map((cat) => (
@@ -187,6 +216,7 @@ export default function CreateProductPage() {
                       </option>
                     ))}
                   </select>
+                  {errors.categoryId && <div className="text-danger small mt-1">{errors.categoryId}</div>}
                 </div>
                 <div className="col-md-6">
                   <label htmlFor="buyNowPrice" className="form-label">
@@ -197,10 +227,10 @@ export default function CreateProductPage() {
                     name="buyNowPrice"
                     type="number"
                     className="form-control"
-                    min={form.startPrice || 0}
                     value={form.buyNowPrice}
                     onChange={handleChange}
                   />
+                  {errors.buyNowPrice && <div className="text-danger small mt-1">{errors.buyNowPrice}</div>}
                 </div>
               </div>
               <div className="row g-3 mt-1">
@@ -212,12 +242,11 @@ export default function CreateProductPage() {
                     id="startPrice"
                     name="startPrice"
                     type="number"
-                    min="0"
                     className="form-control"
                     value={form.startPrice}
                     onChange={handleChange}
-                    required
                   />
+                  {errors.startPrice && <div className="text-danger small mt-1">{errors.startPrice}</div>}
                 </div>
                 <div className="col-md-4">
                   <label htmlFor="priceStep" className="form-label">
@@ -227,12 +256,11 @@ export default function CreateProductPage() {
                     id="priceStep"
                     name="priceStep"
                     type="number"
-                    min="1"
                     className="form-control"
                     value={form.priceStep}
                     onChange={handleChange}
-                    required
                   />
+                  {errors.priceStep && <div className="text-danger small mt-1">{errors.priceStep}</div>}
                 </div>
                 <div className="col-md-4">
                   <label htmlFor="startAt" className="form-label">
@@ -246,6 +274,7 @@ export default function CreateProductPage() {
                     value={form.startAt}
                     onChange={handleChange}
                   />
+                  {errors.startAt && <div className="text-danger small mt-1">{errors.startAt}</div>}
                 </div>
               </div>
               <div className="row g-3 mt-1">
@@ -260,8 +289,8 @@ export default function CreateProductPage() {
                     className="form-control"
                     value={form.endAt}
                     onChange={handleChange}
-                    required
                   />
+                  {errors.endAt && <div className="text-danger small mt-1">{errors.endAt}</div>}
                 </div>
                 <div className="col-md-6">
                   <div className="form-check mb-2">
@@ -319,6 +348,7 @@ export default function CreateProductPage() {
                   multiple
                   onChange={handleImageChange}
                 />
+                {errors.images && <div className="text-danger small mt-1">{errors.images}</div>}
                 <small className="text-muted">At least three images are required.</small>
                 {images.length > 0 && (
                   <ul className="mt-2 small">

@@ -27,7 +27,9 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [categoryForm, setCategoryForm] = useState({ name: '', parentId: '' })
+  const [categoryErrors, setCategoryErrors] = useState({})
   const [extendForm, setExtendForm] = useState({ windowMinutes: 5, extendMinutes: 10 })
+  const [extendErrors, setExtendErrors] = useState({})
   const [autoBids, setAutoBids] = useState([])
   const [autoBidProductId, setAutoBidProductId] = useState(null)
   const [confirmDialog, setConfirmDialog] = useState(null)
@@ -63,6 +65,18 @@ export default function AdminDashboardPage() {
 
   const handleCategorySubmit = (event) => {
     event.preventDefault()
+    const nextErrors = {}
+    if (!categoryForm.name.trim()) {
+      nextErrors.name = 'Category name is required.'
+    }
+    if (categoryForm.parentId && Number(categoryForm.parentId) < 1) {
+      nextErrors.parentId = 'Parent ID must be a positive number.'
+    }
+    if (Object.keys(nextErrors).length > 0) {
+      setCategoryErrors(nextErrors)
+      return
+    }
+    setCategoryErrors({})
     const payload = {
       name: categoryForm.name,
       parentId: categoryForm.parentId ? Number(categoryForm.parentId) : null
@@ -120,9 +134,23 @@ export default function AdminDashboardPage() {
 
   const handleExtendSubmit = (event) => {
     event.preventDefault()
+    const nextErrors = {}
+    const windowValue = Number(extendForm.windowMinutes)
+    const extendValue = Number(extendForm.extendMinutes)
+    if (!extendForm.windowMinutes || Number.isNaN(windowValue) || windowValue < 1) {
+      nextErrors.windowMinutes = 'Extend window must be at least 1.'
+    }
+    if (!extendForm.extendMinutes || Number.isNaN(extendValue) || extendValue < 1) {
+      nextErrors.extendMinutes = 'Extend amount must be at least 1.'
+    }
+    if (Object.keys(nextErrors).length > 0) {
+      setExtendErrors(nextErrors)
+      return
+    }
+    setExtendErrors({})
     updateExtendSettings({
-      windowMinutes: Number(extendForm.windowMinutes),
-      extendMinutes: Number(extendForm.extendMinutes)
+      windowMinutes: windowValue,
+      extendMinutes: extendValue
     })
       .then(() => {
         setError(null)
@@ -216,28 +244,26 @@ export default function AdminDashboardPage() {
 
       <section className="mb-5">
         <h2>Auto-extend settings</h2>
-        <form className="row g-3 align-items-end" onSubmit={handleExtendSubmit}>
+        <form className="row g-3 align-items-end" onSubmit={handleExtendSubmit} noValidate>
           <div className="col-sm-4 col-md-3">
             <label className="form-label">Extend window (minutes)</label>
             <input
               type="number"
-              min="1"
               className="form-control"
               value={extendForm.windowMinutes}
               onChange={(e) => setExtendForm((prev) => ({ ...prev, windowMinutes: e.target.value }))}
-              required
             />
+            {extendErrors.windowMinutes && <div className="text-danger small mt-1">{extendErrors.windowMinutes}</div>}
           </div>
           <div className="col-sm-4 col-md-3">
             <label className="form-label">Extend amount (minutes)</label>
             <input
               type="number"
-              min="1"
               className="form-control"
               value={extendForm.extendMinutes}
               onChange={(e) => setExtendForm((prev) => ({ ...prev, extendMinutes: e.target.value }))}
-              required
             />
+            {extendErrors.extendMinutes && <div className="text-danger small mt-1">{extendErrors.extendMinutes}</div>}
           </div>
           <div className="col-sm-4 col-md-3 d-grid">
             <button type="submit" className="btn btn-primary">
@@ -252,15 +278,15 @@ export default function AdminDashboardPage() {
 
       <section className="mb-5">
         <h2>Categories</h2>
-        <form className="row g-2 mb-3" onSubmit={handleCategorySubmit}>
+        <form className="row g-2 mb-3" onSubmit={handleCategorySubmit} noValidate>
           <div className="col-md-5">
             <input
               className="form-control"
               placeholder="Category name"
               value={categoryForm.name}
               onChange={(e) => setCategoryForm((prev) => ({ ...prev, name: e.target.value }))}
-              required
             />
+            {categoryErrors.name && <div className="text-danger small mt-1">{categoryErrors.name}</div>}
           </div>
           <div className="col-md-5">
             <input
@@ -270,6 +296,7 @@ export default function AdminDashboardPage() {
               value={categoryForm.parentId}
               onChange={(e) => setCategoryForm((prev) => ({ ...prev, parentId: e.target.value }))}
             />
+            {categoryErrors.parentId && <div className="text-danger small mt-1">{categoryErrors.parentId}</div>}
           </div>
           <div className="col-md-2 d-grid">
             <button className="btn btn-primary" type="submit">

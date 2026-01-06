@@ -5,6 +5,7 @@ export default function ResetPasswordPage() {
   const [form, setForm] = useState({ token: '', newPassword: '' })
   const [status, setStatus] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  const [errors, setErrors] = useState({})
 
   const handleChange = (event) => {
     const { name, value } = event.target
@@ -13,6 +14,22 @@ export default function ResetPasswordPage() {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
+    const nextErrors = {
+    }
+    if (!form.token.trim()) {
+      nextErrors.token = 'Reset token is required.'
+    }
+    if (!form.newPassword) {
+      nextErrors.newPassword = 'New password is required.'
+    } else if (form.newPassword.length < 8) {
+      nextErrors.newPassword = 'Password must be at least 8 characters.'
+    }
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors)
+      setStatus(null)
+      return
+    }
+    setErrors({})
     setSubmitting(true)
     setStatus(null)
     try {
@@ -35,7 +52,7 @@ export default function ResetPasswordPage() {
             {status.message}
           </div>
         )}
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <div className="mb-3">
             <label htmlFor="token" className="form-label">
               Reset token
@@ -46,8 +63,8 @@ export default function ResetPasswordPage() {
               className="form-control"
               value={form.token}
               onChange={handleChange}
-              required
             />
+            {errors.token && <div className="text-danger small mt-1">{errors.token}</div>}
           </div>
           <div className="mb-4">
             <label htmlFor="newPassword" className="form-label">
@@ -60,8 +77,8 @@ export default function ResetPasswordPage() {
               className="form-control"
               value={form.newPassword}
               onChange={handleChange}
-              required
             />
+            {errors.newPassword && <div className="text-danger small mt-1">{errors.newPassword}</div>}
           </div>
           <button type="submit" className="btn btn-primary w-100" disabled={submitting}>
             {submitting ? 'Updating…' : 'Update password'}
