@@ -12,6 +12,7 @@
     "migrate:status": "knex migrate:list --knexfile knexfile.js",
     "migrate:make": "knex migrate:make --knexfile knexfile.js",
     "migrate:rollback": "knex migrate:rollback --knexfile knexfile.js",
+    "migrate:manual": "node scripts/run-manual-migrations.js",
     "seed": "knex seed:run --knexfile knexfile.js",
     "seed:ensure": "node scripts/ensure-seed.js"
   },

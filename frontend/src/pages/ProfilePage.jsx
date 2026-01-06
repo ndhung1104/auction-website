@@ -227,7 +227,7 @@ export default function ProfilePage() {
   return (
     <div className="profile-page">
       <div className="row g-4">
-        <div className="col-lg-5">
+        <div className="col-lg-5 d-flex flex-column gap-4 h-100">
           <div className="card shadow-sm">
             <div className="card-body">
               <h3 className="card-title mb-3">Account overview</h3>
@@ -275,9 +275,66 @@ export default function ProfilePage() {
               )}
             </div>
           </div>
+          <div className="card shadow-sm flex-grow-1">
+            <div className="card-body">
+              <h3 className="card-title mb-3">Change password</h3>
+              {passwordAlert && (
+                <div className={`alert alert-${passwordAlert.type}`} role="alert">
+                  {passwordAlert.message}
+                </div>
+              )}
+              <form onSubmit={handlePasswordSubmit} noValidate>
+                <div className="mb-3">
+                  <label htmlFor="currentPassword" className="form-label">
+                    Current password
+                  </label>
+                  <input
+                    id="currentPassword"
+                    name="currentPassword"
+                    type="password"
+                    className="form-control"
+                    value={passwordForm.currentPassword}
+                    onChange={handlePasswordFieldChange}
+                  />
+                  {passwordErrors.currentPassword && <div className="text-danger small mt-1">{passwordErrors.currentPassword}</div>}
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="newPassword" className="form-label">
+                    New password
+                  </label>
+                  <input
+                    id="newPassword"
+                    name="newPassword"
+                    type="password"
+                    className="form-control"
+                    value={passwordForm.newPassword}
+                    onChange={handlePasswordFieldChange}
+                  />
+                  {passwordErrors.newPassword && <div className="text-danger small mt-1">{passwordErrors.newPassword}</div>}
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="confirmPassword" className="form-label">
+                    Confirm new password
+                  </label>
+                  <input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    className="form-control"
+                    value={passwordForm.confirmPassword}
+                    onChange={handlePasswordFieldChange}
+                  />
+                  {passwordErrors.confirmPassword && <div className="text-danger small mt-1">{passwordErrors.confirmPassword}</div>}
+                </div>
+                <button type="submit" className="btn btn-outline-primary" disabled={passwordSubmitting}>
+                  {passwordSubmitting ? 'Updating…' : 'Update password'}
+                </button>
+              </form>
+            </div>
+          </div>
         </div>
         <div className="col-lg-7">
-          <div className="card shadow-sm">
+          <div className="card shadow-sm h-100">
             <div className="card-body">
               <h3 className="card-title mb-3">Edit profile</h3>
               {alert && (
@@ -353,67 +410,6 @@ export default function ProfilePage() {
                 </div>
                 <button type="submit" className="btn btn-primary" disabled={updating}>
                   {updating ? 'Saving…' : 'Save changes'}
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="row g-4 mt-2">
-        <div className="col-lg-6">
-          <div className="card shadow-sm">
-            <div className="card-body">
-              <h3 className="card-title mb-3">Change password</h3>
-              {passwordAlert && (
-                <div className={`alert alert-${passwordAlert.type}`} role="alert">
-                  {passwordAlert.message}
-                </div>
-              )}
-              <form onSubmit={handlePasswordSubmit} noValidate>
-                <div className="mb-3">
-                  <label htmlFor="currentPassword" className="form-label">
-                    Current password
-                  </label>
-                  <input
-                    id="currentPassword"
-                    name="currentPassword"
-                    type="password"
-                    className="form-control"
-                    value={passwordForm.currentPassword}
-                    onChange={handlePasswordFieldChange}
-                  />
-                  {passwordErrors.currentPassword && <div className="text-danger small mt-1">{passwordErrors.currentPassword}</div>}
-                </div>
-                <div className="mb-3">
-                  <label htmlFor="newPassword" className="form-label">
-                    New password
-                  </label>
-                  <input
-                    id="newPassword"
-                    name="newPassword"
-                    type="password"
-                    className="form-control"
-                    value={passwordForm.newPassword}
-                    onChange={handlePasswordFieldChange}
-                  />
-                  {passwordErrors.newPassword && <div className="text-danger small mt-1">{passwordErrors.newPassword}</div>}
-                </div>
-                <div className="mb-3">
-                  <label htmlFor="confirmPassword" className="form-label">
-                    Confirm new password
-                  </label>
-                  <input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type="password"
-                    className="form-control"
-                    value={passwordForm.confirmPassword}
-                    onChange={handlePasswordFieldChange}
-                  />
-                  {passwordErrors.confirmPassword && <div className="text-danger small mt-1">{passwordErrors.confirmPassword}</div>}
-                </div>
-                <button type="submit" className="btn btn-outline-primary" disabled={passwordSubmitting}>
-                  {passwordSubmitting ? 'Updating…' : 'Update password'}
                 </button>
               </form>
             </div>
