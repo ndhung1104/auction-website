@@ -15,6 +15,31 @@ const SORT_OPTIONS = [
   { value: 'bid_count,desc', label: 'Most bids' }
 ]
 
+const LOGIC_OPTIONS = [
+  { value: 'and', label: 'Match all (AND)' },
+  { value: 'or', label: 'Match any (OR)' }
+]
+
+const formatDateInput = (date) => {
+  const offset = date.getTimezoneOffset()
+  const adjusted = new Date(date.getTime() - offset * 60 * 1000)
+  return adjusted.toISOString().slice(0, 16)
+}
+
+const normalizeDateInput = (value) => {
+  if (!value) return ''
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return ''
+  return formatDateInput(parsed)
+}
+
+const toISOFromLocalInput = (value) => {
+  if (!value) return value
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return value
+  return parsed.toISOString()
+}
+
 export default function SearchResultsPage() {
   const { isAuthenticated } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -33,10 +58,40 @@ export default function SearchResultsPage() {
   const [watchlistLoading, setWatchlistLoading] = useState({})
   const [watchlistStatus, setWatchlistStatus] = useState({})
   const watchlistTimers = useRef({})
+  const [priceMin, setPriceMin] = useState('')
+  const [priceMax, setPriceMax] = useState('')
+  const [priceLogic, setPriceLogic] = useState('and')
+  const [bidMin, setBidMin] = useState('')
+  const [bidMax, setBidMax] = useState('')
+  const [bidLogic, setBidLogic] = useState('and')
+  const [allowUnrated, setAllowUnrated] = useState('')
+  const [allowUnratedLogic, setAllowUnratedLogic] = useState('and')
+  const [startAtFrom, setStartAtFrom] = useState('')
+  const [startAtTo, setStartAtTo] = useState('')
+  const [startAtLogic, setStartAtLogic] = useState('and')
+  const [endAtFrom, setEndAtFrom] = useState('')
+  const [endAtTo, setEndAtTo] = useState('')
+  const [endAtLogic, setEndAtLogic] = useState('and')
+  const [showAdvanced, setShowAdvanced] = useState(false)
+  const searchKey = searchParams.toString()
 
   useEffect(() => {
     setFormTerm(term)
-  }, [term])
+    setPriceMin(searchParams.get('priceMin') || '')
+    setPriceMax(searchParams.get('priceMax') || '')
+    setPriceLogic(searchParams.get('priceLogic') || 'and')
+    setBidMin(searchParams.get('bidMin') || '')
+    setBidMax(searchParams.get('bidMax') || '')
+    setBidLogic(searchParams.get('bidLogic') || 'and')
+    setAllowUnrated(searchParams.get('allowUnrated') || '')
+    setAllowUnratedLogic(searchParams.get('allowUnratedLogic') || 'and')
+    setStartAtFrom(normalizeDateInput(searchParams.get('startAtFrom')))
+    setStartAtTo(normalizeDateInput(searchParams.get('startAtTo')))
+    setStartAtLogic(searchParams.get('startAtLogic') || 'and')
+    setEndAtFrom(normalizeDateInput(searchParams.get('endAtFrom')))
+    setEndAtTo(normalizeDateInput(searchParams.get('endAtTo')))
+    setEndAtLogic(searchParams.get('endAtLogic') || 'and')
+  }, [term, searchKey])
 
   useEffect(() => {
     fetchCategories()
@@ -64,9 +119,25 @@ export default function SearchResultsPage() {
       setLoading(false)
       return
     }
+    const filters = {
+      priceMin: searchParams.get('priceMin') || undefined,
+      priceMax: searchParams.get('priceMax') || undefined,
+      priceLogic: searchParams.get('priceLogic') || undefined,
+      bidMin: searchParams.get('bidMin') || undefined,
+      bidMax: searchParams.get('bidMax') || undefined,
+      bidLogic: searchParams.get('bidLogic') || undefined,
+      allowUnrated: searchParams.get('allowUnrated') || undefined,
+      allowUnratedLogic: searchParams.get('allowUnratedLogic') || undefined,
+      startAtFrom: searchParams.get('startAtFrom') || undefined,
+      startAtTo: searchParams.get('startAtTo') || undefined,
+      startAtLogic: searchParams.get('startAtLogic') || undefined,
+      endAtFrom: searchParams.get('endAtFrom') || undefined,
+      endAtTo: searchParams.get('endAtTo') || undefined,
+      endAtLogic: searchParams.get('endAtLogic') || undefined
+    }
     setLoading(true)
     setError(null)
-    searchProducts(term, { page, sort, categoryId: categoryId || undefined })
+    searchProducts(term, { page, sort, categoryId: categoryId || undefined, filters })
       .then((response) => {
         const payload = response?.data || {}
         setItems(
@@ -89,7 +160,7 @@ export default function SearchResultsPage() {
         setError(err.message || 'Unable to search products')
       })
       .finally(() => setLoading(false))
-  }, [term, page, sort, categoryId])
+  }, [term, page, sort, categoryId, searchKey])
 
   const handleSubmit = (event) => {
     event.preventDefault()
@@ -104,33 +175,21 @@ export default function SearchResultsPage() {
       return
     }
     setSearchErrors({})
-    const params = { q: trimmed, page: '1' }
-    if (sort) params.sort = sort
-    if (categoryId) params.categoryId = categoryId
-    setSearchParams(params)
+    setSearchParams(buildSearchParams({ nextTerm: trimmed, nextPage: 1 }))
   }
 
   const handlePageChange = (nextPage) => {
     if (!term) return
-    const params = { q: term, page: String(nextPage) }
-    if (sort) params.sort = sort
-    if (categoryId) params.categoryId = categoryId
-    setSearchParams(params)
+    setSearchParams(buildSearchParams({ nextTerm: term, nextPage }))
   }
 
   const handleSortChange = (event) => {
     const nextSort = event.target.value
-    const params = { q: term, page: '1' }
-    if (nextSort) params.sort = nextSort
-    if (categoryId) params.categoryId = categoryId
-    setSearchParams(params)
+    setSearchParams(buildSearchParams({ nextTerm: term, nextPage: 1, nextSort }))
   }
 
   const handleCategoryChange = (nextCat) => {
-    const params = { q: term, page: '1' }
-    if (sort) params.sort = sort
-    if (nextCat) params.categoryId = nextCat
-    setSearchParams(params)
+    setSearchParams(buildSearchParams({ nextTerm: term, nextPage: 1, nextCategoryId: nextCat }))
   }
 
   const setStatusWithTimeout = (productId, payload) => {
@@ -177,6 +236,39 @@ export default function SearchResultsPage() {
     }
   }
 
+  const buildFilterParams = () => {
+    const params = {}
+    if (priceMin) params.priceMin = priceMin
+    if (priceMax) params.priceMax = priceMax
+    if ((priceMin || priceMax) && priceLogic) params.priceLogic = priceLogic
+    if (bidMin) params.bidMin = bidMin
+    if (bidMax) params.bidMax = bidMax
+    if ((bidMin || bidMax) && bidLogic) params.bidLogic = bidLogic
+    if (allowUnrated) params.allowUnrated = allowUnrated
+    if (allowUnrated && allowUnratedLogic) params.allowUnratedLogic = allowUnratedLogic
+    if (startAtFrom) params.startAtFrom = toISOFromLocalInput(startAtFrom)
+    if (startAtTo) params.startAtTo = toISOFromLocalInput(startAtTo)
+    if ((startAtFrom || startAtTo) && startAtLogic) params.startAtLogic = startAtLogic
+    if (endAtFrom) params.endAtFrom = toISOFromLocalInput(endAtFrom)
+    if (endAtTo) params.endAtTo = toISOFromLocalInput(endAtTo)
+    if ((endAtFrom || endAtTo) && endAtLogic) params.endAtLogic = endAtLogic
+    return params
+  }
+
+  const buildSearchParams = ({ nextTerm, nextPage, nextSort, nextCategoryId } = {}) => {
+    const params = {
+      q: nextTerm ?? term,
+      page: String(nextPage ?? 1)
+    }
+    const filters = buildFilterParams()
+    Object.assign(params, filters)
+    const resolvedSort = nextSort ?? sort
+    if (resolvedSort) params.sort = resolvedSort
+    const resolvedCategory = nextCategoryId ?? categoryId
+    if (resolvedCategory) params.categoryId = resolvedCategory
+    return params
+  }
+
   const renderSummary = useMemo(() => {
     if (!term || !meta.total) return null
     const rangeStart = (meta.page - 1) * meta.limit + 1
@@ -187,6 +279,19 @@ export default function SearchResultsPage() {
       </span>
     )
   }, [items.length, meta.limit, meta.page, meta.total, term])
+
+  const hasActiveFilters = Boolean(
+    categoryId ||
+      priceMin ||
+      priceMax ||
+      bidMin ||
+      bidMax ||
+      allowUnrated ||
+      startAtFrom ||
+      startAtTo ||
+      endAtFrom ||
+      endAtTo
+  )
 
   return (
     <div>
@@ -268,6 +373,195 @@ export default function SearchResultsPage() {
             ))}
           </select>
         </div>
+        <div className="col-12">
+          <div className="border rounded-3 bg-white">
+            <button
+              type="button"
+              className="btn btn-link w-100 text-start d-flex align-items-center justify-content-between px-3 py-3 text-decoration-none"
+              onClick={() => setShowAdvanced((prev) => !prev)}
+            >
+              <span className="fw-semibold text-secondary">Advanced filters</span>
+              <span className="text-muted small">{showAdvanced ? 'Hide' : 'Show'}</span>
+            </button>
+            {showAdvanced && (
+              <div className="px-3 pb-3">
+                <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                  <span className="text-muted small">Choose AND/OR per group</span>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary"
+                    onClick={() => setSearchParams({ q: term, page: '1', sort })}
+                    disabled={!hasActiveFilters}
+                  >
+                    Clear filters
+                  </button>
+                </div>
+                <div className="row g-3">
+              <div className="col-12 col-lg-4">
+                <label className="form-label">Price range (VND)</label>
+                <div className="row g-2">
+                  <div className="col-6">
+                    <input
+                      type="number"
+                      className="form-control"
+                      placeholder="Min"
+                      value={priceMin}
+                      onChange={(event) => setPriceMin(event.target.value)}
+                    />
+                  </div>
+                  <div className="col-6">
+                    <input
+                      type="number"
+                      className="form-control"
+                      placeholder="Max"
+                      value={priceMax}
+                      onChange={(event) => setPriceMax(event.target.value)}
+                    />
+                  </div>
+                </div>
+                <select
+                  className="form-select form-select-sm mt-2"
+                  value={priceLogic}
+                  onChange={(event) => setPriceLogic(event.target.value)}
+                  disabled={!priceMin && !priceMax}
+                >
+                  {LOGIC_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-12 col-lg-4">
+                <label className="form-label">Bid count</label>
+                <div className="row g-2">
+                  <div className="col-6">
+                    <input
+                      type="number"
+                      className="form-control"
+                      placeholder="Min"
+                      value={bidMin}
+                      onChange={(event) => setBidMin(event.target.value)}
+                    />
+                  </div>
+                  <div className="col-6">
+                    <input
+                      type="number"
+                      className="form-control"
+                      placeholder="Max"
+                      value={bidMax}
+                      onChange={(event) => setBidMax(event.target.value)}
+                    />
+                  </div>
+                </div>
+                <select
+                  className="form-select form-select-sm mt-2"
+                  value={bidLogic}
+                  onChange={(event) => setBidLogic(event.target.value)}
+                  disabled={!bidMin && !bidMax}
+                >
+                  {LOGIC_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-12 col-lg-4">
+                <label className="form-label">Allow unrated bidders</label>
+                <select
+                  className="form-select"
+                  value={allowUnrated}
+                  onChange={(event) => setAllowUnrated(event.target.value)}
+                >
+                  <option value="">Any</option>
+                  <option value="true">Allow</option>
+                  <option value="false">Disallow</option>
+                </select>
+                <select
+                  className="form-select form-select-sm mt-2"
+                  value={allowUnratedLogic}
+                  onChange={(event) => setAllowUnratedLogic(event.target.value)}
+                  disabled={!allowUnrated}
+                >
+                  {LOGIC_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-12 col-lg-6">
+                <label className="form-label">Start time range</label>
+                <div className="row g-2">
+                  <div className="col-6">
+                    <input
+                      type="datetime-local"
+                      className="form-control"
+                      value={startAtFrom}
+                      onChange={(event) => setStartAtFrom(event.target.value)}
+                    />
+                  </div>
+                  <div className="col-6">
+                    <input
+                      type="datetime-local"
+                      className="form-control"
+                      value={startAtTo}
+                      onChange={(event) => setStartAtTo(event.target.value)}
+                    />
+                  </div>
+                </div>
+                <select
+                  className="form-select form-select-sm mt-2"
+                  value={startAtLogic}
+                  onChange={(event) => setStartAtLogic(event.target.value)}
+                  disabled={!startAtFrom && !startAtTo}
+                >
+                  {LOGIC_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-12 col-lg-6">
+                <label className="form-label">End time range</label>
+                <div className="row g-2">
+                  <div className="col-6">
+                    <input
+                      type="datetime-local"
+                      className="form-control"
+                      value={endAtFrom}
+                      onChange={(event) => setEndAtFrom(event.target.value)}
+                    />
+                  </div>
+                  <div className="col-6">
+                    <input
+                      type="datetime-local"
+                      className="form-control"
+                      value={endAtTo}
+                      onChange={(event) => setEndAtTo(event.target.value)}
+                    />
+                  </div>
+                </div>
+                <select
+                  className="form-select form-select-sm mt-2"
+                  value={endAtLogic}
+                  onChange={(event) => setEndAtLogic(event.target.value)}
+                  disabled={!endAtFrom && !endAtTo}
+                >
+                  {LOGIC_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+              </div>
+            )}
+          </div>
+        </div>
       </form>
       {!term && (
         <div className="alert alert-light">Type a keyword above to explore available auctions.</div>
@@ -308,7 +602,7 @@ export default function SearchResultsPage() {
         ))}
       </div>
 
-      {categories.length > 0 && (
+      {categories.length > 0 && !hasActiveFilters && (
         <div className="mt-4">
           <h4 className="mb-3">Matching categories</h4>
           <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">

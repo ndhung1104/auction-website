@@ -3,8 +3,48 @@ import { findPrimaryImagesForProducts } from '../repositories/product.repository
 import { getHighlightNewMinutes } from './setting.service.js';
 import { mapProduct } from './product.service.js';
 
-export const searchActiveProducts = async ({ term, limit, offset, categoryId, sort }) => {
-  const { rows, total } = await searchProducts({ term, limit, offset, categoryId, sort });
+export const searchActiveProducts = async ({
+  term,
+  limit,
+  offset,
+  categoryId,
+  sort,
+  priceMin,
+  priceMax,
+  priceLogic,
+  bidMin,
+  bidMax,
+  bidLogic,
+  allowUnrated,
+  allowUnratedLogic,
+  startAtFrom,
+  startAtTo,
+  startAtLogic,
+  endAtFrom,
+  endAtTo,
+  endAtLogic
+}) => {
+  const { rows, total } = await searchProducts({
+    term,
+    limit,
+    offset,
+    categoryId,
+    sort,
+    priceMin,
+    priceMax,
+    priceLogic,
+    bidMin,
+    bidMax,
+    bidLogic,
+    allowUnrated,
+    allowUnratedLogic,
+    startAtFrom,
+    startAtTo,
+    startAtLogic,
+    endAtFrom,
+    endAtTo,
+    endAtLogic
+  });
   if (!rows.length) {
     return { items: [], total };
   }

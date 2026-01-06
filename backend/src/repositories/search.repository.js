@@ -26,6 +26,50 @@ const applyCategoryFilter = (query, categoryId) => {
   return query.whereIn('p.category_id', subCategories);
 };
 
+const applyRangeFilter = (query, column, min, max) => {
+  if (min !== undefined && min !== null) {
+    query.where(column, '>=', min);
+  }
+  if (max !== undefined && max !== null) {
+    query.where(column, '<=', max);
+  }
+};
+
+const buildGroupFilter = (filters) => {
+  const andGroups = [];
+  const orGroups = [];
+
+  const addGroup = (logic, handler) => {
+    if (logic === 'or') {
+      orGroups.push(handler);
+    } else {
+      andGroups.push(handler);
+    }
+  };
+
+  if (filters.priceMin !== undefined || filters.priceMax !== undefined) {
+    addGroup(filters.priceLogic, (qb) => applyRangeFilter(qb, 'p.current_price', filters.priceMin, filters.priceMax));
+  }
+
+  if (filters.bidMin !== undefined || filters.bidMax !== undefined) {
+    addGroup(filters.bidLogic, (qb) => applyRangeFilter(qb, 'p.bid_count', filters.bidMin, filters.bidMax));
+  }
+
+  if (typeof filters.allowUnrated === 'boolean') {
+    addGroup(filters.allowUnratedLogic, (qb) => qb.where('p.allow_unrated_bidders', filters.allowUnrated));
+  }
+
+  if (filters.startAtFrom || filters.startAtTo) {
+    addGroup(filters.startAtLogic, (qb) => applyRangeFilter(qb, 'p.start_at', filters.startAtFrom, filters.startAtTo));
+  }
+
+  if (filters.endAtFrom || filters.endAtTo) {
+    addGroup(filters.endAtLogic, (qb) => applyRangeFilter(qb, 'p.end_at', filters.endAtFrom, filters.endAtTo));
+  }
+
+  return { andGroups, orGroups };
+};
+
 export const searchCategories = async ({ term, limit = 10 }) => {
   const sanitized = sanitizeTerm(term);
   if (!sanitized) {
@@ -39,7 +83,27 @@ export const searchCategories = async ({ term, limit = 10 }) => {
     .limit(safeLimit);
 };
 
-export const searchProducts = async ({ term, limit = DEFAULT_LIMIT, offset = 0, categoryId = null, sort = null }) => {
+export const searchProducts = async ({
+  term,
+  limit = DEFAULT_LIMIT,
+  offset = 0,
+  categoryId = null,
+  sort = null,
+  priceMin,
+  priceMax,
+  priceLogic = 'and',
+  bidMin,
+  bidMax,
+  bidLogic = 'and',
+  allowUnrated,
+  allowUnratedLogic = 'and',
+  startAtFrom,
+  startAtTo,
+  startAtLogic = 'and',
+  endAtFrom,
+  endAtTo,
+  endAtLogic = 'and'
+}) => {
   const sanitized = sanitizeTerm(term);
   if (!sanitized) {
     return { rows: [], total: 0 };
@@ -53,6 +117,40 @@ export const searchProducts = async ({ term, limit = DEFAULT_LIMIT, offset = 0, 
     .andWhereRaw("p.search_vector @@ websearch_to_tsquery('simple', ?)", [sanitized]);
 
   applyCategoryFilter(baseQuery, categoryId);
+  const { andGroups, orGroups } = buildGroupFilter({
+    priceMin,
+    priceMax,
+    priceLogic,
+    bidMin,
+    bidMax,
+    bidLogic,
+    allowUnrated,
+    allowUnratedLogic,
+    startAtFrom,
+    startAtTo,
+    startAtLogic,
+    endAtFrom,
+    endAtTo,
+    endAtLogic
+  });
+
+  andGroups.forEach((handler) => {
+    baseQuery.andWhere((qb) => {
+      handler(qb);
+    });
+  });
+
+  if (orGroups.length) {
+    baseQuery.andWhere((qb) => {
+      orGroups.forEach((handler, index) => {
+        if (index === 0) {
+          qb.where((sub) => handler(sub));
+        } else {
+          qb.orWhere((sub) => handler(sub));
+        }
+      });
+    });
+  }
 
   const totalRow = await baseQuery.clone().count({ count: '*' }).first();
 

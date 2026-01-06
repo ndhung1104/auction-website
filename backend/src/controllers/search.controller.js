@@ -9,7 +9,21 @@ const searchSchema = Joi.object({
   categoryId: Joi.number().integer().min(1).optional(),
   sort: Joi.string()
     .valid('end_at,asc', 'end_at,desc', 'price,asc', 'price,desc', 'bid_count,desc', 'created_at,desc')
-    .optional()
+    .optional(),
+  priceMin: Joi.number().integer().min(0).optional(),
+  priceMax: Joi.number().integer().min(0).optional(),
+  priceLogic: Joi.string().lowercase().valid('and', 'or').optional(),
+  bidMin: Joi.number().integer().min(0).optional(),
+  bidMax: Joi.number().integer().min(0).optional(),
+  bidLogic: Joi.string().lowercase().valid('and', 'or').optional(),
+  allowUnrated: Joi.boolean().optional(),
+  allowUnratedLogic: Joi.string().lowercase().valid('and', 'or').optional(),
+  startAtFrom: Joi.date().iso().optional(),
+  startAtTo: Joi.date().iso().optional(),
+  startAtLogic: Joi.string().lowercase().valid('and', 'or').optional(),
+  endAtFrom: Joi.date().iso().optional(),
+  endAtTo: Joi.date().iso().optional(),
+  endAtLogic: Joi.string().lowercase().valid('and', 'or').optional()
 });
 
 export const search = async (req, res, next) => {
@@ -19,7 +33,20 @@ export const search = async (req, res, next) => {
       convert: true
     });
     if (error) {
-      return sendSuccess(res, { items: [], meta: { total: 0, page: 1, limit: 12, hasMore: false } }, 'Search term required');
+      return sendSuccess(res, { items: [], meta: { total: 0, page: 1, limit: 12, hasMore: false } }, 'Invalid search filters');
+    }
+
+    if (value.priceMin && value.priceMax && value.priceMin > value.priceMax) {
+      return sendSuccess(res, { items: [], meta: { total: 0, page: 1, limit: 12, hasMore: false } }, 'Invalid price range');
+    }
+    if (value.bidMin && value.bidMax && value.bidMin > value.bidMax) {
+      return sendSuccess(res, { items: [], meta: { total: 0, page: 1, limit: 12, hasMore: false } }, 'Invalid bid count range');
+    }
+    if (value.startAtFrom && value.startAtTo && value.startAtFrom > value.startAtTo) {
+      return sendSuccess(res, { items: [], meta: { total: 0, page: 1, limit: 12, hasMore: false } }, 'Invalid start date range');
+    }
+    if (value.endAtFrom && value.endAtTo && value.endAtFrom > value.endAtTo) {
+      return sendSuccess(res, { items: [], meta: { total: 0, page: 1, limit: 12, hasMore: false } }, 'Invalid end date range');
     }
 
     const page = value.page;
@@ -32,7 +59,21 @@ export const search = async (req, res, next) => {
         limit,
         offset,
         categoryId: value.categoryId,
-        sort: value.sort
+        sort: value.sort,
+        priceMin: value.priceMin,
+        priceMax: value.priceMax,
+        priceLogic: value.priceLogic,
+        bidMin: value.bidMin,
+        bidMax: value.bidMax,
+        bidLogic: value.bidLogic,
+        allowUnrated: value.allowUnrated,
+        allowUnratedLogic: value.allowUnratedLogic,
+        startAtFrom: value.startAtFrom,
+        startAtTo: value.startAtTo,
+        startAtLogic: value.startAtLogic,
+        endAtFrom: value.endAtFrom,
+        endAtTo: value.endAtTo,
+        endAtLogic: value.endAtLogic
       }),
       searchCategoriesByName({ term: value.q, limit: 10 })
     ]);
