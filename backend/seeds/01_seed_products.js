@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt';
 import fs from 'node:fs';
 
 const SEED_PREFIX = 'seed-';
-const PRODUCTS_PER_CATEGORY = 2;
+const PRODUCTS_PER_CATEGORY = 7;
 const PASSWORD = 'SeedSeller123!';
 
 const CATEGORY_NAMES = {

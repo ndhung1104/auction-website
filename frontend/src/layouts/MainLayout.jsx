@@ -78,29 +78,27 @@ export default function MainLayout() {
         >
           {categories.map((category) => (
             <li key={category.id}>
-              <div className="dropdown-item">
-                <Link
-                  to={`/products?categoryId=${category.id}`}
-                  className="text-decoration-none d-block fw-semibold mb-1"
-                >
-                  {category.name}
-                </Link>
+              <Link
+                to={`/products?categoryId=${category.id}`}
+                className="dropdown-item fw-semibold"
+              >
+                {category.name}
+              </Link>
 
-                {category.children?.length ? (
-                  <ul className="list-unstyled ps-3 mb-0">
-                    {category.children.map((child) => (
-                      <li key={child.id}>
-                        <Link
-                          className="text-decoration-none"
-                          to={`/products?categoryId=${child.id}`}
-                        >
-                          {child.name}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </div>
+              {category.children?.length ? (
+                <ul className="list-unstyled ps-3 mb-0">
+                  {category.children.map((child) => (
+                    <li key={child.id}>
+                      <Link
+                        className="dropdown-item"
+                        to={`/products?categoryId=${child.id}`}
+                      >
+                        {child.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </li>
           ))}
         </ul>
@@ -186,11 +184,11 @@ export default function MainLayout() {
                 <form className="d-flex gap-2" onSubmit={handleSearch} noValidate>
                   <div>
                     <div className="input-group">
-                      <span className="input-group-text bg-light border-end-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-search text-muted" viewBox="0 0 16 16">
-                          <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
-                        </svg>
-                      </span>
+                    <button type="submit" className="input-group-text bg-light border-end-0">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-search text-muted" viewBox="0 0 16 16">
+                        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
+                      </svg>
+                    </button>
                       <input
                         type="search"
                         className="form-control border-start-0 bg-light"

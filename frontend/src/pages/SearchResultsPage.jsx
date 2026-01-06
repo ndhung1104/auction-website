@@ -46,19 +46,16 @@ export default function SearchResultsPage() {
       .catch(() => setCategoryTree([]))
   }, [])
 
-  const flattenedCategories = useMemo(() => {
-    const result = []
-    const walk = (nodes = [], prefix = '') => {
-      nodes.forEach((node) => {
-        result.push({ id: node.id, name: `${prefix}${node.name}` })
-        if (node.children?.length) {
-          walk(node.children, `${prefix}› `)
-        }
-      })
+  const selectedCategoryLabel = useMemo(() => {
+    if (!categoryId) return 'All categories'
+    const targetId = Number(categoryId)
+    for (const category of categoryTree) {
+      if (Number(category.id) === targetId) return category.name
+      const match = category.children?.find((child) => Number(child.id) === targetId)
+      if (match) return `${category.name} / ${match.name}`
     }
-    walk(categoryTree)
-    return result
-  }, [categoryTree])
+    return 'Selected category'
+  }, [categoryId, categoryTree])
 
   useEffect(() => {
     if (!term) {
@@ -129,8 +126,7 @@ export default function SearchResultsPage() {
     setSearchParams(params)
   }
 
-  const handleCategoryChange = (event) => {
-    const nextCat = event.target.value
+  const handleCategoryChange = (nextCat) => {
     const params = { q: term, page: '1' }
     if (sort) params.sort = sort
     if (nextCat) params.categoryId = nextCat
@@ -215,14 +211,53 @@ export default function SearchResultsPage() {
           {searchErrors.q && <div className="text-danger small mt-1">{searchErrors.q}</div>}
         </div>
         <div className="col-12 col-md-3">
-          <select className="form-select" value={categoryId} onChange={handleCategoryChange}>
-            <option value="">All categories</option>
-            {flattenedCategories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name}
-              </option>
-            ))}
-          </select>
+          <div className="dropdown w-100">
+            <button
+              className="form-select text-start search-category-toggle"
+              type="button"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              {selectedCategoryLabel}
+            </button>
+            <ul className="dropdown-menu w-100 dropdown-menu-categories">
+              <li>
+                <button
+                  type="button"
+                  className={`dropdown-item ${!categoryId ? 'active' : ''}`}
+                  onClick={() => handleCategoryChange('')}
+                >
+                  All categories
+                </button>
+              </li>
+              {categoryTree.map((category) => (
+                <li key={category.id}>
+                  <button
+                    type="button"
+                    className={`dropdown-item fw-semibold ${String(category.id) === String(categoryId) ? 'active' : ''}`}
+                    onClick={() => handleCategoryChange(String(category.id))}
+                  >
+                    {category.name}
+                  </button>
+                  {category.children?.length ? (
+                    <ul className="list-unstyled ps-3 mb-0">
+                      {category.children.map((child) => (
+                        <li key={child.id}>
+                          <button
+                            type="button"
+                            className={`dropdown-item ${String(child.id) === String(categoryId) ? 'active' : ''}`}
+                            onClick={() => handleCategoryChange(String(child.id))}
+                          >
+                            {child.name}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
         <div className="col-12 col-md-3">
           <select className="form-select" value={sort} onChange={handleSortChange}>

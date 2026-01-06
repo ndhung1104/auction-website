@@ -30,6 +30,15 @@ button {
   font-family: inherit;
 }
 
+select,
+option {
+  font-family: inherit;
+}
+
+.search-category-toggle {
+  cursor: pointer;
+}
+
 /* Custom Component Styles */
 .product-card-image {
   width: 100%;
