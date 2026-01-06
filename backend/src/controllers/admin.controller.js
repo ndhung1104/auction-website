@@ -10,6 +10,7 @@ import {
   adminUpdateCategory,
   adminUpdateUser,
   adminDeleteUser,
+  adminResetUserPassword,
   adminFinalizeAuctions,
   adminUpdateExtendSettings
 } from '../services/admin.service.js';
@@ -120,6 +121,22 @@ export const deleteUserAdmin = async (req, res, next) => {
     }
     const user = await adminDeleteUser(params.id);
     return sendSuccess(res, { user }, 'User deleted');
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const resetUserPasswordAdmin = async (req, res, next) => {
+  try {
+    const { value: params, error } = idParam.validate(req.params, {
+      abortEarly: false,
+      convert: true
+    });
+    if (error) {
+      throw new ApiError(422, 'USERS.INVALID_ID', 'Invalid user id', error.details);
+    }
+    const result = await adminResetUserPassword(params.id);
+    return sendSuccess(res, { user: result }, 'Password reset email sent');
   } catch (err) {
     next(err);
   }

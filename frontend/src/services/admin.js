@@ -24,6 +24,10 @@ export function deleteUser(id) {
   return apiClient.delete(`/admin/users/${id}`)
 }
 
+export function resetUserPassword(id) {
+  return apiClient.post(`/admin/users/${id}/reset-password`)
+}
+
 export function finalizeAuctions() {
   return apiClient.post('/admin/auctions/finalize')
 }

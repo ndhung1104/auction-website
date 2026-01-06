@@ -75,8 +75,10 @@ export const sendBidderReceipt = async ({ email, productName, amount }) =>
     text: `Your bid of ${amount} on ${productName} is now the leading offer.`
   });
 
+const getFrontendBase = () => process.env.FRONTEND_URL?.split(',')[0]?.trim();
+
 const buildProductUrl = (productId) => {
-  const base = process.env.FRONTEND_URL?.split(',')[0]?.trim();
+  const base = getFrontendBase();
   if (!base || !productId) return null;
   const normalized = base.endsWith('/') ? base.slice(0, -1) : base;
   return `${normalized}/products/${productId}`;
@@ -99,6 +101,17 @@ export const sendDescriptionUpdateNotification = async ({ email, productName, pr
     to: email,
     subject: 'Product description updated',
     text: `The seller updated the description for ${productName}.${linkLine}`
+  });
+};
+
+export const sendAdminPasswordResetEmail = async ({ email, password }) => {
+  const base = getFrontendBase();
+  const loginUrl = base ? `${base.replace(/\/$/, '')}/login` : null;
+  const linkLine = loginUrl ? `\n\nLogin: ${loginUrl}` : '';
+  return sendMail({
+    to: email,
+    subject: 'Your password has been reset',
+    text: `An administrator reset your password.\n\nNew password: ${password}\n\nYou can change it from your profile after logging in.${linkLine}`
   });
 };
 

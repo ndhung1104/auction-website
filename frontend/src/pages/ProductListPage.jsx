@@ -5,8 +5,8 @@ import ProductCard from '../components/ProductCard'
 import { useAuth } from '../contexts/AuthContext'
 
 const SORT_OPTIONS = [
+  { value: 'created_at,desc', label: 'Newly listed' },
   { value: 'end_at,asc', label: 'Ending soon' },
-  { value: 'end_at,desc', label: 'Newly listed' },
   { value: 'price,asc', label: 'Price: low to high' },
   { value: 'price,desc', label: 'Price: high to low' },
   { value: 'bid_count,desc', label: 'Most bids' }

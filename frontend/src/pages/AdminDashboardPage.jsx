@@ -10,6 +10,7 @@ import {
   updateCategory,
   updateUser,
   deleteUser,
+  resetUserPassword,
   finalizeAuctions,
   updateExtendSettings
 } from '../services/admin'
@@ -32,6 +33,7 @@ export default function AdminDashboardPage() {
   const [extendErrors, setExtendErrors] = useState({})
   const [autoBids, setAutoBids] = useState([])
   const [autoBidProductId, setAutoBidProductId] = useState(null)
+  const [notice, setNotice] = useState(null)
   const [confirmDialog, setConfirmDialog] = useState(null)
   const [confirmLoading, setConfirmLoading] = useState(false)
   // const [confirmDialog, setConfirmDialog] = useState(null)
@@ -50,6 +52,7 @@ export default function AdminDashboardPage() {
           })
         }
         setError(null)
+        setNotice(null)
       })
       .catch((err) => setError(err.message || 'Unable to load admin dashboard'))
       .finally(() => setLoading(false))
@@ -121,6 +124,17 @@ export default function AdminDashboardPage() {
       action: async () => {
         await deleteUser(id)
         loadDashboard()
+      }
+    })
+  }
+
+  const handleResetUserPassword = (id, email) => {
+    setConfirmDialog({
+      title: 'Reset password',
+      message: `Send a new password to ${email}?`,
+      action: async () => {
+        await resetUserPassword(id)
+        setNotice({ type: 'success', message: 'Password reset email sent.' })
       }
     })
   }
@@ -213,6 +227,11 @@ export default function AdminDashboardPage() {
       {error && (
         <div className="alert alert-danger">
           {error}
+        </div>
+      )}
+      {notice && (
+        <div className={`alert alert-${notice.type}`}>
+          {notice.message}
         </div>
       )}
       {confirmDialog && (
@@ -405,6 +424,12 @@ export default function AdminDashboardPage() {
                   </td>
                   <td>{item.status}</td>
                   <td className="text-end">
+                    <button
+                      className="btn btn-sm btn-outline-secondary me-2"
+                      onClick={() => handleResetUserPassword(item.id, item.email)}
+                    >
+                      Reset password
+                    </button>
                     <button
                       className="btn btn-sm btn-outline-danger"
                       onClick={() => handleUserDelete(item.id)}

@@ -49,7 +49,7 @@ const SORT_FIELDS = {
   'created_at': 'created_at'
 };
 
-const DEFAULT_SORT = { field: 'end_at', direction: 'asc' };
+const DEFAULT_SORT = { field: 'created_at', direction: 'desc' };
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 12;
 const MAX_LIMIT = 60;

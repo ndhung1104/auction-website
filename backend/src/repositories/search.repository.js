@@ -66,7 +66,7 @@ export const searchProducts = async ({ term, limit = DEFAULT_LIMIT, offset = 0, 
     const direction = dirRaw?.toLowerCase() === 'desc' ? 'desc' : 'asc';
     rowsQuery.orderBy(field, direction);
   } else {
-    rowsQuery.orderBy('p.end_at', 'asc');
+    rowsQuery.orderBy('p.created_at', 'desc');
   }
 
   const rows = await rowsQuery.limit(safeLimit).offset(safeOffset);

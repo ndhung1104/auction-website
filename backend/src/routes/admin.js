@@ -11,6 +11,7 @@ import {
   updateCategoryAdmin,
   updateUserAdmin,
   deleteUserAdmin,
+  resetUserPasswordAdmin,
   finalizeAuctionsAdmin,
   updateExtendSettingsAdmin
 } from '../controllers/admin.controller.js';
@@ -26,6 +27,7 @@ router.delete('/categories/:id', deleteCategoryAdmin);
 
 router.patch('/users/:id', updateUserAdmin);
 router.delete('/users/:id', deleteUserAdmin);
+router.post('/users/:id/reset-password', resetUserPasswordAdmin);
 
 router.patch('/products/:id/status', softDeleteProductAdmin);
 router.get('/products/:id/auto-bids', listAutoBidsAdmin);
