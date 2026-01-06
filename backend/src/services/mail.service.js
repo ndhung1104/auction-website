@@ -92,6 +92,16 @@ export const sendOutbidNotification = async ({ email, productName, amount, produ
   });
 };
 
+export const sendDescriptionUpdateNotification = async ({ email, productName, productId }) => {
+  const productUrl = buildProductUrl(productId);
+  const linkLine = productUrl ? `\n\nView auction: ${productUrl}` : '';
+  return sendMail({
+    to: email,
+    subject: 'Product description updated',
+    text: `The seller updated the description for ${productName}.${linkLine}`
+  });
+};
+
 export const sendBidRejectedNotification = async ({ email, productName, reason }) =>
   sendMail({
     to: email,

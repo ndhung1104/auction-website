@@ -35,7 +35,8 @@ import {
   sendBidNotification,
   sendBidderReceipt,
   sendOutbidNotification,
-  sendBidRejectedNotification
+  sendBidRejectedNotification,
+  sendDescriptionUpdateNotification
 } from './mail.service.js';
 import { findWatchlistedProductIds } from '../repositories/watchlist.repository.js';
 import { findOrderByProduct } from '../repositories/order.repository.js';
@@ -948,7 +949,7 @@ export const appendProductDescription = async ({ productId, sellerId, content })
     throw new ApiError(422, 'PRODUCTS.EMPTY_APPEND', 'Description update cannot be empty');
   }
 
-  return db.transaction(async (trx) => {
+  const result = await db.transaction(async (trx) => {
     const product = await findProductByIdForUpdate(productId, trx);
     if (!product) {
       throw new ApiError(404, 'PRODUCTS.NOT_FOUND', 'Product not found');
@@ -973,9 +974,49 @@ export const appendProductDescription = async ({ productId, sellerId, content })
 
     return {
       label: formattedLabel,
-      content: trimmed
+      content: trimmed,
+      productName: product.name,
+      productId: product.id
     };
   });
+
+  Promise.resolve().then(async () => {
+    try {
+      const [bidderEmails, autoBidEmails] = await Promise.all([
+        db('bids as b')
+          .leftJoin('users as u', 'u.id', 'b.user_id')
+          .where('b.product_id', productId)
+          .distinct()
+          .pluck('u.email'),
+        db('auto_bids as ab')
+          .leftJoin('users as u', 'u.id', 'ab.user_id')
+          .where('ab.product_id', productId)
+          .distinct()
+          .pluck('u.email')
+      ]);
+
+      const recipients = new Set();
+      bidderEmails.filter(Boolean).forEach((email) => recipients.add(email));
+      autoBidEmails.filter(Boolean).forEach((email) => recipients.add(email));
+
+      await Promise.all(
+        Array.from(recipients).map((email) =>
+          sendDescriptionUpdateNotification({
+            email,
+            productName: result.productName || 'product',
+            productId: result.productId
+          })
+        )
+      );
+    } catch (err) {
+      console.warn('[mail] description update notification skipped', err.message);
+    }
+  });
+
+  return {
+    label: result.label,
+    content: result.content
+  };
 };
 
 export const rejectBidder = async ({ productId, sellerId, bidderId, reason }) => {
