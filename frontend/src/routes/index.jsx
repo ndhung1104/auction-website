@@ -15,6 +15,10 @@ import ResetPasswordPage from '../pages/ResetPasswordPage'
 import OrdersPage from '../pages/OrdersPage'
 import OrderDetailPage from '../pages/OrderDetailPage'
 import VerifyEmailPage from '../pages/VerifyEmailPage'
+import ContactPage from '../pages/ContactPage'
+import HelpCenterPage from '../pages/HelpCenterPage'
+import TermsPage from '../pages/TermsPage'
+import PrivacyPage from '../pages/PrivacyPage'
 
 const router = createBrowserRouter([
   {
@@ -76,6 +80,22 @@ const router = createBrowserRouter([
       {
         path: 'orders/:orderId',
         element: <OrderDetailPage />,
+      },
+      {
+        path: 'contact',
+        element: <ContactPage />,
+      },
+      {
+        path: 'help-center',
+        element: <HelpCenterPage />,
+      },
+      {
+        path: 'terms',
+        element: <TermsPage />,
+      },
+      {
+        path: 'privacy',
+        element: <PrivacyPage />,
       }
     ],
   },

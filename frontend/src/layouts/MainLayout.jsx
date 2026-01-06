@@ -240,20 +240,14 @@ export default function MainLayout() {
       <footer className="footer-section py-5 mt-auto">
         <div className="container">
           <div className="row g-4">
-            <div className="col-lg-4">
+            <div className="col-lg-6">
               <div className="d-flex align-items-center gap-2 mb-3">
                 <img src="/bidmaster.svg" alt="BidMaster" width="32" height="32" className="me-2" />
                 <h5 className="mb-0 text-white fw-bold">BidMaster</h5>
               </div>
               <p className="small mb-4">The premier online auction platform for collectors and enthusiasts worldwide.</p>
-              <div className="d-flex gap-2">
-                {/* Social placeholders */}
-                <div className="bg-secondary bg-opacity-25 p-2 rounded text-white"><i className="bi bi-facebook"></i> F</div>
-                <div className="bg-secondary bg-opacity-25 p-2 rounded text-white"><i className="bi bi-twitter"></i> T</div>
-                <div className="bg-secondary bg-opacity-25 p-2 rounded text-white"><i className="bi bi-instagram"></i> I</div>
-              </div>
             </div>
-            <div className="col-6 col-lg-2">
+            <div className="col-6 col-lg-3">
               <h5 className="fw-bold mb-3">Categories</h5>
               <ul className="list-unstyled d-flex flex-column gap-2">
                 {footerCategories.length === 0 && <li className="text-muted small">No categories</li>}
@@ -266,26 +260,18 @@ export default function MainLayout() {
                 ))}
               </ul>
             </div>
-            <div className="col-6 col-lg-2">
+            <div className="col-6 col-lg-3">
               <h5 className="fw-bold mb-3">Support</h5>
               <ul className="list-unstyled d-flex flex-column gap-2">
-                <li><a href="#" className="text-decoration-none">Contact Us</a></li>
-                <li><a href="#" className="text-decoration-none">Help Center</a></li>
-                <li><a href="#" className="text-decoration-none">Terms</a></li>
-                <li><a href="#" className="text-decoration-none">Privacy</a></li>
+                <li><Link to="/contact" className="text-decoration-none">Contact Us</Link></li>
+                <li><Link to="/help-center" className="text-decoration-none">Help Center</Link></li>
+                <li><Link to="/terms" className="text-decoration-none">Terms</Link></li>
+                <li><Link to="/privacy" className="text-decoration-none">Privacy</Link></li>
               </ul>
-            </div>
-            <div className="col-lg-4">
-              <h5 className="fw-bold mb-3">Newsletter</h5>
-              <p className="small">Subscribe to get the latest auction news.</p>
-              <div className="input-group mb-3">
-                <input type="email" className="form-control border-0" placeholder="Enter your email" />
-                <button className="btn btn-primary" type="button">Subscribe</button>
-              </div>
             </div>
           </div>
           <div className="border-top border-secondary border-opacity-25 pt-4 mt-4 text-center">
-            <small>© {new Date().getFullYear()} BidMaster. All rights reserved.</small>
+            <small>Copyright {new Date().getFullYear()} BidMaster. All rights reserved.</small>
           </div>
         </div>
       </footer>
