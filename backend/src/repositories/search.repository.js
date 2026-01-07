@@ -36,15 +36,10 @@ const applyRangeFilter = (query, column, min, max) => {
 };
 
 const buildGroupFilter = (filters) => {
-  const andGroups = [];
-  const orGroups = [];
+  const groups = [];
 
   const addGroup = (logic, handler) => {
-    if (logic === 'or') {
-      orGroups.push(handler);
-    } else {
-      andGroups.push(handler);
-    }
+    groups.push({ logic: logic === 'or' ? 'or' : 'and', handler });
   };
 
   if (filters.priceMin !== undefined || filters.priceMax !== undefined) {
@@ -67,7 +62,7 @@ const buildGroupFilter = (filters) => {
     addGroup(filters.endAtLogic, (qb) => applyRangeFilter(qb, 'p.end_at', filters.endAtFrom, filters.endAtTo));
   }
 
-  return { andGroups, orGroups };
+  return groups;
 };
 
 export const searchCategories = async ({ term, limit = 10 }) => {
@@ -117,7 +112,7 @@ export const searchProducts = async ({
     .andWhereRaw("p.search_vector @@ websearch_to_tsquery('simple', ?)", [sanitized]);
 
   applyCategoryFilter(baseQuery, categoryId);
-  const { andGroups, orGroups } = buildGroupFilter({
+  const groups = buildGroupFilter({
     priceMin,
     priceMax,
     priceLogic,
@@ -134,19 +129,17 @@ export const searchProducts = async ({
     endAtLogic
   });
 
-  andGroups.forEach((handler) => {
+  if (groups.length) {
     baseQuery.andWhere((qb) => {
-      handler(qb);
-    });
-  });
-
-  if (orGroups.length) {
-    baseQuery.andWhere((qb) => {
-      orGroups.forEach((handler, index) => {
+      groups.forEach((group, index) => {
         if (index === 0) {
-          qb.where((sub) => handler(sub));
+          qb.where((sub) => group.handler(sub));
+          return;
+        }
+        if (group.logic === 'or') {
+          qb.orWhere((sub) => group.handler(sub));
         } else {
-          qb.orWhere((sub) => handler(sub));
+          qb.andWhere((sub) => group.handler(sub));
         }
       });
     });
