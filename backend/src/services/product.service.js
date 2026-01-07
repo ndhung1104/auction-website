@@ -451,6 +451,7 @@ export const getProductDetail = async (productId, viewer = null) => {
     : null;
 
   const viewerIsSeller = viewerId && String(viewerId) === String(productRow.seller_id);
+  const viewerIsAdmin = viewer?.role === 'ADMIN';
   const viewerIsWinner = viewerId && orderRow && String(orderRow.winner_id) === String(viewerId);
   const orderForViewer =
     orderRow && (viewerIsSeller || viewerIsWinner)
@@ -478,9 +479,9 @@ export const getProductDetail = async (productId, viewer = null) => {
       count: Number(watchlistCount?.count || 0)
     },
     permissions: {
-      canAppendDescription: Boolean(viewerIsSeller),
-      canRejectBidder: Boolean(viewerIsSeller && productRow.current_bidder_id),
-      canAnswerQuestions: Boolean(viewerIsSeller)
+      canAppendDescription: Boolean(viewerIsSeller || viewerIsAdmin),
+      canRejectBidder: Boolean((viewerIsSeller || viewerIsAdmin) && productRow.current_bidder_id),
+      canAnswerQuestions: Boolean(viewerIsSeller || viewerIsAdmin)
     },
     orderForViewer
   };
@@ -943,7 +944,7 @@ export const buyNowProduct = async ({ productId, userId }) => {
   });
 };
 
-export const appendProductDescription = async ({ productId, sellerId, content }) => {
+export const appendProductDescription = async ({ productId, sellerId, content, viewerRole }) => {
   const trimmed = content?.trim();
   if (!trimmed) {
     throw new ApiError(422, 'PRODUCTS.EMPTY_APPEND', 'Description update cannot be empty');
@@ -954,7 +955,7 @@ export const appendProductDescription = async ({ productId, sellerId, content })
     if (!product) {
       throw new ApiError(404, 'PRODUCTS.NOT_FOUND', 'Product not found');
     }
-    if (String(product.seller_id) !== String(sellerId)) {
+    if (String(product.seller_id) !== String(sellerId) && viewerRole !== 'ADMIN') {
       throw new ApiError(403, 'PRODUCTS.SELLER_REQUIRED', 'Only the seller can update this product');
     }
 
@@ -1019,13 +1020,13 @@ export const appendProductDescription = async ({ productId, sellerId, content })
   };
 };
 
-export const rejectBidder = async ({ productId, sellerId, bidderId, reason }) => {
+export const rejectBidder = async ({ productId, sellerId, bidderId, reason, viewerRole }) => {
   return db.transaction(async (trx) => {
     const product = await findProductByIdForUpdate(productId, trx);
     if (!product) {
       throw new ApiError(404, 'PRODUCTS.NOT_FOUND', 'Product not found');
     }
-    if (String(product.seller_id) !== String(sellerId)) {
+    if (String(product.seller_id) !== String(sellerId) && viewerRole !== 'ADMIN') {
       throw new ApiError(403, 'PRODUCTS.SELLER_REQUIRED', 'Only the seller can reject bidders');
     }
 

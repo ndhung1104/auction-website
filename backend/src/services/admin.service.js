@@ -19,6 +19,7 @@ import { getExtendSettings, updateExtendSettings } from './setting.service.js';
 import { sendAdminPasswordResetEmail } from './mail.service.js';
 
 const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 10);
+const SELLER_APPROVAL_TTL_DAYS = Number(process.env.SELLER_REQUEST_TTL_DAYS || 7);
 
 const generatePassword = () => crypto.randomBytes(8).toString('hex');
 
@@ -168,7 +169,13 @@ export const adminListAutoBids = (productId) => findAutoBidsWithUsers(productId)
 export const adminApproveSellerRequest = async (requestId) => {
   const trx = await db.transaction();
   try {
-    const [request] = await updateSellerRequestStatus(requestId, 'APPROVED', trx);
+    const expireAt = new Date(Date.now() + SELLER_APPROVAL_TTL_DAYS * 24 * 60 * 60 * 1000);
+    const [request] = await updateSellerRequestStatus(
+      requestId,
+      'APPROVED',
+      trx,
+      { expire_at: expireAt }
+    );
     if (!request) {
       throw new ApiError(404, 'SELLER_REQUEST.NOT_FOUND', 'Seller request not found');
     }

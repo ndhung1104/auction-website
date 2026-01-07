@@ -55,7 +55,7 @@ export const askQuestion = async ({ productId, userId, questionText }) => {
   };
 };
 
-export const answerQuestion = async ({ questionId, userId, answerText }) => {
+export const answerQuestion = async ({ questionId, userId, userRole, answerText }) => {
   const trimmed = answerText?.trim();
   if (!trimmed) {
     throw new ApiError(422, 'ANSWERS.EMPTY', 'Answer text is required');
@@ -67,7 +67,7 @@ export const answerQuestion = async ({ questionId, userId, answerText }) => {
   }
 
   const product = await findProductByIdWithSeller(question.product_id);
-  if (!product || String(product.seller_id) !== String(userId)) {
+  if (!product || (String(product.seller_id) !== String(userId) && userRole !== 'ADMIN')) {
     throw new ApiError(403, 'ANSWERS.FORBIDDEN', 'Only the product owner can answer');
   }
 

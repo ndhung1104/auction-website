@@ -1,5 +1,6 @@
 # Bỏ qua dependencies cục bộ (sẽ được cài đặt bên trong container)
 node_modules
+submission
 
 # Bỏ qua file biến môi trường (sẽ được cung cấp khi chạy container)
 .env

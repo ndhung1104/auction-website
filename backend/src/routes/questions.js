@@ -9,7 +9,6 @@ router.post('/products/:productId', checkAuth, checkRole('BIDDER', 'SELLER'), cr
 router.post(
   '/:questionId/answer',
   checkAuth,
-  checkRole('SELLER', 'ADMIN'),
   createAnswer
 );
 

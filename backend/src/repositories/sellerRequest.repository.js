@@ -35,13 +35,14 @@ export const listSellerRequests = (limit = 50, offset = 0) =>
     .limit(limit)
     .offset(offset);
 
-export const updateSellerRequestStatus = (id, status, trx = db) =>
+export const updateSellerRequestStatus = (id, status, trx = db, extra = {}) =>
   trx('seller_requests')
     .where({ id })
     .update(
       {
         status,
-        processed_at: trx.fn.now()
+        processed_at: trx.fn.now(),
+        ...extra
       },
       ['id', 'user_id', 'status', 'processed_at']
     );

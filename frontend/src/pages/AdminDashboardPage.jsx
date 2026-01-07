@@ -128,6 +128,18 @@ export default function AdminDashboardPage() {
     })
   }
 
+  const handleDowngradeSeller = (id, email) => {
+    setConfirmDialog({
+      title: 'Downgrade seller',
+      message: `Downgrade ${email} to bidder?`,
+      action: async () => {
+        await updateUser(id, { role: 'BIDDER' })
+        setNotice({ type: 'success', message: 'Seller downgraded to bidder.' })
+        loadDashboard()
+      }
+    })
+  }
+
   const handleResetUserPassword = (id, email) => {
     setConfirmDialog({
       title: 'Reset password',
@@ -424,6 +436,14 @@ export default function AdminDashboardPage() {
                   </td>
                   <td>{item.status}</td>
                   <td className="text-end">
+                    {item.role === 'SELLER' && String(item.id) !== String(user.id) && (
+                      <button
+                        className="btn btn-sm btn-outline-warning me-2"
+                        onClick={() => handleDowngradeSeller(item.id, item.email)}
+                      >
+                        Downgrade
+                      </button>
+                    )}
                     <button
                       className="btn btn-sm btn-outline-secondary me-2"
                       onClick={() => handleResetUserPassword(item.id, item.email)}

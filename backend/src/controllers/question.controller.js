@@ -93,6 +93,7 @@ export const createAnswer = async (req, res, next) => {
     const payload = await answerQuestion({
       questionId: params.questionId,
       userId: req.user.id,
+      userRole: req.user.role,
       answerText: value.answerText
     });
 

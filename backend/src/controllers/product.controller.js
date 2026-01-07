@@ -361,7 +361,8 @@ export const appendProductDescription = async (req, res, next) => {
     const payload = await appendDescriptionService({
       productId: params.id,
       sellerId: req.user.id,
-      content: value.content
+      content: value.content,
+      viewerRole: req.user.role
     });
 
     return sendSuccess(res, payload, 'Description updated');
@@ -404,7 +405,8 @@ export const rejectBidder = async (req, res, next) => {
       productId: params.id,
       sellerId: req.user.id,
       bidderId: value.bidderId,
-      reason: value.reason || null
+      reason: value.reason || null,
+      viewerRole: req.user.role
     });
 
     return sendSuccess(res, payload, 'Bidder rejected');

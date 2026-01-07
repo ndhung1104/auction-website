@@ -30,13 +30,11 @@ router.post('/:id/buy-now', checkAuth, checkRole('BIDDER', 'SELLER'), buyNow);
 router.post(
   '/:id/append-description',
   checkAuth,
-  checkRole('SELLER', 'ADMIN'),
   appendProductDescription
 );
 router.post(
   '/:id/reject-bidder',
   checkAuth,
-  checkRole('SELLER', 'ADMIN'),
   rejectBidder
 );
 router.get('/:id', optionalAuth, getProductById);

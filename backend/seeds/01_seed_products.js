@@ -4,6 +4,26 @@ import fs from 'node:fs';
 const SEED_PREFIX = 'seed-';
 const PRODUCTS_PER_CATEGORY = 7;
 const PASSWORD = 'SeedSeller123!';
+const SEED_ACCOUNTS = [
+  {
+    role: 'BIDDER',
+    email: process.env.BIDDER_EMAIL,
+    password: process.env.BIDDER_PASSWORD,
+    fullName: 'Bidder'
+  },
+  {
+    role: 'SELLER',
+    email: process.env.SELLER_EMAIL,
+    password: process.env.SELLER_PASSWORD,
+    fullName: 'Seller'
+  },
+  {
+    role: 'ADMIN',
+    email: process.env.ADMIN_EMAIL,
+    password: process.env.ADMIN_PASSWORD,
+    fullName: 'Admin'
+  }
+];
 
 const CATEGORY_NAMES = {
   electronics: 'Electronics',
@@ -107,6 +127,33 @@ const ensureSeller = async (trx, seller, passwordHash) => {
   return row.id;
 };
 
+const ensureSeedAccount = async (trx, account) => {
+  if (!account.email || !account.password) return null;
+  const passwordHash = await bcrypt.hash(account.password, 10);
+  const existing = await trx('users').select('id').where({ email: account.email }).first();
+  if (existing) {
+    await trx('users')
+      .where({ id: existing.id })
+      .update({
+        password_hash: passwordHash,
+        full_name: account.fullName,
+        role: account.role,
+        status: 'CONFIRMED'
+      });
+    return existing.id;
+  }
+  const [row] = await trx('users')
+    .insert({
+      email: account.email,
+      password_hash: passwordHash,
+      full_name: account.fullName,
+      role: account.role,
+      status: 'CONFIRMED'
+    })
+    .returning(['id']);
+  return row.id;
+};
+
 const deleteSeedData = async (trx, productIds) => {
   if (!productIds.length) return;
   const orderIds = await trx('orders').whereIn('product_id', productIds).pluck('id');
@@ -151,6 +198,10 @@ export async function seed(knex) {
     for (const seller of SELLERS) {
       const sellerId = await ensureSeller(trx, seller, passwordHash);
       sellerIds.push(sellerId);
+    }
+
+    for (const account of SEED_ACCOUNTS) {
+      await ensureSeedAccount(trx, account);
     }
 
     const productGroups = [
